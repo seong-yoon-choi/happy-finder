@@ -158,7 +158,7 @@ const PlusIcon = () => (
   </svg>
 );
 
-const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenNicknameEditor }) => {
+const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNicknameEditor }) => {
   const {
     isDarkMode,
     toggleTheme,
@@ -232,6 +232,12 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenNicknameEditor }) =>
     resetReminderEditor();
     onClose();
     onOpenNicknameEditor?.();
+  };
+
+  const handleOpenAgreement = () => {
+    resetReminderEditor();
+    onClose();
+    onOpenAgreement?.();
   };
 
   const handleSignOut = async () => {
@@ -311,6 +317,14 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenNicknameEditor }) =>
               </div>
 
               <div className="settings-button-stack">
+                <button
+                  type="button"
+                  className="settings-action-btn"
+                  onClick={handleOpenAgreement}
+                  disabled={isAuthBusy}
+                >
+                  동의 사항
+                </button>
                 <button
                   type="button"
                   className="settings-action-btn"

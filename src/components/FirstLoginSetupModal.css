@@ -14,6 +14,7 @@
 }
 
 .first-login-modal {
+    position: relative;
     width: min(100%, 420px);
     padding: 28px 24px 24px;
     display: flex;
@@ -31,6 +32,21 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.first-login-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    border: none;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.4rem;
+    line-height: 1;
 }
 
 .first-login-eyebrow {
@@ -54,27 +70,6 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-}
-
-.first-login-label {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-dark);
-}
-
-.first-login-input {
-    width: 100%;
-    border: 1px solid rgba(255, 142, 139, 0.25);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.88);
-    color: var(--text-dark);
-    padding: 14px 16px;
-    font-size: 1rem;
-    font-family: inherit;
-}
-
-.dark-theme .first-login-input {
-    background: rgba(255, 255, 255, 0.08);
 }
 
 .first-login-agreement-box {
@@ -106,22 +101,22 @@
     flex-shrink: 0;
 }
 
-.first-login-check.all {
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    font-weight: 800;
-}
-
-.dark-theme .first-login-check.all {
-    border-bottom-color: rgba(255, 255, 255, 0.12);
-}
-
 .first-login-check.required span::before {
     content: '';
 }
 
 .first-login-check.optional {
     color: var(--text-light);
+}
+
+.first-login-link {
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
 }
 
 .first-login-feedback {

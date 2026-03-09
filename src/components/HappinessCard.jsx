@@ -11,6 +11,7 @@ const HappinessCard = ({ item, onClick }) => {
         <div className="glass-card happiness-card compact" onClick={() => onClick(item)}>
             <div className="card-header">
                 <span className="category-badge">{item.category}</span>
+                {item.isCustom && <span className="custom-badge">MY</span>}
             </div>
             <h3 className="card-title">{item.title}</h3>
             <p className="card-desc-short">{item.description}</p>

@@ -1404,7 +1404,6 @@ export const HappyProvider = ({ children }) => {
   };
 
   const completeAuthOnboarding = async ({
-    nickname,
     isOver14,
     hasAcceptedTerms,
     hasAcceptedPrivacy,
@@ -1412,16 +1411,6 @@ export const HappyProvider = ({ children }) => {
   }) => {
     if (!supabase || !authUser) {
       return { success: false, error: '로그인한 계정이 없어요.' };
-    }
-
-    const normalizedNickname = nickname.trim();
-
-    if (!normalizedNickname) {
-      return { success: false, error: '닉네임을 입력해주세요.' };
-    }
-
-    if (normalizedNickname.length > 8) {
-      return { success: false, error: '닉네임은 최대 8글자까지 입력할 수 있어요.' };
     }
 
     if (!isOver14) {
@@ -1441,7 +1430,6 @@ export const HappyProvider = ({ children }) => {
     const { data, error } = await supabase.auth.updateUser({
       data: {
         ...(isRecord(authUser.user_metadata) ? authUser.user_metadata : {}),
-        nickname: normalizedNickname,
         ageConfirmed: true,
         termsAccepted: true,
         privacyAccepted: true,

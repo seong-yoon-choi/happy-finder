@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HappyProvider, useHappy } from './store/HappyContext';
 import NavBar from './components/NavBar';
 import CelebrationModal from './components/CelebrationModal';
@@ -14,6 +14,8 @@ function AppContent() {
   const [currentView, setCurrentView] = useState('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(false);
+  const [isAgreementModalRequested, setIsAgreementModalRequested] = useState(false);
+  const [isAgreementModalDismissed, setIsAgreementModalDismissed] = useState(false);
   const [isNicknameModalRequested, setIsNicknameModalRequested] = useState(false);
 
   const {
@@ -27,17 +29,39 @@ function AppContent() {
 
   const isForcedAuthScreen = !authUser && !isGuestMode;
   const isAuthScreenOpen = isForcedAuthScreen || (isAuthScreenRequested && !authUser);
-  const needsFirstLoginSetup = Boolean(
+  const needsAgreementSetup = Boolean(
     authUser
       && !isGuestMode
       && (
-        !authUserOnboarding.nickname
-        || !authUserOnboarding.isOver14
+        !authUserOnboarding.isOver14
         || !authUserOnboarding.hasAcceptedTerms
         || !authUserOnboarding.hasAcceptedPrivacy
       )
   );
-  const isNicknameModalOpen = isNicknameModalRequested && Boolean(authUser) && !needsFirstLoginSetup;
+  const needsNicknameSetup = Boolean(
+    authUser
+      && !isGuestMode
+      && !needsAgreementSetup
+      && !authUserOnboarding.nickname
+  );
+  const isAgreementModalOpen = Boolean(authUser) && !isGuestMode && (
+    (needsAgreementSetup && !isAgreementModalDismissed)
+    || isAgreementModalRequested
+  );
+  const isNicknameModalOpen = Boolean(authUser) && !isGuestMode && (
+    needsNicknameSetup
+    || (isNicknameModalRequested && !needsAgreementSetup)
+  );
+
+  useEffect(() => {
+    setIsAgreementModalDismissed(false);
+  }, [authUser?.id]);
+
+  useEffect(() => {
+    if (!needsAgreementSetup) {
+      setIsAgreementModalDismissed(false);
+    }
+  }, [needsAgreementSetup]);
 
   const openAuthScreen = () => {
     setIsAuthScreenRequested(true);
@@ -45,6 +69,16 @@ function AppContent() {
 
   const closeAuthScreen = () => {
     setIsAuthScreenRequested(false);
+  };
+
+  const openAgreementModal = () => {
+    setIsAgreementModalDismissed(false);
+    setIsAgreementModalRequested(true);
+  };
+
+  const closeAgreementModal = () => {
+    setIsAgreementModalRequested(false);
+    setIsAgreementModalDismissed(true);
   };
 
   const openNicknameModal = () => {
@@ -81,6 +115,7 @@ function AppContent() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onOpenAuth={openAuthScreen}
+        onOpenAgreement={openAgreementModal}
         onOpenNicknameEditor={openNicknameModal}
       />
 
@@ -92,18 +127,21 @@ function AppContent() {
 
       <FirstLoginSetupModal
         key={`first-login-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}`}
-        isOpen={needsFirstLoginSetup}
+        isOpen={isAgreementModalOpen}
+        canClose
+        onClose={closeAgreementModal}
+        onComplete={closeAgreementModal}
         initialValues={authUserOnboarding}
       />
 
       <NicknameModal
-        key={`edit-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}-${isNicknameModalOpen ? 'open' : 'closed'}`}
+        key={`edit-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}-${isNicknameModalOpen ? 'open' : 'closed'}-${needsNicknameSetup ? 'forced' : 'manual'}`}
         isOpen={isNicknameModalOpen}
-        canClose
+        canClose={!needsNicknameSetup}
         onClose={closeNicknameModal}
-        title="닉네임 바꾸기"
-        description="프로필에 표시할 닉네임을 새로 입력해주세요."
-        submitLabel="저장하기"
+        title={needsNicknameSetup ? '닉네임 설정' : '닉네임 바꾸기'}
+        description={needsNicknameSetup ? '프로필에 표시할 닉네임을 입력해주세요.' : '프로필에 표시할 닉네임을 새로 입력해주세요.'}
+        submitLabel={needsNicknameSetup ? '저장하고 시작하기' : '저장하기'}
         initialValue={authUserNickname}
       />
     </div>

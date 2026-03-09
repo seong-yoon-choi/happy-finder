@@ -248,6 +248,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
         <div className="detail-header">
           <div className="badges-container">
             <span className="category-badge">{item.category}</span>
+            {item.isCustom && <span className="custom-badge">MY</span>}
             <button
               className={`favorite-btn ${userFavorites[item.id] ? 'active' : ''}`}
               onClick={() => toggleFavorite(item.id)}
