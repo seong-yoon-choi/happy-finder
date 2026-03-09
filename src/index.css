@@ -1,0 +1,218 @@
+/* Custom Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Brand Colors */
+  --primary-color: #ff8e8b;
+  --secondary-color: #f7b733;
+  --background-start: #ffe5e5;
+  --background-end: #fff0d1;
+  --text-dark: #333333;
+  --text-light: #777777;
+  --white: #ffffff;
+  --danger: #ff4757;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 8px 32px 0 rgba(255, 142, 139, 0.15);
+  /* Metrics */
+  --border-radius-lg: 24px;
+  --border-radius-md: 16px;
+  --border-radius-sm: 8px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+/* Dark Theme Variables */
+.dark-theme {
+  --primary-color: #ff9a9a;
+  /* Slightly brighter for dark mode */
+  --secondary-color: #ffd166;
+  --background-start: #1a1a2e;
+  /* Deep navy/purple */
+  --background-end: #16213e;
+  --text-dark: #f0f0f0;
+  /* Off-white text */
+  --text-light: #b0b0b0;
+  --white: #2d2f41;
+  /* Surface color serving as "white" container bg */
+
+  /* Glassmorphism Dark */
+  --glass-bg: rgba(30, 32, 50, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+  /* Mobile app feel */
+}
+
+body {
+  background: linear-gradient(135deg, var(--background-start), var(--background-end));
+  background-attachment: fixed;
+  color: var(--text-dark);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0 auto;
+  max-width: 480px;
+  /* Mobile width constraint */
+  background: var(--glass-bg);
+  /* Use variable instead of hardcoded white alpha */
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+  /* More visible shadow */
+  position: relative;
+  overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--border-radius-lg);
+}
+
+.glass-card {
+  background: var(--white);
+  /* Switch to variable */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+p {
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+/* Base Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: #ffffff;
+  /* Explicitly keep this text absolute white */
+  border: none;
+  border-radius: var(--border-radius-lg);
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255, 142, 139, 0.3);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(255, 142, 139, 0.2);
+}
+
+/* Animations */
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Smooth Scrolling */
+.scroll-container {
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide Scrollbar */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* Floating Theme Toggle Button */
+.theme-toggle-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.9);
+}

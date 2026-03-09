@@ -1,0 +1,488 @@
+.detail-modal-overlay {
+    z-index: 2000;
+    /* Above nav bar */
+}
+
+.detail-modal-content {
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 0;
+    border-radius: var(--border-radius-lg);
+    display: flex;
+    flex-direction: column;
+    /* Soft pastel gradient for the modal background */
+    background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+}
+
+.dark-theme .detail-modal-content {
+    background: linear-gradient(135deg, #2a2a35 0%, #1e1e28 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.detail-top-actions {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.detail-close,
+.detail-memo-trigger {
+    background: rgba(255, 255, 255, 0.7);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detail-close {
+    font-size: 1.5rem;
+}
+
+.detail-icon-btn {
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.detail-header {
+    /* Match top padding with the close button's top (16px) and add min-height to ensure vertical centering */
+    padding: 16px 20px 8px;
+    min-height: 36px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.badges-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.favorite-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Remove tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+    /* Use a rounder font family for the star if possible, or just rely on the OS emoji */
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+    line-height: 1;
+}
+
+.favorite-btn:active {
+    transform: scale(0.8);
+}
+
+.favorite-btn.active {
+    color: var(--secondary-color);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.detail-title {
+    padding: 0 20px;
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+}
+
+.detail-desc {
+    padding: 0 20px;
+    font-size: 1.05rem;
+    color: var(--text-dark);
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.detail-stamp-section {
+    padding: 20px;
+    background: var(--glass-bg);
+    /* Adjusted for theme support */
+    border-top: 1px solid var(--glass-border);
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.stamp-count.large {
+    text-align: center;
+    font-size: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stamp-count.large .active-stamps strong {
+    font-size: 1.5rem;
+}
+
+.stamp-guidance {
+    font-size: 0.95rem;
+    color: var(--text-light);
+}
+
+.detail-stat-chips {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.detail-stat-chip {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+}
+
+.dark-theme .detail-stat-chip {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.detail-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.stamp-btn-large {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.15rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    border-radius: 30px;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    transition: transform 0.2s ease, background 0.3s ease;
+}
+
+.long-press-btn {
+    background: var(--white) !important;
+    color: var(--text-dark);
+    border: 2px solid var(--primary-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.long-press-btn.pressing {
+    transform: scale(0.96);
+    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.long-press-btn.disabled {
+    background: var(--white) !important;
+    color: var(--text-dark);
+    /* Keep the original pastel pink border instead of default gray */
+    border-color: var(--primary-color);
+    cursor: default;
+    transform: none;
+    opacity: 0.8;
+}
+
+.progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100%;
+    background-color: var(--primary-color) !important;
+    opacity: 0.4;
+    /* Lighter via opacity instead of hard hex */
+    z-index: 1;
+    pointer-events: none;
+}
+
+.long-press-btn .btn-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.hint-text {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: -8px;
+}
+
+.success-message {
+    width: 100%;
+    text-align: center;
+    background: rgba(43, 192, 106, 0.1);
+    color: #2bc06a;
+    padding: 12px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+}
+
+.detail-delete-btn {
+    width: 100%;
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    background: rgba(255, 71, 87, 0.08);
+    color: var(--danger);
+    border-radius: 30px;
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.detail-delete-btn:active {
+    transform: scale(0.98);
+}
+
+.detail-memo-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.detail-memo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.detail-memo-header h3 {
+    font-size: 1rem;
+}
+
+.detail-memo-header span {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.detail-memo-compose {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.detail-memo-compose textarea {
+    width: 100%;
+    resize: none;
+    border: 1px solid rgba(255, 142, 139, 0.25);
+    border-radius: 18px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.dark-theme .detail-memo-compose textarea {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.detail-memo-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.detail-memo-skip,
+.detail-memo-save {
+    flex: 1;
+}
+
+.detail-memo-skip {
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.detail-memo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.detail-memo-item {
+    background: rgba(255, 255, 255, 0.64);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 14px;
+}
+
+.dark-theme .detail-memo-item {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.detail-memo-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.detail-memo-time {
+    font-size: 0.78rem;
+    color: var(--text-light);
+}
+
+.detail-memo-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.detail-memo-edit-btn,
+.detail-memo-delete-btn {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.detail-memo-edit-btn {
+    color: var(--primary-color);
+}
+
+.detail-memo-delete-btn {
+    color: var(--danger);
+}
+
+.detail-memo-edit-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.detail-memo-edit-wrap textarea {
+    width: 100%;
+    resize: none;
+    border: 1px solid rgba(255, 142, 139, 0.25);
+    border-radius: 18px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.dark-theme .detail-memo-edit-wrap textarea {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.detail-memo-item p {
+    color: var(--text-dark);
+    line-height: 1.55;
+}
+
+.delete-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 24, 28, 0.38);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 2200;
+}
+
+.delete-confirm-modal {
+    width: min(100%, 320px);
+    padding: 22px;
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+}
+
+.delete-confirm-title {
+    font-size: 1.15rem;
+    margin: 0;
+}
+
+.delete-confirm-text {
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.delete-confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.delete-confirm-cancel,
+.delete-confirm-submit {
+    border-radius: 18px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.delete-confirm-cancel {
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+    border-color: var(--glass-border);
+}
+
+.delete-confirm-submit {
+    background: rgba(255, 71, 87, 0.12);
+    color: var(--danger);
+    border-color: rgba(255, 71, 87, 0.28);
+}
+
+.slide-down {
+    animation: slideDownFade 0.4s ease forwards;
+}
+
+@keyframes slideDownFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

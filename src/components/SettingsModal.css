@@ -1,0 +1,533 @@
+.settings-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+    -webkit-overflow-scrolling: touch;
+}
+
+.settings-modal {
+    width: min(100%, 380px);
+    max-height: calc(100dvh - 40px);
+    margin: auto 0;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    background: linear-gradient(145deg, var(--background-start) 0%, var(--background-end) 100%);
+    animation: slideUp 0.25s ease;
+}
+
+.settings-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.settings-close {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.62);
+    color: var(--text-dark);
+    font-size: 1.7rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.42);
+}
+
+.dark-theme .settings-section {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-section-copy h3 {
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+.settings-section-copy p {
+    font-size: 0.9rem;
+}
+
+.settings-action-btn,
+.settings-secondary-btn,
+.settings-reminder-add-btn,
+.settings-reminder-icon-btn,
+.settings-period-btn,
+.settings-time-cancel-btn,
+.settings-time-apply-btn {
+    font-family: inherit;
+}
+
+.settings-action-btn {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.settings-action-btn:disabled,
+.settings-secondary-btn:disabled,
+.settings-time-cancel-btn:disabled,
+.settings-time-apply-btn:disabled,
+.settings-reminder-add-btn:disabled,
+.settings-reminder-icon-btn:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.settings-action-btn.active {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(255, 142, 139, 0.24);
+}
+
+.settings-secondary-btn {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.56);
+    color: var(--text-dark);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.settings-button-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-reminder-toolbar {
+    display: grid;
+    grid-template-columns: 118px minmax(0, 1fr);
+    gap: 10px;
+}
+
+.settings-inline-btn {
+    padding: 12px 10px;
+    font-size: 0.9rem;
+}
+
+.settings-reminder-add-btn {
+    width: 100%;
+    padding: 12px 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid rgba(255, 142, 139, 0.26);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-dark);
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.settings-reminder-add-btn svg,
+.settings-reminder-icon-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.settings-reminder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-reminder-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.settings-reminder-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-reminder-icon-btn {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 142, 139, 0.18);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-light);
+    cursor: pointer;
+    transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.settings-reminder-icon-btn.danger {
+    color: #d16a74;
+}
+
+.settings-reminder-add-btn:hover,
+.settings-reminder-icon-btn:hover,
+.settings-time-shell:hover,
+.settings-time-shell.active {
+    transform: translateY(-1px);
+}
+
+.settings-reminder-add-btn:hover,
+.settings-time-shell:hover,
+.settings-time-shell.active {
+    border-color: rgba(255, 142, 139, 0.58);
+    box-shadow: 0 10px 22px rgba(255, 142, 139, 0.16);
+}
+
+.settings-reminder-icon-btn:hover {
+    border-color: rgba(255, 142, 139, 0.34);
+}
+
+.settings-time-shell {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(255, 142, 139, 0.26);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 58%),
+        linear-gradient(135deg, rgba(255, 244, 236, 0.92), rgba(255, 232, 215, 0.9));
+    color: var(--text-dark);
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.settings-reminder-order {
+    padding: 7px 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-light);
+    font-size: 0.76rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.settings-time-text {
+    min-width: 0;
+    font-size: 0.98rem;
+    font-weight: 800;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.settings-time-chevron {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-light);
+    transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.settings-time-chevron svg {
+    width: 16px;
+    height: 16px;
+}
+
+.settings-time-chevron.open {
+    transform: rotate(180deg);
+}
+
+.settings-reminder-empty {
+    padding: 14px 16px;
+    border: 1px dashed rgba(255, 142, 139, 0.24);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.46);
+    color: var(--text-light);
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.settings-time-popover {
+    margin-top: 2px;
+    padding: 16px;
+    border: 1px solid rgba(255, 142, 139, 0.18);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 50%),
+        linear-gradient(145deg, rgba(255, 250, 247, 0.98), rgba(255, 238, 226, 0.96));
+    box-shadow: 0 18px 38px rgba(255, 142, 139, 0.16);
+    animation: fadeIn 0.18s ease;
+}
+
+.settings-time-popover-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.settings-time-popover-header strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+}
+
+.settings-time-popover-header p {
+    color: var(--text-light);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.settings-time-preview {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.settings-period-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.settings-period-btn,
+.settings-time-cancel-btn,
+.settings-time-apply-btn {
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 16px;
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.settings-period-btn {
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+}
+
+.settings-period-btn.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: #ffffff;
+    box-shadow: 0 10px 18px rgba(255, 142, 139, 0.22);
+}
+
+.settings-time-select-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.settings-time-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.settings-time-field span {
+    color: var(--text-light);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.settings-time-field select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 142, 139, 0.2);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text-dark);
+    font-size: 0.94rem;
+    font-weight: 700;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image:
+        linear-gradient(45deg, transparent 50%, rgba(90, 95, 109, 0.75) 50%),
+        linear-gradient(135deg, rgba(90, 95, 109, 0.75) 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) calc(50% - 2px),
+        calc(100% - 12px) calc(50% - 2px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+}
+
+.settings-time-field select:focus {
+    border-color: rgba(255, 142, 139, 0.55);
+    box-shadow: 0 0 0 3px rgba(255, 142, 139, 0.15);
+}
+
+.settings-time-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.settings-time-cancel-btn {
+    border: 1px solid rgba(255, 142, 139, 0.16);
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+}
+
+.settings-time-apply-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: #ffffff;
+    box-shadow: 0 12px 22px rgba(255, 142, 139, 0.22);
+}
+
+.settings-note {
+    color: var(--text-light);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.settings-account-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.62);
+}
+
+.settings-account-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.settings-account-copy strong {
+    font-size: 0.95rem;
+}
+
+.settings-account-copy span {
+    color: var(--text-light);
+    font-size: 0.84rem;
+}
+
+.settings-guest-state {
+    padding: 11px 13px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.dark-theme .settings-close,
+.dark-theme .settings-action-btn:not(.active),
+.dark-theme .settings-secondary-btn,
+.dark-theme .settings-reminder-add-btn,
+.dark-theme .settings-reminder-icon-btn,
+.dark-theme .settings-account-card,
+.dark-theme .settings-reminder-empty {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.dark-theme .settings-time-shell {
+    border-color: rgba(255, 255, 255, 0.09);
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 55%),
+        linear-gradient(145deg, rgba(36, 40, 50, 0.96), rgba(25, 28, 35, 0.98));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.dark-theme .settings-reminder-order,
+.dark-theme .settings-time-chevron,
+.dark-theme .settings-time-preview,
+.dark-theme .settings-period-btn,
+.dark-theme .settings-time-field select,
+.dark-theme .settings-time-cancel-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-dark);
+}
+
+.dark-theme .settings-time-popover {
+    border-color: rgba(255, 255, 255, 0.08);
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 48%),
+        linear-gradient(145deg, rgba(30, 34, 43, 0.96), rgba(23, 26, 33, 0.98));
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.34);
+}
+
+.dark-theme .settings-action-btn.active,
+.dark-theme .settings-period-btn.active,
+.dark-theme .settings-time-apply-btn {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: #ffffff;
+}
+
+@media (max-width: 480px) {
+    .settings-account-card,
+    .settings-reminder-item,
+    .settings-reminder-toolbar,
+    .settings-time-select-grid,
+    .settings-time-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-account-card {
+        align-items: stretch;
+    }
+
+    .settings-reminder-item-actions {
+        justify-content: flex-end;
+    }
+
+    .settings-time-popover-header {
+        flex-direction: column;
+    }
+}
