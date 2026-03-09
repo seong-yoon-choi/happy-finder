@@ -7,16 +7,19 @@ create table if not exists public.happy_user_snapshots (
 
 alter table public.happy_user_snapshots enable row level security;
 
+drop policy if exists "Users can view own snapshot" on public.happy_user_snapshots;
 create policy "Users can view own snapshot"
 on public.happy_user_snapshots
 for select
 using ((select auth.uid()) = user_id);
 
+drop policy if exists "Users can insert own snapshot" on public.happy_user_snapshots;
 create policy "Users can insert own snapshot"
 on public.happy_user_snapshots
 for insert
 with check ((select auth.uid()) = user_id);
 
+drop policy if exists "Users can update own snapshot" on public.happy_user_snapshots;
 create policy "Users can update own snapshot"
 on public.happy_user_snapshots
 for update
