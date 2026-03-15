@@ -1,6 +1,18 @@
+.app-shell {
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
 .app-container {
     position: relative;
     min-height: 100vh;
+    width: 100%;
+    max-width: 480px;
+    background: var(--glass-bg);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+    overflow-x: hidden;
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 .settings-trigger-btn {

@@ -3,6 +3,7 @@ import React, { createContext, useState, useContext, useEffect, useRef } from 'r
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import { getTreeInfo } from '../utils/progress';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { getAppRedirectUrl } from '../lib/routes';
 
 const LOCAL_CREATOR_ID = 'local-user';
 const DEFAULT_REMINDER_TIME = '20:00';
@@ -1276,7 +1277,7 @@ export const HappyProvider = ({ children }) => {
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
-    const redirectTo = typeof window === 'undefined' ? undefined : window.location.origin;
+    const redirectTo = getAppRedirectUrl();
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
       password: normalizedPassword,
@@ -1324,9 +1325,7 @@ export const HappyProvider = ({ children }) => {
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
-    const redirectTo = typeof window === 'undefined'
-      ? undefined
-      : window.location.origin;
+    const redirectTo = getAppRedirectUrl();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: redirectTo ? { redirectTo } : undefined

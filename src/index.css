@@ -67,19 +67,9 @@ body {
 }
 
 #root {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
-  margin: 0 auto;
-  max-width: 480px;
-  /* Mobile width constraint */
-  background: var(--glass-bg);
-  /* Use variable instead of hardcoded white alpha */
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
-  /* More visible shadow */
+  width: 100%;
   position: relative;
-  overflow-x: hidden;
-  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Glassmorphism Utilities */

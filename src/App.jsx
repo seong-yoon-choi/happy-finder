@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { startTransition, useEffect, useState } from 'react';
 import { HappyProvider, useHappy } from './store/HappyContext';
 import NavBar from './components/NavBar';
 import CelebrationModal from './components/CelebrationModal';
@@ -8,7 +8,25 @@ import NicknameModal from './components/NicknameModal';
 import FirstLoginSetupModal from './components/FirstLoginSetupModal';
 import Home from './views/Home';
 import Profile from './views/Profile';
+import LandingPage from './views/LandingPage';
+import { APP_PATH, isAppPath, normalizePath } from './lib/routes';
 import './App.css';
+
+const navigateToPath = (nextPath, onNavigate) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const normalizedNextPath = normalizePath(nextPath);
+
+  if (normalizePath(window.location.pathname) === normalizedNextPath) {
+    return;
+  }
+
+  window.history.pushState({}, '', normalizedNextPath);
+  window.scrollTo({ top: 0, left: 0 });
+  startTransition(() => onNavigate(normalizedNextPath));
+};
 
 function AppContent() {
   const [currentView, setCurrentView] = useState('home');
@@ -149,9 +167,36 @@ function AppContent() {
 }
 
 function App() {
+  const [pathname, setPathname] = useState(() => {
+    if (typeof window === 'undefined') {
+      return '/';
+    }
+
+    return normalizePath(window.location.pathname);
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      window.scrollTo({ top: 0, left: 0 });
+      startTransition(() => setPathname(normalizePath(window.location.pathname)));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  if (!isAppPath(pathname)) {
+    return <LandingPage onOpenApp={() => navigateToPath(APP_PATH, setPathname)} />;
+  }
+
   return (
     <HappyProvider>
-      <AppContent />
+      <div className="app-shell">
+        <AppContent />
+      </div>
     </HappyProvider>
   );
 }

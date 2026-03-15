@@ -10,6 +10,17 @@
     text-align: center;
 }
 
+.profile-brand {
+    align-self: stretch;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    text-align: left;
+}
+
 .profile-avatar {
     font-size: 4rem;
     background: var(--glass-bg);

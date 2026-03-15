@@ -59,6 +59,8 @@ const Profile = () => {
   return (
     <div className="view-container profile-view">
       <header className="profile-header">
+        <div className="profile-brand" aria-label="Happy Finder 로고">Happy Finder</div>
+
         <div className="profile-tree-section" onClick={toggleTreeTooltip}>
           <div className="profile-avatar tree-avatar clickable-avatar">{treeInfo.icon}</div>
           <div className="tree-title">{treeInfo.title}</div>
