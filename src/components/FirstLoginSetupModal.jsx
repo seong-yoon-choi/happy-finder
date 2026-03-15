@@ -81,7 +81,7 @@ const FirstLoginSetupModal = ({
               <span>
                 필수:
                 {' '}
-                <a href="/terms/" className="first-login-link">
+                <a href="/terms/index.html" className="first-login-link">
                   이용약관
                 </a>
               </span>
@@ -97,7 +97,7 @@ const FirstLoginSetupModal = ({
               <span>
                 필수:
                 {' '}
-                <a href="/privacy/" className="first-login-link">
+                <a href="/privacy/index.html" className="first-login-link">
                   개인정보처리방침
                 </a>
               </span>
@@ -114,7 +114,7 @@ const FirstLoginSetupModal = ({
               <span>
                 선택:
                 {' '}
-                <a href="/marketing/" className="first-login-link">
+                <a href="/marketing/index.html" className="first-login-link">
                   마케팅 수신
                 </a>
               </span>

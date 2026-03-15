@@ -9,7 +9,15 @@ import FirstLoginSetupModal from './components/FirstLoginSetupModal';
 import Home from './views/Home';
 import Profile from './views/Profile';
 import LandingPage from './views/LandingPage';
-import { APP_PATH, isAppPath, normalizePath } from './lib/routes';
+import SupportPage from './views/SupportPage';
+import {
+  APP_PATH,
+  isAppPath,
+  isFeedbackPath,
+  isQnaPath,
+  isSupportPath,
+  normalizePath
+} from './lib/routes';
 import './App.css';
 
 const navigateToPath = (nextPath, onNavigate) => {
@@ -188,8 +196,17 @@ function App() {
     };
   }, []);
 
+  if (isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname)) {
+    return <SupportPage onNavigate={nextPath => navigateToPath(nextPath, setPathname)} />;
+  }
+
   if (!isAppPath(pathname)) {
-    return <LandingPage onOpenApp={() => navigateToPath(APP_PATH, setPathname)} />;
+    return (
+      <LandingPage
+        onOpenApp={() => navigateToPath(APP_PATH, setPathname)}
+        onNavigate={nextPath => navigateToPath(nextPath, setPathname)}
+      />
+    );
   }
 
   return (
