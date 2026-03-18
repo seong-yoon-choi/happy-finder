@@ -4,6 +4,7 @@ import NavBar from './components/NavBar';
 import CelebrationModal from './components/CelebrationModal';
 import SettingsModal from './components/SettingsModal';
 import AuthScreen from './components/AuthScreen';
+import WebAuthModal from './components/WebAuthModal';
 import NicknameModal from './components/NicknameModal';
 import FirstLoginSetupModal from './components/FirstLoginSetupModal';
 import Home from './views/Home';
@@ -50,11 +51,12 @@ function AppContent() {
     authUser,
     authUserNickname,
     authUserOnboarding,
-    isGuestMode
+    isGuestMode,
+    isPasswordRecovery
   } = useHappy();
 
   const isForcedAuthScreen = !authUser && !isGuestMode;
-  const isAuthScreenOpen = isForcedAuthScreen || (isAuthScreenRequested && !authUser);
+  const isAuthScreenOpen = isForcedAuthScreen || isPasswordRecovery || (isAuthScreenRequested && !authUser);
   const needsAgreementSetup = Boolean(
     authUser
       && !isGuestMode
@@ -147,7 +149,7 @@ function AppContent() {
 
       <AuthScreen
         isOpen={isAuthScreenOpen}
-        canClose={!isForcedAuthScreen}
+        canClose={!isForcedAuthScreen && !isPasswordRecovery}
         onClose={closeAuthScreen}
       />
 
@@ -174,6 +176,54 @@ function AppContent() {
   );
 }
 
+function AppRoutes({ pathname, setPathname }) {
+  const [isWebAuthOpen, setIsWebAuthOpen] = useState(false);
+
+  useEffect(() => {
+    setIsWebAuthOpen(false);
+  }, [pathname]);
+
+  const handleNavigate = nextPath => navigateToPath(nextPath, setPathname);
+
+  if (isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname)) {
+    return (
+      <>
+        <SupportPage
+          pathname={pathname}
+          onNavigate={handleNavigate}
+          onOpenAuth={() => setIsWebAuthOpen(true)}
+        />
+        <WebAuthModal
+          isOpen={isWebAuthOpen}
+          onClose={() => setIsWebAuthOpen(false)}
+        />
+      </>
+    );
+  }
+
+  if (!isAppPath(pathname)) {
+    return (
+      <>
+        <LandingPage
+          onOpenApp={() => handleNavigate(APP_PATH)}
+          onOpenAuth={() => setIsWebAuthOpen(true)}
+          onNavigate={handleNavigate}
+        />
+        <WebAuthModal
+          isOpen={isWebAuthOpen}
+          onClose={() => setIsWebAuthOpen(false)}
+        />
+      </>
+    );
+  }
+
+  return (
+    <div className="app-shell">
+      <AppContent />
+    </div>
+  );
+}
+
 function App() {
   const [pathname, setPathname] = useState(() => {
     if (typeof window === 'undefined') {
@@ -196,24 +246,9 @@ function App() {
     };
   }, []);
 
-  if (isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname)) {
-    return <SupportPage onNavigate={nextPath => navigateToPath(nextPath, setPathname)} />;
-  }
-
-  if (!isAppPath(pathname)) {
-    return (
-      <LandingPage
-        onOpenApp={() => navigateToPath(APP_PATH, setPathname)}
-        onNavigate={nextPath => navigateToPath(nextPath, setPathname)}
-      />
-    );
-  }
-
   return (
     <HappyProvider>
-      <div className="app-shell">
-        <AppContent />
-      </div>
+      <AppRoutes pathname={pathname} setPathname={setPathname} />
     </HappyProvider>
   );
 }

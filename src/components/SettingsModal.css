@@ -434,6 +434,23 @@
     line-height: 1.5;
 }
 
+.settings-feedback {
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+
+.settings-feedback.success {
+    background: rgba(79, 182, 125, 0.12);
+    color: #1f7a47;
+}
+
+.settings-feedback.error {
+    background: rgba(255, 142, 139, 0.14);
+    color: #b64c45;
+}
+
 .settings-account-card {
     display: flex;
     align-items: center;
@@ -464,6 +481,99 @@
     padding: 11px 13px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.5);
+}
+
+.settings-danger-card {
+    padding: 14px;
+    border: 1px solid rgba(209, 106, 116, 0.2);
+    border-radius: 18px;
+    background: rgba(255, 245, 246, 0.84);
+}
+
+.settings-danger-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.settings-danger-summary strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #a64957;
+}
+
+.settings-danger-summary p,
+.settings-danger-note {
+    color: #8a5963;
+    font-size: 0.84rem;
+    line-height: 1.55;
+}
+
+.settings-danger-toggle,
+.settings-danger-btn,
+.settings-danger-input {
+    font-family: inherit;
+}
+
+.settings-danger-toggle {
+    padding: 10px 14px;
+    border: 1px solid rgba(209, 106, 116, 0.22);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    color: #a64957;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.settings-danger-panel {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-danger-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(209, 106, 116, 0.22);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-dark);
+    font-size: 0.94rem;
+    outline: none;
+}
+
+.settings-danger-input:focus {
+    border-color: rgba(209, 106, 116, 0.58);
+    box-shadow: 0 0 0 4px rgba(209, 106, 116, 0.12);
+}
+
+.settings-danger-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.settings-danger-btn {
+    width: 100%;
+    padding: 11px 14px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #df6b77, #c24758);
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 12px 22px rgba(194, 71, 88, 0.22);
+}
+
+.settings-danger-btn:disabled,
+.settings-danger-toggle:disabled,
+.settings-danger-input:disabled {
+    opacity: 0.65;
+    cursor: wait;
 }
 
 .dark-theme .settings-close,
@@ -502,9 +612,35 @@
     box-shadow: 0 18px 38px rgba(0, 0, 0, 0.34);
 }
 
+.dark-theme .settings-feedback.success {
+    color: #86db9d;
+}
+
+.dark-theme .settings-feedback.error {
+    color: #ff9fa9;
+}
+
+.dark-theme .settings-danger-card {
+    border-color: rgba(255, 159, 169, 0.12);
+    background: rgba(255, 111, 122, 0.08);
+}
+
+.dark-theme .settings-danger-summary strong,
+.dark-theme .settings-danger-summary p,
+.dark-theme .settings-danger-note {
+    color: #f4c8ce;
+}
+
+.dark-theme .settings-danger-toggle,
+.dark-theme .settings-danger-input {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-dark);
+}
+
 .dark-theme .settings-action-btn.active,
 .dark-theme .settings-period-btn.active,
-.dark-theme .settings-time-apply-btn {
+.dark-theme .settings-time-apply-btn,
+.dark-theme .settings-danger-btn {
     border-color: transparent;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: #ffffff;
@@ -515,7 +651,8 @@
     .settings-reminder-item,
     .settings-reminder-toolbar,
     .settings-time-select-grid,
-    .settings-time-actions {
+    .settings-time-actions,
+    .settings-danger-actions {
         grid-template-columns: 1fr;
     }
 
