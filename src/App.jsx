@@ -12,6 +12,8 @@ import LandingPage from './views/LandingPage';
 import SupportPage from './views/SupportPage';
 import {
   APP_PATH,
+  clearRequestedAuthModeInUrl,
+  getRequestedAuthModeFromUrl,
   isAppPath,
   isFeedbackPath,
   isQnaPath,
@@ -40,6 +42,7 @@ function AppContent() {
   const [currentView, setCurrentView] = useState('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(false);
+  const [authScreenMode, setAuthScreenMode] = useState('login');
   const [isAgreementModalRequested, setIsAgreementModalRequested] = useState(false);
   const [isAgreementModalDismissed, setIsAgreementModalDismissed] = useState(false);
   const [isNicknameModalRequested, setIsNicknameModalRequested] = useState(false);
@@ -90,12 +93,26 @@ function AppContent() {
     }
   }, [needsAgreementSetup]);
 
-  const openAuthScreen = () => {
+  useEffect(() => {
+    const requestedMode = getRequestedAuthModeFromUrl();
+
+    if (!requestedMode) {
+      return;
+    }
+
+    setAuthScreenMode(requestedMode);
+    setIsAuthScreenRequested(true);
+    clearRequestedAuthModeInUrl();
+  }, []);
+
+  const openAuthScreen = (mode = 'login') => {
+    setAuthScreenMode(mode);
     setIsAuthScreenRequested(true);
   };
 
   const closeAuthScreen = () => {
     setIsAuthScreenRequested(false);
+    setAuthScreenMode('login');
   };
 
   const openAgreementModal = () => {
@@ -149,6 +166,7 @@ function AppContent() {
       <AuthScreen
         isOpen={isAuthScreenOpen}
         canClose={!isForcedAuthScreen && !isPasswordRecovery}
+        initialMode={authScreenMode}
         onClose={closeAuthScreen}
       />
 

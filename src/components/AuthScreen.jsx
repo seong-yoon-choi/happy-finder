@@ -7,7 +7,7 @@ const socialButtons = [
   { provider: 'google', label: 'Google로 계속하기', Icon: GoogleIcon }
 ];
 
-const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
+const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }) => {
   const {
     isSupabaseConfigured,
     isAuthLoading,
@@ -44,6 +44,17 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
 
     setMode(prev => (prev === 'reset-password' ? 'login' : prev));
   }, [isOpen, isPasswordRecovery]);
+
+  useEffect(() => {
+    if (!isOpen || isPasswordRecovery || !initialMode) {
+      return;
+    }
+
+    setMode(initialMode);
+    setPassword('');
+    setConfirmPassword('');
+    setLocalFeedback('');
+  }, [initialMode, isOpen, isPasswordRecovery]);
 
   if (!isOpen) {
     return null;

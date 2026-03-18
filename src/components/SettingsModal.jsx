@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useHappy } from '../store/HappyContext';
+import { getPasswordResetWebUrl } from '../lib/routes';
 import './SettingsModal.css';
 
 const DEFAULT_REMINDER_TIME = '20:00';
@@ -176,7 +177,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     authFeedback,
     clearAuthFeedback,
     signOutFromSupabase,
-    requestPasswordReset,
     deleteAccount
   } = useHappy();
 
@@ -270,13 +270,24 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     onClose();
   };
 
-  const handleSendPasswordReset = async () => {
-    if (!authUser?.email) {
+  const handleOpenPasswordResetWeb = () => {
+    resetAccountDangerState();
+    resetModalState();
+    onClose();
+
+    const resetWebUrl = getPasswordResetWebUrl();
+
+    if (typeof window !== 'undefined' && resetWebUrl) {
+      const openedWindow = window.open(resetWebUrl, '_blank', 'noopener,noreferrer');
+
+      if (!openedWindow) {
+        window.location.assign(resetWebUrl);
+      }
+
       return;
     }
 
-    resetAccountDangerState();
-    await requestPasswordReset(authUser.email);
+    onOpenAuth?.('reset-request');
   };
 
   const handleDeleteAccount = async () => {
@@ -397,10 +408,10 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                     <button
                       type="button"
                       className="settings-secondary-btn"
-                      onClick={handleSendPasswordReset}
+                      onClick={handleOpenPasswordResetWeb}
                       disabled={isAuthBusy}
                     >
-                      비밀번호 재설정 메일
+                      웹에서 비밀번호 재설정
                     </button>
                     <button
                       type="button"

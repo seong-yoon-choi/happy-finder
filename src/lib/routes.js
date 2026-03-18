@@ -17,6 +17,25 @@ export const isSupportPath = (value) => normalizePath(value) === SUPPORT_PATH;
 export const isQnaPath = (value) => normalizePath(value) === QNA_PATH;
 export const isFeedbackPath = (value) => normalizePath(value) === FEEDBACK_PATH;
 
+export const getRequestedAuthModeFromUrl = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const authMode = new URLSearchParams(window.location.search).get('auth');
+  return authMode === 'reset' ? 'reset-request' : null;
+};
+
+export const clearRequestedAuthModeInUrl = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete('auth');
+  window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+};
+
 export const getAppRedirectUrl = () => {
   if (typeof window === 'undefined') {
     return undefined;
@@ -29,4 +48,25 @@ export const getAppRedirectUrl = () => {
   }
 
   return `${window.location.origin}${APP_PATH}`;
+};
+
+export const getPasswordResetWebUrl = () => {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  const overrideWebUrl = import.meta.env.VITE_AUTH_WEB_URL;
+  const appBaseUrl = typeof overrideWebUrl === 'string' && overrideWebUrl.trim()
+    ? overrideWebUrl.trim()
+    : window.location.origin.startsWith('http')
+      ? `${window.location.origin}${APP_PATH}`
+      : undefined;
+
+  if (!appBaseUrl) {
+    return undefined;
+  }
+
+  const url = new URL(appBaseUrl);
+  url.searchParams.set('auth', 'reset');
+  return url.toString();
 };
