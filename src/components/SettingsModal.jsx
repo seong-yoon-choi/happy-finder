@@ -411,7 +411,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                       onClick={handleOpenPasswordResetWeb}
                       disabled={isAuthBusy}
                     >
-                      웹에서 비밀번호 재설정
+                      비밀번호 재설정
                     </button>
                     <button
                       type="button"
