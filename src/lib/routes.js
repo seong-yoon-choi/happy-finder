@@ -1,4 +1,5 @@
 export const APP_PATH = '/app';
+export const PASSWORD_RESET_PATH = '/password-reset';
 export const SUPPORT_PATH = '/support';
 export const QNA_PATH = '/qna';
 export const FEEDBACK_PATH = '/feedback';
@@ -13,6 +14,7 @@ export const normalizePath = (value) => {
 };
 
 export const isAppPath = (value) => normalizePath(value) === APP_PATH;
+export const isPasswordResetPath = (value) => normalizePath(value) === PASSWORD_RESET_PATH;
 export const isSupportPath = (value) => normalizePath(value) === SUPPORT_PATH;
 export const isQnaPath = (value) => normalizePath(value) === QNA_PATH;
 export const isFeedbackPath = (value) => normalizePath(value) === FEEDBACK_PATH;
@@ -59,7 +61,7 @@ export const getPasswordResetWebUrl = () => {
   const appBaseUrl = typeof overrideWebUrl === 'string' && overrideWebUrl.trim()
     ? overrideWebUrl.trim()
     : window.location.origin.startsWith('http')
-      ? `${window.location.origin}${APP_PATH}`
+      ? window.location.origin
       : undefined;
 
   if (!appBaseUrl) {
@@ -67,6 +69,7 @@ export const getPasswordResetWebUrl = () => {
   }
 
   const url = new URL(appBaseUrl);
-  url.searchParams.set('auth', 'reset');
+  url.pathname = PASSWORD_RESET_PATH;
+  url.searchParams.delete('auth');
   return url.toString();
 };

@@ -9,6 +9,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/password-reset",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/password-reset/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/qna",
       "destination": "/index.html"
     },

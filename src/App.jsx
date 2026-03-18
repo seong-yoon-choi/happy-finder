@@ -15,6 +15,7 @@ import {
   clearRequestedAuthModeInUrl,
   getRequestedAuthModeFromUrl,
   isAppPath,
+  isPasswordResetPath,
   isFeedbackPath,
   isQnaPath,
   isSupportPath,
@@ -193,6 +194,18 @@ function AppContent() {
   );
 }
 
+function PasswordResetRoute() {
+  return (
+    <div className="app-shell">
+      <AuthScreen
+        isOpen
+        canClose={false}
+        initialMode="reset-request"
+      />
+    </div>
+  );
+}
+
 function App() {
   const [pathname, setPathname] = useState(() => {
     if (typeof window === 'undefined') {
@@ -217,6 +230,14 @@ function App() {
 
   if (isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname)) {
     return <SupportPage onNavigate={nextPath => navigateToPath(nextPath, setPathname)} />;
+  }
+
+  if (isPasswordResetPath(pathname)) {
+    return (
+      <HappyProvider>
+        <PasswordResetRoute />
+      </HappyProvider>
+    );
   }
 
   if (!isAppPath(pathname)) {
