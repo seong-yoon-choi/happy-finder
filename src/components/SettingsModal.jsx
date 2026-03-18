@@ -59,8 +59,8 @@ const formatReminderTimeLabel = (timeValue) => {
   return `${period === 'AM' ? '오전' : '오후'} ${Number(hour)}시 ${minute}분`;
 };
 
-const ChevronIcon = ({ isOpen = false }) => (
-  <span className={`settings-time-chevron ${isOpen ? 'open' : ''}`} aria-hidden="true">
+const ChevronIcon = ({ isOpen = false, className = '' }) => (
+  <span className={`settings-time-chevron ${className} ${isOpen ? 'open' : ''}`.trim()} aria-hidden="true">
     <svg viewBox="0 0 20 20" fill="none" focusable="false">
       <path
         d="M5 7.5L10 12.5L15 7.5"
@@ -180,6 +180,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [editingReminderId, setEditingReminderId] = useState(null);
   const [pickerTime, setPickerTime] = useState(() => parseReminderTime(DEFAULT_REMINDER_TIME));
+  const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
 
   const reminders = reminderSettings.reminders || [];
 
@@ -215,33 +216,38 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     setPickerTime(parseReminderTime(DEFAULT_REMINDER_TIME));
   };
 
+  const resetModalState = () => {
+    resetReminderEditor();
+    setIsAccountActionsOpen(false);
+  };
+
   const handleClose = () => {
     clearAuthFeedback();
-    resetReminderEditor();
+    resetModalState();
     onClose();
   };
 
   const handleOpenAuth = () => {
     clearAuthFeedback();
-    resetReminderEditor();
+    resetModalState();
     onClose();
     onOpenAuth();
   };
 
   const handleOpenNicknameEditor = () => {
-    resetReminderEditor();
+    resetModalState();
     onClose();
     onOpenNicknameEditor?.();
   };
 
   const handleOpenAgreement = () => {
-    resetReminderEditor();
+    resetModalState();
     onClose();
     onOpenAgreement?.();
   };
 
   const handleSignOut = async () => {
-    resetReminderEditor();
+    resetModalState();
     await signOutFromSupabase();
     onClose();
   };
@@ -314,9 +320,20 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                   <strong>{authUserNickname || '나'}</strong>
                   <span>{authUser.email}</span>
                 </div>
+                <button
+                  type="button"
+                  className={`settings-account-toggle ${isAccountActionsOpen ? 'open' : ''}`}
+                  onClick={() => setIsAccountActionsOpen(prev => !prev)}
+                  aria-expanded={isAccountActionsOpen}
+                  aria-label="怨꾩젙 湲곕뒫 ?닿린"
+                >
+                  <ChevronIcon isOpen={isAccountActionsOpen} className="settings-account-chevron" />
+                </button>
               </div>
 
-              <div className="settings-button-stack">
+              {isAccountActionsOpen && (
+                <div className="settings-account-panel">
+                  <div className="settings-button-stack">
                 <button
                   type="button"
                   className="settings-action-btn"
@@ -341,7 +358,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                 >
                   {isAuthBusy ? '처리 중...' : '로그아웃하기'}
                 </button>
-              </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
