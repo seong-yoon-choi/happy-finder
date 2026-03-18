@@ -358,8 +358,20 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
         </div>
 
         <div className="settings-section">
-          <div className="settings-section-copy">
+          <div className="settings-section-copy settings-section-copy-row">
             <h3>계정</h3>
+            {!isAuthLoading && authUser && (
+              <button
+                type="button"
+                className={`settings-account-toggle ${isAccountActionsOpen ? 'open' : ''}`}
+                onClick={() => setIsAccountActionsOpen(prev => !prev)}
+                aria-expanded={isAccountActionsOpen}
+                aria-label="계정 메뉴 열기"
+                disabled={isAuthBusy}
+              >
+                <ChevronIcon isOpen={isAccountActionsOpen} className="settings-account-chevron" />
+              </button>
+            )}
           </div>
 
           {isAuthLoading && (

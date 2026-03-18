@@ -115,6 +115,13 @@
     font-size: 0.9rem;
 }
 
+.settings-section-copy-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
 .settings-action-btn,
 .settings-secondary-btn,
 .settings-reminder-add-btn,
@@ -524,50 +531,37 @@
 }
 
 .settings-account-disclosure {
-    width: 100%;
-    padding: 14px 16px;
-    display: flex;
+    display: none;
+}
+
+.settings-account-toggle {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    justify-content: center;
     border: 1px solid rgba(255, 142, 139, 0.24);
-    border-radius: 18px;
+    border-radius: 999px;
     background:
-        radial-gradient(circle at top left, rgba(255, 255, 255, 0.84), transparent 55%),
-        linear-gradient(140deg, rgba(255, 244, 236, 0.9), rgba(255, 232, 215, 0.82));
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 58%),
+        linear-gradient(140deg, rgba(255, 244, 236, 0.94), rgba(255, 232, 215, 0.86));
     color: var(--text-dark);
     cursor: pointer;
     transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.settings-account-disclosure:hover,
-.settings-account-disclosure.open {
+.settings-account-toggle:hover,
+.settings-account-toggle.open {
     transform: translateY(-1px);
     border-color: rgba(255, 142, 139, 0.46);
-    box-shadow: 0 12px 24px rgba(255, 142, 139, 0.14);
-}
-
-.settings-account-disclosure-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    text-align: left;
-}
-
-.settings-account-disclosure-copy strong {
-    font-size: 0.94rem;
-}
-
-.settings-account-disclosure-copy span {
-    color: var(--text-light);
-    font-size: 0.82rem;
-    line-height: 1.45;
+    box-shadow: 0 10px 20px rgba(255, 142, 139, 0.14);
 }
 
 .settings-account-chevron {
-    width: 34px;
-    height: 34px;
-    background: rgba(255, 255, 255, 0.76);
+    width: 24px;
+    height: 24px;
+    background: transparent;
 }
 
 .settings-account-panel {
@@ -688,7 +682,7 @@
 .dark-theme .settings-reminder-add-btn,
 .dark-theme .settings-reminder-icon-btn,
 .dark-theme .settings-account-card,
-.dark-theme .settings-account-disclosure,
+.dark-theme .settings-account-toggle,
 .dark-theme .settings-account-panel,
 .dark-theme .settings-reminder-empty {
     background: rgba(255, 255, 255, 0.08);
