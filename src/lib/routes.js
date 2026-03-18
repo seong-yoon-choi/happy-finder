@@ -22,11 +22,5 @@ export const getAppRedirectUrl = () => {
     return undefined;
   }
 
-  const overrideRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL;
-
-  if (typeof overrideRedirectUrl === 'string' && overrideRedirectUrl.trim()) {
-    return overrideRedirectUrl.trim();
-  }
-
   return `${window.location.origin}${APP_PATH}`;
 };

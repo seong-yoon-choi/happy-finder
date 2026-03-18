@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useHappy } from '../store/HappyContext';
 import { GoogleIcon } from './AuthProviderIcons';
 import './AuthScreen.css';
@@ -16,11 +16,8 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
     clearAuthFeedback,
     signInWithPassword,
     signUpWithPassword,
-    requestPasswordReset,
-    completePasswordReset,
     signInWithSocialProvider,
-    continueAsGuest,
-    isPasswordRecovery
+    continueAsGuest
   } = useHappy();
 
   const [mode, setMode] = useState('login');
@@ -29,30 +26,9 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [localFeedback, setLocalFeedback] = useState('');
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    if (isPasswordRecovery) {
-      setMode('reset-password');
-      setPassword('');
-      setConfirmPassword('');
-      setLocalFeedback('');
-      return;
-    }
-
-    setMode(prev => (prev === 'reset-password' ? 'login' : prev));
-  }, [isOpen, isPasswordRecovery]);
-
   if (!isOpen) {
     return null;
   }
-
-  const isResetRequestMode = mode === 'reset-request';
-  const isResetPasswordMode = mode === 'reset-password';
-  const isSignupMode = mode === 'signup';
-  const isResetMode = isResetRequestMode || isResetPasswordMode;
 
   const resetFields = () => {
     setEmail('');
@@ -63,26 +39,21 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
 
   const handleClose = () => {
     resetFields();
-    setMode('login');
     clearAuthFeedback();
     onClose?.();
   };
 
-  const handleModeChange = nextMode => {
-    if (isPasswordRecovery) {
-      return;
-    }
-
+  const handleModeChange = (nextMode) => {
     setMode(nextMode);
     resetFields();
     clearAuthFeedback();
   };
 
-  const handleSubmit = async event => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     setLocalFeedback('');
 
-    if (isSignupMode) {
+    if (mode === 'signup') {
       if (password !== confirmPassword) {
         setLocalFeedback('비밀번호가 서로 달라요.');
         return;
@@ -99,33 +70,6 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
       return;
     }
 
-    if (isResetRequestMode) {
-      const result = await requestPasswordReset(email);
-
-      if (result?.success) {
-        setMode('login');
-        setPassword('');
-        setConfirmPassword('');
-      }
-
-      return;
-    }
-
-    if (isResetPasswordMode) {
-      if (password !== confirmPassword) {
-        setLocalFeedback('새 비밀번호가 서로 달라요.');
-        return;
-      }
-
-      const result = await completePasswordReset(password);
-
-      if (result?.success) {
-        resetFields();
-      }
-
-      return;
-    }
-
     await signInWithPassword(email, password);
   };
 
@@ -135,66 +79,17 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
     onClose?.();
   };
 
-  const handleSocialLogin = async provider => {
+  const handleSocialLogin = async (provider) => {
     setLocalFeedback('');
     await signInWithSocialProvider(provider);
   };
 
-  const headline = (() => {
-    if (isSignupMode) {
-      return '회원가입하고 행복 기록을 이어가세요';
-    }
-
-    if (isResetRequestMode) {
-      return '비밀번호 재설정 메일을 보내드릴게요';
-    }
-
-    if (isResetPasswordMode) {
-      return '새 비밀번호를 설정해주세요';
-    }
-
-    return '로그인하고 행복 찾기를 이어가세요';
-  })();
-
-  const description = (() => {
-    if (isSignupMode) {
-      return '가입 후 첫 진입 화면에서 닉네임과 약관 동의를 설정할 수 있어요.';
-    }
-
-    if (isResetRequestMode) {
-      return '가입한 이메일을 입력하면 비밀번호를 다시 설정할 수 있는 링크를 보내드려요.';
-    }
-
-    if (isResetPasswordMode) {
-      return '재설정 링크로 들어오셨다면 여기에서 새 비밀번호를 바로 저장할 수 있어요.';
-    }
-
-    return '로그인하면 기기 변경 후에도 기록을 계속 관리할 수 있어요.';
-  })();
-
-  const submitLabel = (() => {
-    if (isAuthLoading) {
-      return '확인 중...';
-    }
-
-    if (isAuthBusy) {
-      return '처리 중...';
-    }
-
-    if (isSignupMode) {
-      return '회원가입하기';
-    }
-
-    if (isResetRequestMode) {
-      return '재설정 메일 보내기';
-    }
-
-    if (isResetPasswordMode) {
-      return '새 비밀번호 저장';
-    }
-
-    return '로그인하기';
-  })();
+  const headline = mode === 'signup'
+    ? '회원가입하고 행복 기록을 이어가세요'
+    : '로그인하고 행복 찾기를 이어가요';
+  const description = mode === 'signup'
+    ? '가입 후 첫 진입 화면에서 닉네임과 동의를 한 번에 설정할 수 있어요.'
+    : '로그인하면 기기 변경 후에도 기록을 계속 관리할 수 있어요.';
 
   return (
     <div className="auth-screen-overlay">
@@ -211,63 +106,53 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
           <p>{description}</p>
         </div>
 
-        {!isResetPasswordMode && (
-          <div className="auth-screen-mode-tabs">
-            <button
-              type="button"
-              className={`auth-screen-mode-btn ${mode === 'login' ? 'active' : ''}`}
-              onClick={() => handleModeChange('login')}
-            >
-              로그인
-            </button>
-            <button
-              type="button"
-              className={`auth-screen-mode-btn ${isSignupMode ? 'active' : ''}`}
-              onClick={() => handleModeChange('signup')}
-            >
-              회원가입
-            </button>
-          </div>
-        )}
+        <div className="auth-screen-mode-tabs">
+          <button
+            type="button"
+            className={`auth-screen-mode-btn ${mode === 'login' ? 'active' : ''}`}
+            onClick={() => handleModeChange('login')}
+          >
+            로그인
+          </button>
+          <button
+            type="button"
+            className={`auth-screen-mode-btn ${mode === 'signup' ? 'active' : ''}`}
+            onClick={() => handleModeChange('signup')}
+          >
+            회원가입
+          </button>
+        </div>
 
         <form className="auth-screen-form" onSubmit={handleSubmit}>
-          {!isResetPasswordMode && (
-            <>
-              <label className="auth-screen-label" htmlFor="auth-email">
-                이메일
-              </label>
-              <input
-                id="auth-email"
-                type="email"
-                className="auth-screen-input"
-                value={email}
-                onChange={event => setEmail(event.target.value)}
-                placeholder="이메일 주소를 입력해주세요"
-                autoComplete="email"
-                disabled={isAuthLoading || !isSupabaseConfigured}
-              />
-            </>
-          )}
+          <label className="auth-screen-label" htmlFor="auth-email">
+            이메일
+          </label>
+          <input
+            id="auth-email"
+            type="email"
+            className="auth-screen-input"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="이메일 주소를 입력해주세요"
+            autoComplete="email"
+            disabled={isAuthLoading || !isSupabaseConfigured}
+          />
 
-          {!isResetRequestMode && (
-            <>
-              <label className="auth-screen-label" htmlFor="auth-password">
-                {isResetPasswordMode ? '새 비밀번호' : '비밀번호'}
-              </label>
-              <input
-                id="auth-password"
-                type="password"
-                className="auth-screen-input"
-                value={password}
-                onChange={event => setPassword(event.target.value)}
-                placeholder={isResetPasswordMode ? '새 비밀번호를 입력해주세요' : '비밀번호를 입력해주세요'}
-                autoComplete={isSignupMode || isResetPasswordMode ? 'new-password' : 'current-password'}
-                disabled={isAuthLoading || !isSupabaseConfigured}
-              />
-            </>
-          )}
+          <label className="auth-screen-label" htmlFor="auth-password">
+            비밀번호
+          </label>
+          <input
+            id="auth-password"
+            type="password"
+            className="auth-screen-input"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="비밀번호를 입력해주세요"
+            autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+            disabled={isAuthLoading || !isSupabaseConfigured}
+          />
 
-          {(isSignupMode || isResetPasswordMode) && (
+          {mode === 'signup' && (
             <>
               <label className="auth-screen-label" htmlFor="auth-confirm-password">
                 비밀번호 확인
@@ -277,7 +162,7 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
                 type="password"
                 className="auth-screen-input"
                 value={confirmPassword}
-                onChange={event => setConfirmPassword(event.target.value)}
+                onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="비밀번호를 한 번 더 입력해주세요"
                 autoComplete="new-password"
                 disabled={isAuthLoading || !isSupabaseConfigured}
@@ -285,36 +170,18 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
             </>
           )}
 
-          {mode === 'login' && (
-            <button
-              type="button"
-              className="auth-screen-inline-action"
-              onClick={() => handleModeChange('reset-request')}
-              disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured}
-            >
-              비밀번호를 잊으셨나요?
-            </button>
-          )}
-
           <button
             type="submit"
             className="btn-primary auth-screen-submit"
             disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured}
           >
-            {submitLabel}
+            {isAuthLoading
+              ? '확인 중...'
+              : isAuthBusy
+                ? '처리 중...'
+                : (mode === 'signup' ? '회원가입하기' : '로그인하기')}
           </button>
         </form>
-
-        {isResetMode && !isPasswordRecovery && (
-          <button
-            type="button"
-            className="auth-screen-secondary-link"
-            onClick={() => handleModeChange('login')}
-            disabled={isAuthBusy}
-          >
-            로그인으로 돌아가기
-          </button>
-        )}
 
         {!isSupabaseConfigured && (
           <div className="auth-screen-note">
@@ -334,34 +201,30 @@ const AuthScreen = ({ isOpen, canClose = false, onClose }) => {
           </div>
         )}
 
-        {!isResetMode && (
-          <>
-            <div className="auth-screen-divider auth-screen-divider-form">
-              <span>또는</span>
-            </div>
+        <div className="auth-screen-divider auth-screen-divider-form">
+          <span>또는</span>
+        </div>
 
-            <div className="auth-screen-socials">
-              {socialButtons.map(({ provider, label, Icon }) => (
-                <button
-                  key={provider}
-                  type="button"
-                  className={`auth-screen-social-btn ${provider}`}
-                  onClick={() => handleSocialLogin(provider)}
-                  disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured}
-                >
-                  <span className={`auth-screen-social-icon ${provider}`} aria-hidden="true">
-                    {React.createElement(Icon)}
-                  </span>
-                  <span className="auth-screen-social-text">{label}</span>
-                </button>
-              ))}
-            </div>
-
-            <button type="button" className="auth-screen-guest-btn" onClick={handleContinueAsGuest}>
-              게스트로 로그인하기
+        <div className="auth-screen-socials">
+          {socialButtons.map(({ provider, label, Icon }) => (
+            <button
+              key={provider}
+              type="button"
+              className={`auth-screen-social-btn ${provider}`}
+              onClick={() => handleSocialLogin(provider)}
+              disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured}
+            >
+              <span className={`auth-screen-social-icon ${provider}`} aria-hidden="true">
+                {React.createElement(Icon)}
+              </span>
+              <span className="auth-screen-social-text">{label}</span>
             </button>
-          </>
-        )}
+          ))}
+        </div>
+
+        <button type="button" className="auth-screen-guest-btn" onClick={handleContinueAsGuest}>
+          게스트로 로그인하기
+        </button>
       </div>
     </div>
   );

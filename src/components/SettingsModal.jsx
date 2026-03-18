@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useHappy } from '../store/HappyContext';
 import './SettingsModal.css';
 
@@ -59,8 +59,8 @@ const formatReminderTimeLabel = (timeValue) => {
   return `${period === 'AM' ? '오전' : '오후'} ${Number(hour)}시 ${minute}분`;
 };
 
-const ChevronIcon = ({ isOpen = false, className = '' }) => (
-  <span className={`settings-time-chevron ${className} ${isOpen ? 'open' : ''}`.trim()} aria-hidden="true">
+const ChevronIcon = ({ isOpen = false }) => (
+  <span className={`settings-time-chevron ${isOpen ? 'open' : ''}`} aria-hidden="true">
     <svg viewBox="0 0 20 20" fill="none" focusable="false">
       <path
         d="M5 7.5L10 12.5L15 7.5"
@@ -173,31 +173,15 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     isGuestMode,
     isAuthLoading,
     isAuthBusy,
-    authFeedback,
     clearAuthFeedback,
-    signOutFromSupabase,
-    requestPasswordReset,
-    deleteAccount
+    signOutFromSupabase
   } = useHappy();
 
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [editingReminderId, setEditingReminderId] = useState(null);
   const [pickerTime, setPickerTime] = useState(() => parseReminderTime(DEFAULT_REMINDER_TIME));
-  const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
 
   const reminders = reminderSettings.reminders || [];
-
-  useEffect(() => {
-    if (isOpen) {
-      return;
-    }
-
-    setIsAccountActionsOpen(false);
-    setIsDeleteConfirmOpen(false);
-    setDeleteConfirmationEmail('');
-  }, [isOpen]);
 
   if (!isOpen) {
     return null;
@@ -205,18 +189,18 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const reminderMessage = (() => {
     if (notificationPermission === 'granted') {
-      return '설정한 시간마다 브라우저 알림과 시스템 알림으로 행복 찾기를 보내드려요.';
+      return '설정한 시간마다 브라우저 알림과 시스템 알림을 함께 보내요.';
     }
 
     if (notificationPermission === 'unsupported') {
-      return '현재 환경에서는 시스템 알림이 지원되지 않아요. 앱이 열려 있으면 화면 알림으로 안내돼요.';
+      return '현재 환경에서는 시스템 알림이 지원되지 않아요. 앱이 열려 있으면 앱 안 알림으로 알려드려요.';
     }
 
     if (notificationPermission === 'denied') {
-      return '브라우저 알림이 차단돼 있어요. 앱이 열려 있으면 화면 알림으로 계속 안내돼요.';
+      return '브라우저 알림이 차단되어 있어요. 앱이 열려 있으면 앱 안 알림으로 계속 알려드려요.';
     }
 
-    return '브라우저 알림을 허용하면 시스템 알림까지 받을 수 있어요. 앱이 열려 있으면 화면 알림은 그대로 동작해요.';
+    return '브라우저 알림을 허용하면 시스템 알림까지 받을 수 있어요. 앱이 열려 있으면 앱 안 알림은 그대로 동작해요.';
   })();
 
   const pickerPreviewText = formatReminderTimeLabel(toReminderTimeValue(pickerTime));
@@ -224,20 +208,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const timeEditorDescription = editingReminderId === 'new'
     ? '원하는 시간을 골라 새 알림을 추가해보세요.'
     : '선택한 알림 시간을 바로 바꿀 수 있어요.';
-  const isDeleteConfirmationMatched = Boolean(
-    authUser?.email
-      && deleteConfirmationEmail.trim().toLowerCase() === authUser.email.toLowerCase()
-  );
-
-  const resetAccountDangerState = () => {
-    setIsDeleteConfirmOpen(false);
-    setDeleteConfirmationEmail('');
-  };
-
-  const resetAccountSectionState = () => {
-    setIsAccountActionsOpen(false);
-    resetAccountDangerState();
-  };
 
   const resetReminderEditor = () => {
     setIsTimePickerOpen(false);
@@ -247,62 +217,33 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const handleClose = () => {
     clearAuthFeedback();
-    resetAccountSectionState();
     resetReminderEditor();
     onClose();
   };
 
   const handleOpenAuth = () => {
     clearAuthFeedback();
-    resetAccountSectionState();
     resetReminderEditor();
     onClose();
     onOpenAuth();
   };
 
   const handleOpenNicknameEditor = () => {
-    resetAccountSectionState();
     resetReminderEditor();
     onClose();
     onOpenNicknameEditor?.();
   };
 
   const handleOpenAgreement = () => {
-    resetAccountSectionState();
     resetReminderEditor();
     onClose();
     onOpenAgreement?.();
   };
 
   const handleSignOut = async () => {
-    resetAccountSectionState();
     resetReminderEditor();
     await signOutFromSupabase();
     onClose();
-  };
-
-  const handleSendPasswordReset = async () => {
-    if (!authUser?.email) {
-      return;
-    }
-
-    resetAccountDangerState();
-    await requestPasswordReset(authUser.email);
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!authUser?.email || !isDeleteConfirmationMatched) {
-      return;
-    }
-
-    resetReminderEditor();
-
-    const result = await deleteAccount();
-
-    if (result?.success) {
-      resetAccountSectionState();
-      onClose();
-    }
   };
 
   const openCreateReminder = () => {
@@ -358,20 +299,8 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
         </div>
 
         <div className="settings-section">
-          <div className="settings-section-copy settings-section-copy-row">
+          <div className="settings-section-copy">
             <h3>계정</h3>
-            {!isAuthLoading && authUser && (
-              <button
-                type="button"
-                className={`settings-account-toggle ${isAccountActionsOpen ? 'open' : ''}`}
-                onClick={() => setIsAccountActionsOpen(prev => !prev)}
-                aria-expanded={isAccountActionsOpen}
-                aria-label="계정 메뉴 열기"
-                disabled={isAuthBusy}
-              >
-                <ChevronIcon isOpen={isAccountActionsOpen} className="settings-account-chevron" />
-              </button>
-            )}
           </div>
 
           {isAuthLoading && (
@@ -387,30 +316,14 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                 </div>
               </div>
 
-              <button
-                type="button"
-                className={`settings-account-disclosure ${isAccountActionsOpen ? 'open' : ''}`}
-                onClick={() => setIsAccountActionsOpen(prev => !prev)}
-                aria-expanded={isAccountActionsOpen}
-                disabled={isAuthBusy}
-              >
-                <div className="settings-account-disclosure-copy">
-                  <strong>계정 메뉴</strong>
-                  <span>닉네임, 약관, 보안, 로그아웃, 탈퇴</span>
-                </div>
-                <ChevronIcon isOpen={isAccountActionsOpen} className="settings-account-chevron" />
-              </button>
-
-              {isAccountActionsOpen && (
-                <div className="settings-account-panel">
-                  <div className="settings-button-stack">
+              <div className="settings-button-stack">
                 <button
                   type="button"
                   className="settings-action-btn"
                   onClick={handleOpenAgreement}
                   disabled={isAuthBusy}
                 >
-                  동의 항목
+                  동의 사항
                 </button>
                 <button
                   type="button"
@@ -423,80 +336,12 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                 <button
                   type="button"
                   className="settings-secondary-btn"
-                  onClick={handleSendPasswordReset}
-                  disabled={isAuthBusy}
-                >
-                  비밀번호 재설정 메일
-                </button>
-                <button
-                  type="button"
-                  className="settings-secondary-btn"
                   onClick={handleSignOut}
                   disabled={isAuthBusy}
                 >
                   {isAuthBusy ? '처리 중...' : '로그아웃하기'}
                 </button>
               </div>
-
-              {authFeedback.message && (
-                <div className={`settings-feedback ${authFeedback.type === 'error' ? 'error' : 'success'}`}>
-                  {authFeedback.message}
-                </div>
-              )}
-
-              <div className="settings-danger-card">
-                <div className="settings-danger-summary">
-                  <div>
-                    <strong>회원탈퇴</strong>
-                    <p>계정과 저장된 기록이 함께 삭제되며 되돌릴 수 없어요.</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="settings-danger-toggle"
-                    onClick={() => setIsDeleteConfirmOpen(prev => !prev)}
-                    disabled={isAuthBusy}
-                  >
-                    {isDeleteConfirmOpen ? '닫기' : '열기'}
-                  </button>
-                </div>
-
-                {isDeleteConfirmOpen && (
-                  <div className="settings-danger-panel">
-                    <p className="settings-danger-note">
-                      탈퇴하려면 아래 입력칸에 현재 이메일 주소를 그대로 입력해주세요.
-                    </p>
-                    <input
-                      type="email"
-                      className="settings-danger-input"
-                      value={deleteConfirmationEmail}
-                      onChange={event => setDeleteConfirmationEmail(event.target.value)}
-                      placeholder={authUser.email || '이메일 주소'}
-                      autoComplete="email"
-                      disabled={isAuthBusy}
-                    />
-                    <div className="settings-danger-actions">
-                      <button
-                        type="button"
-                        className="settings-secondary-btn"
-                        onClick={resetAccountDangerState}
-                        disabled={isAuthBusy}
-                      >
-                        취소
-                      </button>
-                      <button
-                        type="button"
-                        className="settings-danger-btn"
-                        onClick={handleDeleteAccount}
-                        disabled={isAuthBusy || !isDeleteConfirmationMatched}
-                      >
-                        {isAuthBusy ? '삭제 중...' : '회원탈퇴하기'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                  </div>
-                </div>
-              )}
             </>
           )}
 
@@ -522,7 +367,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
             className={`settings-action-btn ${isDarkMode ? 'active' : ''}`}
             onClick={toggleTheme}
           >
-            {isDarkMode ? '다크모드 끄기' : '다크모드 켜기'}
+            {isDarkMode ? '다크모드 켜짐' : '다크모드 꺼짐'}
           </button>
         </div>
 
@@ -538,7 +383,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
               className={`settings-action-btn settings-inline-btn ${reminderSettings.enabled ? 'active' : ''}`}
               onClick={() => toggleReminder(!reminderSettings.enabled)}
             >
-              {reminderSettings.enabled ? '알림 끄기' : '알림 켜기'}
+              {reminderSettings.enabled ? '알림 켜짐' : '알림 꺼짐'}
             </button>
 
             <button
@@ -589,7 +434,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
             </div>
           ) : (
             <div className="settings-reminder-empty">
-              아직 추가된 알림이 없어요. 알림 추가 버튼으로 시간을 등록해보세요.
+              아직 추가한 알림이 없어요. 알림 추가 버튼으로 시간을 더해보세요.
             </div>
           )}
 

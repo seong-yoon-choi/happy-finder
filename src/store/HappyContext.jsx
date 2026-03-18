@@ -25,22 +25,12 @@ const defaultAuthFeedback = {
   message: ''
 };
 const AUTH_MODE_STORAGE_KEY = 'happy_auth_mode';
-const APP_STORAGE_KEYS = [
-  'happy_items',
-  'happy_stamps',
-  'happy_favorites',
-  'happy_memos',
-  'happy_theme',
-  'happy_streak',
-  'happy_reminder'
-];
 const defaultCloudSyncStatus = {
   type: 'idle',
   message: '',
   lastSyncedAt: null
 };
 const CLOUD_SNAPSHOT_TABLE = 'happy_user_snapshots';
-const DELETE_ACCOUNT_FUNCTION_NAME = 'delete-account';
 
 const initialItems = [
   {
@@ -232,35 +222,6 @@ const readStoredJson = (key, fallback) => {
   } catch {
     return fallback;
   }
-};
-
-const hasPasswordRecoveryInUrl = () => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  const searchParams = new URLSearchParams(window.location.search);
-
-  if (searchParams.get('type') === 'recovery') {
-    return true;
-  }
-
-  const hash = window.location.hash.startsWith('#')
-    ? window.location.hash.slice(1)
-    : window.location.hash;
-  const hashParams = new URLSearchParams(hash);
-
-  return hashParams.get('type') === 'recovery';
-};
-
-const clearAuthRedirectState = () => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  const url = new URL(window.location.href);
-  url.hash = '';
-  window.history.replaceState({}, '', `${url.pathname}${url.search}`);
 };
 
 const isRecord = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -607,7 +568,6 @@ export const HappyProvider = ({ children }) => {
   const [authSession, setAuthSession] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem(AUTH_MODE_STORAGE_KEY) === 'guest');
-  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => hasPasswordRecoveryInUrl());
   const [isAuthLoading, setIsAuthLoading] = useState(isSupabaseConfigured);
   const [isAuthBusy, setIsAuthBusy] = useState(false);
   const [authFeedback, setAuthFeedback] = useState(defaultAuthFeedback);
@@ -617,62 +577,6 @@ export const HappyProvider = ({ children }) => {
   const isApplyingCloudSnapshotRef = useRef(false);
   const cloudSyncTimeoutRef = useRef(null);
   const latestSnapshotStateRef = useRef(null);
-  const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
-  const postSignOutFeedbackRef = useRef(null);
-
-  useEffect(() => {
-    isPasswordRecoveryRef.current = isPasswordRecovery;
-  }, [isPasswordRecovery]);
-
-  useEffect(() => {
-    if (!globalStreak.lastDate || globalStreak.current === 0) {
-      return;
-    }
-
-    const diffDays = getCalendarDayDifference(globalStreak.lastDate, new Date());
-
-    if (diffDays === null || diffDays <= 1) {
-      return;
-    }
-
-    setGlobalStreak(prev => {
-      if (!prev.lastDate || prev.current === 0) {
-        return prev;
-      }
-
-      const nextDiffDays = getCalendarDayDifference(prev.lastDate, new Date());
-
-      if (nextDiffDays === null || nextDiffDays <= 1) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        current: 0
-      };
-    });
-  }, [globalStreak.current, globalStreak.lastDate]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return undefined;
-    }
-
-    const syncPasswordRecoveryState = () => {
-      const nextValue = hasPasswordRecoveryInUrl();
-      isPasswordRecoveryRef.current = nextValue;
-      setIsPasswordRecovery(nextValue);
-    };
-
-    syncPasswordRecoveryState();
-    window.addEventListener('hashchange', syncPasswordRecoveryState);
-    window.addEventListener('popstate', syncPasswordRecoveryState);
-
-    return () => {
-      window.removeEventListener('hashchange', syncPasswordRecoveryState);
-      window.removeEventListener('popstate', syncPasswordRecoveryState);
-    };
-  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -704,8 +608,6 @@ export const HappyProvider = ({ children }) => {
         return;
       }
 
-      const isRecoverySession = event === 'PASSWORD_RECOVERY' || hasPasswordRecoveryInUrl();
-
       setAuthSession(session ?? null);
       setAuthUser(session?.user ?? null);
       setIsAuthLoading(false);
@@ -713,38 +615,17 @@ export const HappyProvider = ({ children }) => {
       if (event === 'SIGNED_IN') {
         setIsGuestMode(false);
         localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-        if (!isRecoverySession) {
-          setIsPasswordRecovery(false);
-          setAuthFeedback(defaultAuthFeedback);
-        }
-      }
-
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsGuestMode(false);
-        localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-        setIsPasswordRecovery(true);
+        const email = session?.user?.email;
         setAuthFeedback({
           type: 'success',
-          message: '새 비밀번호를 설정해주세요.'
-        });
-      }
-
-      if (event === 'USER_UPDATED' && isPasswordRecoveryRef.current) {
-        clearAuthRedirectState();
-        setIsPasswordRecovery(false);
-        setAuthFeedback({
-          type: 'success',
-          message: '비밀번호가 새로 설정됐어요. 다시 사용할 수 있어요.'
+          message: email ? `${email} 계정으로 연결됐어요.` : '계정이 연결됐어요.'
         });
       }
 
       if (event === 'SIGNED_OUT') {
         setIsGuestMode(false);
         localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-        setIsPasswordRecovery(false);
-        const postSignOutFeedback = postSignOutFeedbackRef.current;
-        postSignOutFeedbackRef.current = null;
-        setAuthFeedback(postSignOutFeedback || defaultAuthFeedback);
+        setAuthFeedback(defaultAuthFeedback);
       }
     });
 
@@ -1271,27 +1152,6 @@ export const HappyProvider = ({ children }) => {
     });
   };
 
-  const resetLocalAppState = () => {
-    const emptyProgress = {};
-
-    setItems(mergeItemsWithInitialItems(initialItems, emptyProgress));
-    setUserStamps(emptyProgress);
-    setUserFavorites({});
-    setUserMemos({});
-    setIsDarkMode(false);
-    setGlobalStreak({ current: 0, lastDate: null });
-    setReminderSettings(defaultReminderSettings);
-    setCelebrationQueue([]);
-    setCloudSyncStatus(defaultCloudSyncStatus);
-    setIsCloudSyncing(false);
-    hasBootstrappedCloudRef.current = false;
-    latestSnapshotStateRef.current = null;
-  };
-
-  const clearLocalAppStorage = () => {
-    APP_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
-  };
-
   const clearAuthFeedback = () => {
     setAuthFeedback(defaultAuthFeedback);
   };
@@ -1451,118 +1311,6 @@ export const HappyProvider = ({ children }) => {
     return { success: true };
   };
 
-  const requestPasswordReset = async (email) => {
-    if (!supabase) {
-      const nextFeedback = {
-        type: 'error',
-        message: 'Supabase 환경변수를 먼저 연결해주세요.'
-      };
-
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (!normalizedEmail) {
-      const nextFeedback = {
-        type: 'error',
-        message: '이메일을 입력해주세요.'
-      };
-
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
-    }
-
-    setIsAuthBusy(true);
-    setAuthFeedback(defaultAuthFeedback);
-
-    const redirectTo = getAppRedirectUrl();
-    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-      ...(redirectTo ? { redirectTo } : {})
-    });
-
-    setIsAuthBusy(false);
-
-    if (error) {
-      const nextFeedback = getAuthFeedbackFromError(error, '비밀번호 재설정 메일을 보내지 못했어요.');
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
-    }
-
-    const nextFeedback = {
-      type: 'success',
-      message: '비밀번호 재설정 메일을 보냈어요. 메일의 링크에서 새 비밀번호를 설정해주세요.'
-    };
-
-    setAuthFeedback(nextFeedback);
-    return { success: true };
-  };
-
-  const completePasswordReset = async (password) => {
-    if (!supabase) {
-      const nextFeedback = {
-        type: 'error',
-        message: 'Supabase 환경변수를 먼저 연결해주세요.'
-      };
-
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
-    }
-
-    const normalizedPassword = password.trim();
-
-    if (!normalizedPassword) {
-      const nextFeedback = {
-        type: 'error',
-        message: '새 비밀번호를 입력해주세요.'
-      };
-
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
-    }
-
-    if (normalizedPassword.length < 6) {
-      const nextFeedback = {
-        type: 'error',
-        message: '비밀번호는 6자 이상으로 입력해주세요.'
-      };
-
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
-    }
-
-    setIsAuthBusy(true);
-    setAuthFeedback(defaultAuthFeedback);
-
-    const { data, error } = await supabase.auth.updateUser({
-      password: normalizedPassword
-    });
-
-    setIsAuthBusy(false);
-
-    if (error) {
-      const nextFeedback = getAuthFeedbackFromError(error, '새 비밀번호를 저장하지 못했어요.');
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
-    }
-
-    clearAuthRedirectState();
-    setIsPasswordRecovery(false);
-
-    if (data.user) {
-      setAuthUser(data.user);
-      setAuthSession(prev => (prev ? { ...prev, user: data.user } : prev));
-    }
-
-    setAuthFeedback({
-      type: 'success',
-      message: '비밀번호가 새로 설정됐어요. 다시 사용할 수 있어요.'
-    });
-
-    return { success: true };
-  };
-
   const signInWithSocialProvider = async (provider) => {
     if (!supabase) {
       const nextFeedback = {
@@ -1610,54 +1358,6 @@ export const HappyProvider = ({ children }) => {
       const nextFeedback = getAuthFeedbackFromError(error, '로그아웃하지 못했어요.');
       setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message };
-    }
-
-    return { success: true };
-  };
-
-  const deleteAccount = async () => {
-    if (!supabase || !authUser) {
-      return { success: false, error: '로그인한 계정이 없어요.' };
-    }
-
-    setIsAuthBusy(true);
-    setAuthFeedback(defaultAuthFeedback);
-
-    const successFeedback = {
-      type: 'success',
-      message: '계정과 저장된 기록이 삭제됐어요.'
-    };
-
-    const { error } = await supabase.functions.invoke(DELETE_ACCOUNT_FUNCTION_NAME, {
-      body: {
-        confirmation: 'DELETE'
-      }
-    });
-
-    if (error) {
-      setIsAuthBusy(false);
-      const nextFeedback = getAuthFeedbackFromError(error, '회원탈퇴를 완료하지 못했어요.');
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
-    }
-
-    clearLocalAppStorage();
-    resetLocalAppState();
-    clearAuthRedirectState();
-    setIsGuestMode(false);
-    localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-    postSignOutFeedbackRef.current = successFeedback;
-
-    const { error: signOutError } = await supabase.auth.signOut();
-
-    setIsAuthBusy(false);
-
-    if (signOutError) {
-      postSignOutFeedbackRef.current = null;
-      setAuthSession(null);
-      setAuthUser(null);
-      setIsPasswordRecovery(false);
-      setAuthFeedback(successFeedback);
     }
 
     return { success: true };
@@ -1882,7 +1582,6 @@ export const HappyProvider = ({ children }) => {
       authUserOnboarding: getAuthUserOnboardingState(authUser),
       authUserNickname: getAuthUserNickname(authUser),
       authUserDisplayName: getAuthUserDisplayName(authUser),
-      isPasswordRecovery,
       isAuthLoading,
       isAuthBusy,
       authFeedback,
@@ -1893,11 +1592,8 @@ export const HappyProvider = ({ children }) => {
       leaveGuestMode,
       signInWithPassword,
       signUpWithPassword,
-      requestPasswordReset,
-      completePasswordReset,
       signInWithSocialProvider,
       signOutFromSupabase,
-      deleteAccount,
       completeAuthOnboarding,
       updateAuthNickname,
       globalStreak,
