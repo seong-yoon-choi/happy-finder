@@ -9,6 +9,7 @@
     max-height: 90vh;
     overflow-y: auto;
     padding: 0;
+    position: relative;
     border-radius: var(--border-radius-lg);
     display: flex;
     flex-direction: column;
@@ -34,7 +35,7 @@
 
 .detail-close,
 .detail-memo-trigger {
-    background: rgba(255, 255, 255, 0.7);
+    background: #ffffff;
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -42,6 +43,11 @@
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .detail-close,
+.dark-theme .detail-memo-trigger {
+    background: rgba(30, 34, 43, 0.98);
 }
 
 .detail-close {
@@ -62,6 +68,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
+    background: #ffffff;
 }
 
 .badges-container {
@@ -113,6 +120,7 @@
     padding: 0 20px;
     font-size: 1.6rem;
     margin-bottom: 12px;
+    background: #ffffff;
 }
 
 .detail-desc {
@@ -121,6 +129,13 @@
     color: var(--text-dark);
     line-height: 1.6;
     margin-bottom: 24px;
+    background: #ffffff;
+}
+
+.dark-theme .detail-header,
+.dark-theme .detail-title,
+.dark-theme .detail-desc {
+    background: rgba(30, 34, 43, 0.98);
 }
 
 .detail-stamp-section {
