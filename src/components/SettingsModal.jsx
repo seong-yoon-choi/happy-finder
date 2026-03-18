@@ -305,8 +305,19 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
         </div>
 
         <div className="settings-section">
-          <div className="settings-section-copy">
+          <div className="settings-section-copy settings-section-copy-row">
             <h3>계정</h3>
+            {!isAuthLoading && authUser && (
+              <button
+                type="button"
+                className={`settings-account-toggle ${isAccountActionsOpen ? 'open' : ''}`}
+                onClick={() => setIsAccountActionsOpen(prev => !prev)}
+                aria-expanded={isAccountActionsOpen}
+                aria-label="계정 기능 열기"
+              >
+                <ChevronIcon isOpen={isAccountActionsOpen} className="settings-account-chevron" />
+              </button>
+            )}
           </div>
 
           {isAuthLoading && (
@@ -320,15 +331,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                   <strong>{authUserNickname || '나'}</strong>
                   <span>{authUser.email}</span>
                 </div>
-                <button
-                  type="button"
-                  className={`settings-account-toggle ${isAccountActionsOpen ? 'open' : ''}`}
-                  onClick={() => setIsAccountActionsOpen(prev => !prev)}
-                  aria-expanded={isAccountActionsOpen}
-                  aria-label="怨꾩젙 湲곕뒫 ?닿린"
-                >
-                  <ChevronIcon isOpen={isAccountActionsOpen} className="settings-account-chevron" />
-                </button>
               </div>
 
               {isAccountActionsOpen && (
