@@ -4,6 +4,7 @@ import HappinessCard from '../components/HappinessCard';
 import CategoryTabs from '../components/CategoryTabs';
 import CreateHappinessModal from '../components/CreateHappinessModal';
 import HappinessDetailModal from '../components/HappinessDetailModal';
+import { getCalendarDayDifference } from '../utils/date';
 import { getTreeInfo } from '../utils/progress';
 import './Profile.css';
 
@@ -37,6 +38,21 @@ const Profile = () => {
     return stampedItems.filter(item => item.category === selectedStampedCategory);
   }, [selectedStampedCategory, stampedItems]);
 
+  const displayStreakCount = useMemo(() => {
+    if (!globalStreak?.lastDate) {
+      return globalStreak?.current || 0;
+    }
+
+    const diffDays = getCalendarDayDifference(globalStreak.lastDate, new Date());
+
+    if (diffDays === null || diffDays <= 1) {
+      return globalStreak.current;
+    }
+
+    return 0;
+  }, [globalStreak?.current, globalStreak?.lastDate]);
+
+  const shouldShowStreakSummary = Boolean(globalStreak?.lastDate) || displayStreakCount > 0;
   const treeInfo = getTreeInfo(totalStamps);
   const profileTitle = authUserNickname ? `${authUserNickname} 님의 행복 프로필` : '나의 행복 프로필';
 
@@ -67,7 +83,7 @@ const Profile = () => {
 
           {showTreeTooltip && treeInfo.nextAt && (
             <div className="tree-tooltip">
-              다음 성장까지 {treeInfo.nextAt - totalStamps}개의 행복이 남았어요!
+              다음 성장까지 {treeInfo.nextAt - totalStamps}개의 행복이 더 필요해요!
             </div>
           )}
 
@@ -84,9 +100,9 @@ const Profile = () => {
           총 <span className="highlight-number">{totalStamps}</span>번의 행복을 찾았어요!
         </div>
 
-        {globalStreak && globalStreak.current > 0 && (
+        {shouldShowStreakSummary && (
           <div className="streak-summary">
-            🔥 행복하기 <span className="highlight-number">{globalStreak.current}</span>일째
+            🔥 행복하기 <span className="highlight-number">{displayStreakCount}</span>일째
           </div>
         )}
 

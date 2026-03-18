@@ -625,6 +625,35 @@ export const HappyProvider = ({ children }) => {
   }, [isPasswordRecovery]);
 
   useEffect(() => {
+    if (!globalStreak.lastDate || globalStreak.current === 0) {
+      return;
+    }
+
+    const diffDays = getCalendarDayDifference(globalStreak.lastDate, new Date());
+
+    if (diffDays === null || diffDays <= 1) {
+      return;
+    }
+
+    setGlobalStreak(prev => {
+      if (!prev.lastDate || prev.current === 0) {
+        return prev;
+      }
+
+      const nextDiffDays = getCalendarDayDifference(prev.lastDate, new Date());
+
+      if (nextDiffDays === null || nextDiffDays <= 1) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        current: 0
+      };
+    });
+  }, [globalStreak.current, globalStreak.lastDate]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') {
       return undefined;
     }
