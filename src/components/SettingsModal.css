@@ -527,6 +527,83 @@
     background: rgba(255, 255, 255, 0.5);
 }
 
+.settings-password-card {
+    padding: 14px;
+    border: 1px solid rgba(255, 142, 139, 0.18);
+    border-radius: 18px;
+    background: rgba(255, 249, 244, 0.84);
+}
+
+.settings-password-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.settings-password-summary strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text-dark);
+}
+
+.settings-password-summary p {
+    color: var(--text-light);
+    font-size: 0.84rem;
+    line-height: 1.55;
+}
+
+.settings-password-toggle,
+.settings-password-input {
+    font-family: inherit;
+}
+
+.settings-password-toggle {
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 142, 139, 0.22);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text-dark);
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.settings-password-form {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-password-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 142, 139, 0.22);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-dark);
+    font-size: 0.94rem;
+    outline: none;
+}
+
+.settings-password-input:focus {
+    border-color: rgba(255, 142, 139, 0.58);
+    box-shadow: 0 0 0 4px rgba(255, 142, 139, 0.12);
+}
+
+.settings-password-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.settings-password-toggle:disabled,
+.settings-password-input:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
 .settings-danger-card {
     padding: 14px;
     border: 1px solid rgba(209, 106, 116, 0.2);
@@ -665,6 +742,22 @@
     color: #ff9fa9;
 }
 
+.dark-theme .settings-password-card {
+    border-color: rgba(255, 194, 163, 0.12);
+    background: rgba(255, 184, 122, 0.08);
+}
+
+.dark-theme .settings-password-summary strong,
+.dark-theme .settings-password-summary p {
+    color: var(--text-dark);
+}
+
+.dark-theme .settings-password-toggle,
+.dark-theme .settings-password-input {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-dark);
+}
+
 .dark-theme .settings-danger-card {
     border-color: rgba(255, 159, 169, 0.12);
     background: rgba(255, 111, 122, 0.08);
@@ -697,6 +790,7 @@
     .settings-reminder-toolbar,
     .settings-time-select-grid,
     .settings-time-actions,
+    .settings-password-actions,
     .settings-danger-actions {
         grid-template-columns: 1fr;
     }
