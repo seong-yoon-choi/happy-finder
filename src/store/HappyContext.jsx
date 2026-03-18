@@ -686,11 +686,7 @@ export const HappyProvider = ({ children }) => {
         localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
         if (!isRecoverySession) {
           setIsPasswordRecovery(false);
-          const email = session?.user?.email;
-          setAuthFeedback({
-            type: 'success',
-            message: email ? `${email} 계정으로 연결됐어요.` : '계정이 연결됐어요.'
-          });
+          setAuthFeedback(defaultAuthFeedback);
         }
       }
 

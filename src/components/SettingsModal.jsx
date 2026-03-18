@@ -59,8 +59,8 @@ const formatReminderTimeLabel = (timeValue) => {
   return `${period === 'AM' ? '오전' : '오후'} ${Number(hour)}시 ${minute}분`;
 };
 
-const ChevronIcon = ({ isOpen = false }) => (
-  <span className={`settings-time-chevron ${isOpen ? 'open' : ''}`} aria-hidden="true">
+const ChevronIcon = ({ isOpen = false, className = '' }) => (
+  <span className={`settings-time-chevron ${className} ${isOpen ? 'open' : ''}`.trim()} aria-hidden="true">
     <svg viewBox="0 0 20 20" fill="none" focusable="false">
       <path
         d="M5 7.5L10 12.5L15 7.5"
@@ -183,6 +183,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [editingReminderId, setEditingReminderId] = useState(null);
   const [pickerTime, setPickerTime] = useState(() => parseReminderTime(DEFAULT_REMINDER_TIME));
+  const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
 
@@ -193,6 +194,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
       return;
     }
 
+    setIsAccountActionsOpen(false);
     setIsDeleteConfirmOpen(false);
     setDeleteConfirmationEmail('');
   }, [isOpen]);
@@ -232,6 +234,11 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     setDeleteConfirmationEmail('');
   };
 
+  const resetAccountSectionState = () => {
+    setIsAccountActionsOpen(false);
+    resetAccountDangerState();
+  };
+
   const resetReminderEditor = () => {
     setIsTimePickerOpen(false);
     setEditingReminderId(null);
@@ -240,35 +247,35 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const handleClose = () => {
     clearAuthFeedback();
-    resetAccountDangerState();
+    resetAccountSectionState();
     resetReminderEditor();
     onClose();
   };
 
   const handleOpenAuth = () => {
     clearAuthFeedback();
-    resetAccountDangerState();
+    resetAccountSectionState();
     resetReminderEditor();
     onClose();
     onOpenAuth();
   };
 
   const handleOpenNicknameEditor = () => {
-    resetAccountDangerState();
+    resetAccountSectionState();
     resetReminderEditor();
     onClose();
     onOpenNicknameEditor?.();
   };
 
   const handleOpenAgreement = () => {
-    resetAccountDangerState();
+    resetAccountSectionState();
     resetReminderEditor();
     onClose();
     onOpenAgreement?.();
   };
 
   const handleSignOut = async () => {
-    resetAccountDangerState();
+    resetAccountSectionState();
     resetReminderEditor();
     await signOutFromSupabase();
     onClose();
@@ -293,7 +300,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     const result = await deleteAccount();
 
     if (result?.success) {
-      resetAccountDangerState();
+      resetAccountSectionState();
       onClose();
     }
   };
@@ -368,7 +375,23 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                 </div>
               </div>
 
-              <div className="settings-button-stack">
+              <button
+                type="button"
+                className={`settings-account-disclosure ${isAccountActionsOpen ? 'open' : ''}`}
+                onClick={() => setIsAccountActionsOpen(prev => !prev)}
+                aria-expanded={isAccountActionsOpen}
+                disabled={isAuthBusy}
+              >
+                <div className="settings-account-disclosure-copy">
+                  <strong>계정 메뉴</strong>
+                  <span>닉네임, 약관, 보안, 로그아웃, 탈퇴</span>
+                </div>
+                <ChevronIcon isOpen={isAccountActionsOpen} className="settings-account-chevron" />
+              </button>
+
+              {isAccountActionsOpen && (
+                <div className="settings-account-panel">
+                  <div className="settings-button-stack">
                 <button
                   type="button"
                   className="settings-action-btn"
@@ -459,7 +482,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                     </div>
                   </div>
                 )}
-              </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
