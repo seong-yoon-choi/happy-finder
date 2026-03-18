@@ -173,14 +173,19 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     isGuestMode,
     isAuthLoading,
     isAuthBusy,
+    authFeedback,
     clearAuthFeedback,
-    signOutFromSupabase
+    signOutFromSupabase,
+    requestPasswordReset,
+    deleteAccount
   } = useHappy();
 
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [editingReminderId, setEditingReminderId] = useState(null);
   const [pickerTime, setPickerTime] = useState(() => parseReminderTime(DEFAULT_REMINDER_TIME));
   const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
 
   const reminders = reminderSettings.reminders || [];
 
@@ -209,6 +214,15 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const timeEditorDescription = editingReminderId === 'new'
     ? '원하는 시간을 골라 새 알림을 추가해보세요.'
     : '선택한 알림 시간을 바로 바꿀 수 있어요.';
+  const isDeleteConfirmationMatched = Boolean(
+    authUser?.email
+      && deleteConfirmationEmail.trim().toLowerCase() === authUser.email.toLowerCase()
+  );
+
+  const resetAccountDangerState = () => {
+    setIsDeleteConfirmOpen(false);
+    setDeleteConfirmationEmail('');
+  };
 
   const resetReminderEditor = () => {
     setIsTimePickerOpen(false);
@@ -217,6 +231,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   };
 
   const resetModalState = () => {
+    resetAccountDangerState();
     resetReminderEditor();
     setIsAccountActionsOpen(false);
   };
@@ -235,21 +250,48 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   };
 
   const handleOpenNicknameEditor = () => {
+    resetAccountDangerState();
     resetModalState();
     onClose();
     onOpenNicknameEditor?.();
   };
 
   const handleOpenAgreement = () => {
+    resetAccountDangerState();
     resetModalState();
     onClose();
     onOpenAgreement?.();
   };
 
   const handleSignOut = async () => {
+    resetAccountDangerState();
     resetModalState();
     await signOutFromSupabase();
     onClose();
+  };
+
+  const handleSendPasswordReset = async () => {
+    if (!authUser?.email) {
+      return;
+    }
+
+    resetAccountDangerState();
+    await requestPasswordReset(authUser.email);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!authUser?.email || !isDeleteConfirmationMatched) {
+      return;
+    }
+
+    resetReminderEditor();
+
+    const result = await deleteAccount();
+
+    if (result?.success) {
+      resetAccountDangerState();
+      onClose();
+    }
   };
 
   const openCreateReminder = () => {
@@ -336,30 +378,96 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
               {isAccountActionsOpen && (
                 <div className="settings-account-panel">
                   <div className="settings-button-stack">
-                <button
-                  type="button"
-                  className="settings-action-btn"
-                  onClick={handleOpenAgreement}
-                  disabled={isAuthBusy}
-                >
-                  동의 사항
-                </button>
-                <button
-                  type="button"
-                  className="settings-action-btn"
-                  onClick={handleOpenNicknameEditor}
-                  disabled={isAuthBusy}
-                >
-                  닉네임 바꾸기
-                </button>
-                <button
-                  type="button"
-                  className="settings-secondary-btn"
-                  onClick={handleSignOut}
-                  disabled={isAuthBusy}
-                >
-                  {isAuthBusy ? '처리 중...' : '로그아웃하기'}
-                </button>
+                    <button
+                      type="button"
+                      className="settings-action-btn"
+                      onClick={handleOpenAgreement}
+                      disabled={isAuthBusy}
+                    >
+                      동의 사항
+                    </button>
+                    <button
+                      type="button"
+                      className="settings-action-btn"
+                      onClick={handleOpenNicknameEditor}
+                      disabled={isAuthBusy}
+                    >
+                      닉네임 바꾸기
+                    </button>
+                    <button
+                      type="button"
+                      className="settings-secondary-btn"
+                      onClick={handleSendPasswordReset}
+                      disabled={isAuthBusy}
+                    >
+                      비밀번호 재설정 메일
+                    </button>
+                    <button
+                      type="button"
+                      className="settings-secondary-btn"
+                      onClick={handleSignOut}
+                      disabled={isAuthBusy}
+                    >
+                      {isAuthBusy ? '처리 중...' : '로그아웃하기'}
+                    </button>
+                  </div>
+
+                  {authFeedback.message && (
+                    <div className={`settings-feedback ${authFeedback.type === 'error' ? 'error' : 'success'}`}>
+                      {authFeedback.message}
+                    </div>
+                  )}
+
+                  <div className="settings-danger-card">
+                    <div className="settings-danger-summary">
+                      <div>
+                        <strong>회원탈퇴</strong>
+                        <p>계정과 저장된 기록이 함께 삭제되며 되돌릴 수 없어요.</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="settings-danger-toggle"
+                        onClick={() => setIsDeleteConfirmOpen(prev => !prev)}
+                        disabled={isAuthBusy}
+                      >
+                        {isDeleteConfirmOpen ? '닫기' : '열기'}
+                      </button>
+                    </div>
+
+                    {isDeleteConfirmOpen && (
+                      <div className="settings-danger-panel">
+                        <p className="settings-danger-note">
+                          탈퇴하려면 아래 입력칸에 현재 이메일 주소를 그대로 입력해주세요.
+                        </p>
+                        <input
+                          type="email"
+                          className="settings-danger-input"
+                          value={deleteConfirmationEmail}
+                          onChange={event => setDeleteConfirmationEmail(event.target.value)}
+                          placeholder={authUser.email || '이메일 주소'}
+                          autoComplete="email"
+                          disabled={isAuthBusy}
+                        />
+                        <div className="settings-danger-actions">
+                          <button
+                            type="button"
+                            className="settings-secondary-btn"
+                            onClick={resetAccountDangerState}
+                            disabled={isAuthBusy}
+                          >
+                            취소
+                          </button>
+                          <button
+                            type="button"
+                            className="settings-danger-btn"
+                            onClick={handleDeleteAccount}
+                            disabled={isAuthBusy || !isDeleteConfirmationMatched}
+                          >
+                            {isAuthBusy ? '삭제 중...' : '회원탈퇴하기'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

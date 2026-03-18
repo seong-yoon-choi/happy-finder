@@ -50,11 +50,12 @@ function AppContent() {
     authUser,
     authUserNickname,
     authUserOnboarding,
-    isGuestMode
+    isGuestMode,
+    isPasswordRecovery
   } = useHappy();
 
   const isForcedAuthScreen = !authUser && !isGuestMode;
-  const isAuthScreenOpen = isForcedAuthScreen || (isAuthScreenRequested && !authUser);
+  const isAuthScreenOpen = isForcedAuthScreen || isPasswordRecovery || (isAuthScreenRequested && !authUser);
   const needsAgreementSetup = Boolean(
     authUser
       && !isGuestMode
@@ -147,7 +148,7 @@ function AppContent() {
 
       <AuthScreen
         isOpen={isAuthScreenOpen}
-        canClose={!isForcedAuthScreen}
+        canClose={!isForcedAuthScreen && !isPasswordRecovery}
         onClose={closeAuthScreen}
       />
 
