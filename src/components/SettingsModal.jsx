@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useHappy } from '../store/HappyContext';
+import { openExternalUrl } from '../lib/externalBrowser';
+import { getPasswordResetWebUrl } from '../lib/routes';
 import './SettingsModal.css';
 
 const DEFAULT_REMINDER_TIME = '20:00';
@@ -168,6 +170,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     addReminder,
     updateReminder,
     deleteReminder,
+    authSession,
     authUser,
     authUserNickname,
     isGuestMode,
@@ -176,7 +179,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     authFeedback,
     clearAuthFeedback,
     signOutFromSupabase,
-    completePasswordReset,
     deleteAccount
   } = useHappy();
 
@@ -184,10 +186,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [editingReminderId, setEditingReminderId] = useState(null);
   const [pickerTime, setPickerTime] = useState(() => parseReminderTime(DEFAULT_REMINDER_TIME));
   const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
-  const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [passwordResetError, setPasswordResetError] = useState('');
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
 
@@ -228,13 +226,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     setDeleteConfirmationEmail('');
   };
 
-  const resetPasswordResetState = () => {
-    setIsPasswordResetOpen(false);
-    setNewPassword('');
-    setConfirmNewPassword('');
-    setPasswordResetError('');
-  };
-
   const resetReminderEditor = () => {
     setIsTimePickerOpen(false);
     setEditingReminderId(null);
@@ -243,7 +234,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const resetModalState = () => {
     resetAccountDangerState();
-    resetPasswordResetState();
     resetReminderEditor();
     setIsAccountActionsOpen(false);
   };
@@ -282,38 +272,16 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     onClose();
   };
 
-  const handleTogglePasswordReset = () => {
+  const handleTogglePasswordReset = async () => {
     clearAuthFeedback();
     resetAccountDangerState();
-    setPasswordResetError('');
-    setIsPasswordResetOpen(prev => {
-      const nextIsOpen = !prev;
+    const resetWebUrl = getPasswordResetWebUrl(authSession);
 
-      if (!nextIsOpen) {
-        setNewPassword('');
-        setConfirmNewPassword('');
-      }
-
-      return nextIsOpen;
-    });
-  };
-
-  const handleSubmitPasswordReset = async (event) => {
-    event.preventDefault();
-
-    if (newPassword !== confirmNewPassword) {
-      setPasswordResetError('새 비밀번호가 서로 달라요.');
+    if (!resetWebUrl) {
       return;
     }
 
-    setPasswordResetError('');
-    resetAccountDangerState();
-
-    const result = await completePasswordReset(newPassword);
-
-    if (result?.success) {
-      resetPasswordResetState();
-    }
+    await openExternalUrl(resetWebUrl);
   };
 
   const handleDeleteAccount = async () => {
@@ -441,69 +409,14 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                     </button>
                   </div>
 
-                  <div className="settings-password-card">
-                    <div className="settings-password-summary">
-                      <div>
-                        <strong>비밀번호 재설정</strong>
-                        <p>로그인된 상태에서 바로 새 비밀번호를 저장할 수 있어요.</p>
-                      </div>
-                      <button
-                        type="button"
-                        className="settings-password-toggle"
-                        onClick={handleTogglePasswordReset}
-                        disabled={isAuthBusy}
-                      >
-                        {isPasswordResetOpen ? '닫기' : '열기'}
-                      </button>
-                    </div>
-
-                    {isPasswordResetOpen && (
-                      <form className="settings-password-form" onSubmit={handleSubmitPasswordReset}>
-                        <input
-                          type="password"
-                          className="settings-password-input"
-                          value={newPassword}
-                          onChange={event => setNewPassword(event.target.value)}
-                          placeholder="새 비밀번호를 입력해주세요"
-                          autoComplete="new-password"
-                          disabled={isAuthBusy}
-                        />
-                        <input
-                          type="password"
-                          className="settings-password-input"
-                          value={confirmNewPassword}
-                          onChange={event => setConfirmNewPassword(event.target.value)}
-                          placeholder="새 비밀번호를 한 번 더 입력해주세요"
-                          autoComplete="new-password"
-                          disabled={isAuthBusy}
-                        />
-
-                        {passwordResetError && (
-                          <div className="settings-feedback error">
-                            {passwordResetError}
-                          </div>
-                        )}
-
-                        <div className="settings-password-actions">
-                          <button
-                            type="button"
-                            className="settings-secondary-btn"
-                            onClick={resetPasswordResetState}
-                            disabled={isAuthBusy}
-                          >
-                            취소
-                          </button>
-                          <button
-                            type="submit"
-                            className="settings-action-btn"
-                            disabled={isAuthBusy}
-                          >
-                            {isAuthBusy ? '저장 중...' : '새 비밀번호 저장'}
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
+                  <button
+                    type="button"
+                    className="settings-secondary-btn"
+                    onClick={handleTogglePasswordReset}
+                    disabled={isAuthBusy}
+                  >
+                    비밀번호 재설정
+                  </button>
 
                   {authFeedback.message && (
                     <div className={`settings-feedback ${authFeedback.type === 'error' ? 'error' : 'success'}`}>
@@ -521,7 +434,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                         type="button"
                         className="settings-danger-toggle"
                         onClick={() => {
-                          resetPasswordResetState();
                           setIsDeleteConfirmOpen(prev => !prev);
                         }}
                         disabled={isAuthBusy}

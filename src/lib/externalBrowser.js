@@ -14,10 +14,5 @@ export const openExternalUrl = async (url) => {
   }
 
   const openedWindow = window.open(normalizedUrl, '_blank', 'noopener,noreferrer');
-
-  if (!openedWindow) {
-    window.location.assign(normalizedUrl);
-  }
-
-  return true;
+  return Boolean(openedWindow);
 };

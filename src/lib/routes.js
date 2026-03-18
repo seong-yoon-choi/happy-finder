@@ -52,7 +52,7 @@ export const getAppRedirectUrl = () => {
   return `${window.location.origin}${APP_PATH}`;
 };
 
-export const getPasswordResetWebUrl = () => {
+export const getPasswordResetWebUrl = (session) => {
   if (typeof window === 'undefined') {
     return undefined;
   }
@@ -71,5 +71,18 @@ export const getPasswordResetWebUrl = () => {
   const url = new URL(appBaseUrl);
   url.pathname = PASSWORD_RESET_PATH;
   url.searchParams.delete('auth');
+
+  const accessToken = typeof session?.access_token === 'string' ? session.access_token : '';
+  const refreshToken = typeof session?.refresh_token === 'string' ? session.refresh_token : '';
+
+  if (accessToken && refreshToken) {
+    const hashParams = new URLSearchParams();
+    hashParams.set('access_token', accessToken);
+    hashParams.set('refresh_token', refreshToken);
+    url.hash = hashParams.toString();
+  } else {
+    url.hash = '';
+  }
+
   return url.toString();
 };

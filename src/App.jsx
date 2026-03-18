@@ -9,6 +9,7 @@ import FirstLoginSetupModal from './components/FirstLoginSetupModal';
 import Home from './views/Home';
 import Profile from './views/Profile';
 import LandingPage from './views/LandingPage';
+import PasswordResetPage from './views/PasswordResetPage';
 import SupportPage from './views/SupportPage';
 import {
   APP_PATH,
@@ -196,13 +197,7 @@ function AppContent() {
 
 function PasswordResetRoute() {
   return (
-    <div className="app-shell">
-      <AuthScreen
-        isOpen
-        canClose={false}
-        initialMode="reset-request"
-      />
-    </div>
+    <PasswordResetPage />
   );
 }
 
