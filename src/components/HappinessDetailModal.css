@@ -13,19 +13,13 @@
     display: flex;
     flex-direction: column;
     /* Soft pastel gradient for the modal background */
-    background:
-        radial-gradient(circle at top left, rgba(255, 210, 224, 0.72), transparent 34%),
-        radial-gradient(circle at top right, rgba(255, 227, 178, 0.66), transparent 32%),
-        linear-gradient(150deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 244, 236, 0.96) 48%, rgba(255, 248, 219, 0.94) 100%);
+    background: #ffffff;
     box-shadow: 0 18px 48px rgba(255, 142, 139, 0.22);
-    border: 1px solid rgba(255, 255, 255, 0.56);
+    border: 1px solid rgba(255, 255, 255, 0.72);
 }
 
 .dark-theme .detail-modal-content {
-    background:
-        radial-gradient(circle at top left, rgba(255, 154, 154, 0.16), transparent 36%),
-        radial-gradient(circle at top right, rgba(255, 209, 102, 0.14), transparent 34%),
-        linear-gradient(150deg, rgba(38, 44, 71, 0.98) 0%, rgba(31, 38, 62, 0.96) 52%, rgba(23, 29, 49, 0.96) 100%);
+    background: rgba(30, 34, 43, 0.98);
     border-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -131,8 +125,8 @@
 
 .detail-stamp-section {
     padding: 20px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 240, 233, 0.84) 48%, rgba(255, 246, 214, 0.92) 100%);
-    border-top: 1px solid rgba(255, 255, 255, 0.58);
+    background: #ffffff;
+    border-top: 1px solid rgba(255, 142, 139, 0.14);
     border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
     display: flex;
     flex-direction: column;
@@ -142,7 +136,7 @@
 }
 
 .dark-theme .detail-stamp-section {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 154, 154, 0.08) 46%, rgba(255, 209, 102, 0.12) 100%);
+    background: rgba(30, 34, 43, 0.98);
     border-top-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -457,17 +451,11 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    background:
-        radial-gradient(circle at top left, rgba(255, 210, 224, 0.66), transparent 34%),
-        radial-gradient(circle at top right, rgba(255, 227, 178, 0.58), transparent 32%),
-        linear-gradient(150deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 245, 238, 0.95) 48%, rgba(255, 248, 219, 0.94) 100%);
+    background: #ffffff;
 }
 
 .dark-theme .delete-confirm-modal {
-    background:
-        radial-gradient(circle at top left, rgba(255, 154, 154, 0.16), transparent 34%),
-        radial-gradient(circle at top right, rgba(255, 209, 102, 0.14), transparent 32%),
-        linear-gradient(150deg, rgba(38, 44, 71, 0.98) 0%, rgba(31, 38, 62, 0.96) 54%, rgba(23, 29, 49, 0.96) 100%);
+    background: rgba(30, 34, 43, 0.98);
 }
 
 .delete-confirm-title {

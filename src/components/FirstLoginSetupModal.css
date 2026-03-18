@@ -6,9 +6,7 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background:
-        radial-gradient(circle at top, rgba(255, 194, 102, 0.22), transparent 36%),
-        rgba(8, 12, 24, 0.46);
+    background: rgba(8, 12, 24, 0.46);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 }
@@ -20,12 +18,12 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(255, 246, 231, 0.92));
+    background: #ffffff;
     animation: slideUp 0.25s ease;
 }
 
 .dark-theme .first-login-modal {
-    background: linear-gradient(150deg, rgba(35, 42, 66, 0.96), rgba(25, 30, 46, 0.94));
+    background: rgba(30, 34, 43, 0.98);
 }
 
 .first-login-copy {

@@ -27,17 +27,13 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    background:
-        radial-gradient(circle at top left, rgba(255, 126, 163, 0.34), transparent 34%),
-        radial-gradient(circle at top right, rgba(255, 195, 87, 0.32), transparent 38%),
-        radial-gradient(circle at bottom center, rgba(255, 154, 108, 0.22), transparent 44%),
-        linear-gradient(165deg, rgba(255, 249, 243, 0.96) 0%, rgba(255, 238, 220, 0.94) 52%, rgba(255, 232, 240, 0.93) 100%);
+    background: #ffffff;
     animation: slideUp 0.25s ease;
 }
 
 .settings-modal::before,
 .settings-modal::after {
-    content: '';
+    content: none;
     position: absolute;
     border-radius: 999px;
     filter: blur(18px);
@@ -94,16 +90,12 @@
     padding: 16px;
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    background:
-        radial-gradient(circle at top left, rgba(255, 255, 255, 0.74), transparent 52%),
-        linear-gradient(155deg, rgba(255, 255, 255, 0.56), rgba(255, 247, 238, 0.46));
+    background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 12px 28px rgba(255, 146, 120, 0.08);
 }
 
 .dark-theme .settings-section {
-    background:
-        radial-gradient(circle at top left, rgba(255, 168, 122, 0.08), transparent 52%),
-        linear-gradient(155deg, rgba(255, 255, 255, 0.07), rgba(255, 178, 94, 0.05));
+    background: rgba(36, 40, 50, 0.96);
 }
 
 .settings-section-copy h3 {
@@ -689,11 +681,7 @@
 }
 
 .dark-theme .settings-modal {
-    background:
-        radial-gradient(circle at top left, rgba(255, 132, 173, 0.22), transparent 30%),
-        radial-gradient(circle at top right, rgba(255, 192, 87, 0.18), transparent 36%),
-        radial-gradient(circle at bottom center, rgba(99, 166, 255, 0.12), transparent 42%),
-        linear-gradient(160deg, rgba(26, 30, 39, 0.96), rgba(21, 25, 34, 0.98) 52%, rgba(35, 28, 41, 0.96) 100%);
+    background: rgba(26, 30, 39, 0.98);
 }
 
 .dark-theme .settings-time-shell {
