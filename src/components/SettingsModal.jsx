@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useHappy } from '../store/HappyContext';
+import { openExternalUrl } from '../lib/externalBrowser';
 import { getPasswordResetWebUrl } from '../lib/routes';
 import './SettingsModal.css';
 
@@ -270,20 +271,15 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     onClose();
   };
 
-  const handleOpenPasswordResetWeb = () => {
+  const handleOpenPasswordResetWeb = async () => {
     resetAccountDangerState();
     resetModalState();
     onClose();
 
     const resetWebUrl = getPasswordResetWebUrl();
 
-    if (typeof window !== 'undefined' && resetWebUrl) {
-      const openedWindow = window.open(resetWebUrl, '_blank', 'noopener,noreferrer');
-
-      if (!openedWindow) {
-        window.location.assign(resetWebUrl);
-      }
-
+    if (resetWebUrl) {
+      await openExternalUrl(resetWebUrl);
       return;
     }
 
