@@ -20,7 +20,7 @@ const quickFacts = [
   }
 ];
 
-const LandingPage = ({ onOpenApp, onNavigate }) => {
+const LandingPage = ({ onOpenApp, onOpenAuth, onNavigate }) => {
   const navigateToPath = nextPath => () => onNavigate?.(nextPath);
 
   return (
@@ -33,9 +33,8 @@ const LandingPage = ({ onOpenApp, onNavigate }) => {
             </a>
 
             <div className="landing-nav-links">
-              <a href="/terms/index.html">이용약관</a>
-              <a href="/privacy/index.html">개인정보</a>
-              <button type="button" className="landing-nav-link-btn" onClick={navigateToPath(SUPPORT_PATH)}>문의</button>
+              <button type="button" className="landing-nav-link-btn" onClick={navigateToPath(SUPPORT_PATH)}>QnA &amp; Feedback</button>
+              <button type="button" className="landing-nav-link-btn" onClick={onOpenAuth}>로그인</button>
               <button type="button" className="landing-app-button" onClick={onOpenApp}>
                 앱 열기
               </button>
@@ -44,23 +43,36 @@ const LandingPage = ({ onOpenApp, onNavigate }) => {
 
           <div className="landing-hero">
             <div className="landing-hero-copy">
-              <p className="landing-eyebrow">Small happiness, clearly delivered.</p>
-              <h1>일상 속 작은 행복을 더 자주 찾고 기록하게 돕는 앱.</h1>
+              <p className="landing-eyebrow">Find happiness and smiles in this app.</p>
+              <h1>
+                일상이 지루하다면
+                <br />
+                일상이 우울하다면
+                <br />
+                행복을 찾고 싶다면
+                <br />
+                <span className="landing-hero-nowrap">Happy Finder를 사용해 보세요!</span>
+              </h1>
               <p className="landing-lead">
-                Happy Finder는 오늘 바로 실천할 수 있는 행복을 발견하고 기록하고 다시 돌아보게 만드는 앱입니다.
-                복잡한 목표보다 가볍게 반복할 수 있는 행복 기록 경험에 집중했습니다.
+                Happy Finder는 여러분이 더 쉽고 더 많이 행복을 찾을 수 있도록 도와줍니다.
+                오늘의 작은 기쁨을 가볍게 남기고, 다시 꺼내보며 나만의 행복한 루틴을 만들어 보세요.
+              </p>
+              <p className="landing-lead landing-lead-secondary">
+                일상 속 작은 행복을 더 자주 찾고 행복한 순간들을 기록해 보세요.
               </p>
 
               <div className="landing-hero-actions">
                 <button type="button" className="landing-primary-cta" onClick={onOpenApp}>
                   지금 앱 열기
                 </button>
+                <button type="button" className="landing-secondary-cta" onClick={onOpenAuth}>
+                  로그인
+                </button>
               </div>
             </div>
 
             <aside className="landing-panel landing-hero-side" aria-label="앱 핵심 기능">
               <div className="landing-panel-head">
-                <p className="landing-section-label">Key Features</p>
                 <h2>앱에서 바로 할 수 있는 일</h2>
               </div>
 

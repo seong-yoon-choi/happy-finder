@@ -625,6 +625,27 @@ export const HappyProvider = ({ children }) => {
   }, [isPasswordRecovery]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const syncPasswordRecoveryState = () => {
+      const nextValue = hasPasswordRecoveryInUrl();
+      isPasswordRecoveryRef.current = nextValue;
+      setIsPasswordRecovery(nextValue);
+    };
+
+    syncPasswordRecoveryState();
+    window.addEventListener('hashchange', syncPasswordRecoveryState);
+    window.addEventListener('popstate', syncPasswordRecoveryState);
+
+    return () => {
+      window.removeEventListener('hashchange', syncPasswordRecoveryState);
+      window.removeEventListener('popstate', syncPasswordRecoveryState);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!supabase) {
       return undefined;
     }

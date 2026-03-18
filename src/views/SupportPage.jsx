@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { submitWebsiteIntake } from '../lib/websiteIntake';
-import { SUPPORT_PATH } from '../lib/routes';
+import { APP_PATH, FEEDBACK_PATH, QNA_PATH, SUPPORT_PATH, isFeedbackPath } from '../lib/routes';
 import './SupportPage.css';
 
 const emptyStatus = {
@@ -19,6 +19,7 @@ const initialQnaForm = {
 const initialFeedbackForm = {
   name: '',
   email: '',
+  subject: '',
   score: '5',
   message: '',
   website: ''
@@ -50,13 +51,15 @@ const getSubmissionErrorMessage = (error, fallbackMessage) => {
   return fallbackMessage;
 };
 
-const SupportPage = ({ onNavigate }) => {
+const SupportPage = ({ onNavigate, onOpenAuth, pathname }) => {
   const [qnaForm, setQnaForm] = useState(initialQnaForm);
   const [feedbackForm, setFeedbackForm] = useState(initialFeedbackForm);
   const [qnaStatus, setQnaStatus] = useState(emptyStatus);
   const [feedbackStatus, setFeedbackStatus] = useState(emptyStatus);
   const [isSubmittingQna, setIsSubmittingQna] = useState(false);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const activeTab = isFeedbackPath(pathname) ? 'feedback' : 'qna';
+  const isFeedbackTab = activeTab === 'feedback';
 
   const handleNavigate = nextPath => () => onNavigate?.(nextPath);
 
@@ -119,6 +122,7 @@ const SupportPage = ({ onNavigate }) => {
         submissionType: 'feedback',
         name: feedbackForm.name,
         email: feedbackForm.email,
+        subject: feedbackForm.subject,
         message: feedbackForm.message,
         score: Number(feedbackForm.score)
       });
@@ -147,13 +151,14 @@ const SupportPage = ({ onNavigate }) => {
           </button>
 
           <div className="support-nav-links">
-            <button type="button" onClick={handleNavigate(SUPPORT_PATH)}>
-              문의
+            <button type="button" className="support-nav-link-btn" onClick={handleNavigate(SUPPORT_PATH)}>
+              QnA &amp; Feedback
             </button>
-            <a href="/terms/index.html">이용약관</a>
-            <a href="/privacy/index.html">개인정보</a>
-            <button type="button" className="support-home-btn" onClick={handleNavigate('/')}>
-              홈으로
+            <button type="button" className="support-nav-link-btn" onClick={onOpenAuth}>
+              로그인
+            </button>
+            <button type="button" className="support-app-button" onClick={handleNavigate(APP_PATH)}>
+              앱 열기
             </button>
           </div>
         </nav>
@@ -161,94 +166,51 @@ const SupportPage = ({ onNavigate }) => {
         <header className="support-hero">
           <div className="support-copy">
             <p className="support-kicker">Support</p>
-            <h1>Q&amp;A와 피드백을 한곳에서 받습니다.</h1>
-            <p>앱 사용 중 궁금한 점과 개선 의견을 아래에서 바로 남겨주세요.</p>
+            <div className="support-tab-links" aria-label="문의 및 피드백 유형">
+              <button
+                type="button"
+                aria-pressed={!isFeedbackTab}
+                className={`support-tab-link ${!isFeedbackTab ? 'is-active' : ''}`}
+                onClick={handleNavigate(QNA_PATH)}
+              >
+                QnA
+              </button>
+              <button
+                type="button"
+                aria-pressed={isFeedbackTab}
+                className={`support-tab-link ${isFeedbackTab ? 'is-active' : ''}`}
+                onClick={handleNavigate(FEEDBACK_PATH)}
+              >
+                Feedback
+              </button>
+            </div>
           </div>
 
           <aside className="support-side-note">
-            <strong>작성 팁</strong>
-            <p>문제 상황은 구체적으로, 피드백은 좋았던 점과 아쉬운 점을 함께 적어주면 확인이 더 빨라집니다.</p>
+            <strong>함께 만들어 나가는 Happy Finder</strong>
+            <p>불편한 점이나 Happy Finder를 개선할 더 좋은 아이디어가 있다면 알려주세요!! 더 많은 행복을 함께 만들어 나가요!</p>
           </aside>
         </header>
 
         <main className="support-main">
-          <div className="support-forms-grid">
-            <section className="support-panel">
-              <div className="support-form-header">
-                <h2>Q&amp;A 문의</h2>
-                <p>앱 사용, 계정, 정책, 제휴 관련 문의를 남겨주세요.</p>
-              </div>
+          {isFeedbackTab ? (
+            <section className="support-panel support-panel-wide">
+              <div className="support-form-header support-form-header-split">
+                <div>
+                  <h2>서비스 피드백</h2>
+                  <p>좋았던 점, 불편했던 점, 꼭 필요한 기능 제안을 남겨주세요.</p>
+                </div>
 
-              <form className="support-form" onSubmit={handleQnaSubmit}>
-                <label>
-                  이름
-                  <input
-                    type="text"
-                    value={qnaForm.name}
-                    onChange={handleQnaChange('name')}
-                    placeholder="홍길동"
-                  />
+                <label className="support-score-inline">
+                  <span>만족도</span>
+                  <select value={feedbackForm.score} onChange={handleFeedbackChange('score')}>
+                    <option value="5">5점</option>
+                    <option value="4">4점</option>
+                    <option value="3">3점</option>
+                    <option value="2">2점</option>
+                    <option value="1">1점</option>
+                  </select>
                 </label>
-
-                <label>
-                  이메일
-                  <input
-                    type="email"
-                    value={qnaForm.email}
-                    onChange={handleQnaChange('email')}
-                    placeholder="hello@happyfinder.kr"
-                    required
-                  />
-                </label>
-
-                <label>
-                  제목
-                  <input
-                    type="text"
-                    value={qnaForm.subject}
-                    onChange={handleQnaChange('subject')}
-                    placeholder="문의 제목을 입력해주세요"
-                  />
-                </label>
-
-                <label>
-                  문의 내용
-                  <textarea
-                    value={qnaForm.message}
-                    onChange={handleQnaChange('message')}
-                    placeholder="문의 내용을 구체적으로 적어주시면 더 빠르게 확인할 수 있습니다."
-                    rows="8"
-                    maxLength="3000"
-                    required
-                  />
-                </label>
-
-                <input
-                  type="text"
-                  value={qnaForm.website}
-                  onChange={handleQnaChange('website')}
-                  className="support-honeypot"
-                  tabIndex="-1"
-                  autoComplete="off"
-                  aria-hidden="true"
-                />
-
-                {qnaStatus.message && (
-                  <div className={`support-form-status ${qnaStatus.type}`}>
-                    {qnaStatus.message}
-                  </div>
-                )}
-
-                <button type="submit" className="support-submit-button" disabled={isSubmittingQna}>
-                  {isSubmittingQna ? '접수 중...' : 'Q&A 접수하기'}
-                </button>
-              </form>
-            </section>
-
-            <section className="support-panel">
-              <div className="support-form-header">
-                <h2>서비스 피드백</h2>
-                <p>좋았던 점, 불편했던 점, 꼭 필요한 기능 제안을 남겨주세요.</p>
               </div>
 
               <form className="support-form" onSubmit={handleFeedbackSubmit}>
@@ -268,19 +230,18 @@ const SupportPage = ({ onNavigate }) => {
                     type="email"
                     value={feedbackForm.email}
                     onChange={handleFeedbackChange('email')}
-                    placeholder="답변이 필요하면 입력해주세요"
+                    placeholder="이메일 주소를 입력해 주세요"
                   />
                 </label>
 
                 <label>
-                  현재 만족도
-                  <select value={feedbackForm.score} onChange={handleFeedbackChange('score')}>
-                    <option value="5">5점 매우 만족</option>
-                    <option value="4">4점 만족</option>
-                    <option value="3">3점 보통</option>
-                    <option value="2">2점 아쉬움</option>
-                    <option value="1">1점 불편함</option>
-                  </select>
+                  피드백 제목
+                  <input
+                    type="text"
+                    value={feedbackForm.subject}
+                    onChange={handleFeedbackChange('subject')}
+                    placeholder="피드백 제목을 입력해 주세요"
+                  />
                 </label>
 
                 <label>
@@ -316,7 +277,79 @@ const SupportPage = ({ onNavigate }) => {
                 </button>
               </form>
             </section>
-          </div>
+          ) : (
+            <section className="support-panel support-panel-wide">
+              <div className="support-form-header">
+                <h2>Q&amp;A 문의</h2>
+                <p>앱 사용, 계정, 정책, 제휴 관련 문의를 남겨주세요.</p>
+              </div>
+
+              <form className="support-form" onSubmit={handleQnaSubmit}>
+                <label>
+                  이름
+                  <input
+                    type="text"
+                    value={qnaForm.name}
+                    onChange={handleQnaChange('name')}
+                    placeholder="홍길동"
+                  />
+                </label>
+
+                <label>
+                  이메일
+                  <input
+                    type="email"
+                    value={qnaForm.email}
+                    onChange={handleQnaChange('email')}
+                    placeholder="이메일 주소를 입력해 주세요"
+                    required
+                  />
+                </label>
+
+                <label>
+                  제목
+                  <input
+                    type="text"
+                    value={qnaForm.subject}
+                    onChange={handleQnaChange('subject')}
+                    placeholder="문의 제목을 입력해주세요"
+                  />
+                </label>
+
+                <label>
+                  문의 내용
+                  <textarea
+                    value={qnaForm.message}
+                    onChange={handleQnaChange('message')}
+                    placeholder="문의 내용을 구체적으로 적어주시면 더 정확한 답변을 받으실 수 있습니다."
+                    rows="8"
+                    maxLength="3000"
+                    required
+                  />
+                </label>
+
+                <input
+                  type="text"
+                  value={qnaForm.website}
+                  onChange={handleQnaChange('website')}
+                  className="support-honeypot"
+                  tabIndex="-1"
+                  autoComplete="off"
+                  aria-hidden="true"
+                />
+
+                {qnaStatus.message && (
+                  <div className={`support-form-status ${qnaStatus.type}`}>
+                    {qnaStatus.message}
+                  </div>
+                )}
+
+                <button type="submit" className="support-submit-button" disabled={isSubmittingQna}>
+                  {isSubmittingQna ? '접수 중...' : 'Q&A 접수하기'}
+                </button>
+              </form>
+            </section>
+          )}
         </main>
       </div>
     </div>

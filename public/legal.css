@@ -20,7 +20,7 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   color: var(--legal-text);
   background:
     radial-gradient(circle at top, rgba(247, 183, 51, 0.24), transparent 28%),
