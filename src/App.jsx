@@ -199,6 +199,62 @@ function AppContent() {
   );
 }
 
+function PublicSiteContent({ pathname, onNavigate }) {
+  const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(false);
+  const [authScreenMode, setAuthScreenMode] = useState('login');
+  const { authUser, isPasswordRecovery } = useHappy();
+
+  const isSupportRoute = isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname);
+  const isAuthScreenOpen = isPasswordRecovery || (isAuthScreenRequested && !authUser);
+
+  useEffect(() => {
+    const requestedMode = getRequestedAuthModeFromUrl();
+
+    if (!requestedMode) {
+      return;
+    }
+
+    setAuthScreenMode(requestedMode);
+    setIsAuthScreenRequested(true);
+    clearRequestedAuthModeInUrl();
+  }, []);
+
+  const openAuthScreen = (mode = 'login') => {
+    setAuthScreenMode(mode);
+    setIsAuthScreenRequested(true);
+  };
+
+  const closeAuthScreen = () => {
+    setIsAuthScreenRequested(false);
+    setAuthScreenMode('login');
+  };
+
+  return (
+    <>
+      {isSupportRoute ? (
+        <SupportPage
+          pathname={pathname}
+          onNavigate={onNavigate}
+          onOpenAuth={() => openAuthScreen('login')}
+        />
+      ) : (
+        <LandingPage
+          onOpenApp={() => onNavigate(APP_PATH)}
+          onOpenAuth={() => openAuthScreen('login')}
+          onNavigate={onNavigate}
+        />
+      )}
+
+      <AuthScreen
+        isOpen={isAuthScreenOpen}
+        canClose={!isPasswordRecovery}
+        initialMode={authScreenMode}
+        onClose={closeAuthScreen}
+      />
+    </>
+  );
+}
+
 function PasswordResetRoute() {
   return (
     <PasswordResetPage />
@@ -240,7 +296,14 @@ function App() {
   }, []);
 
   if (isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname)) {
-    return <SupportPage pathname={pathname} onNavigate={nextPath => navigateToPath(nextPath, setPathname)} />;
+    return (
+      <HappyProvider>
+        <PublicSiteContent
+          pathname={pathname}
+          onNavigate={nextPath => navigateToPath(nextPath, setPathname)}
+        />
+      </HappyProvider>
+    );
   }
 
   if (isPasswordResetPath(pathname)) {
@@ -269,10 +332,12 @@ function App() {
 
   if (!isAppPath(pathname)) {
     return (
-      <LandingPage
-        onOpenApp={() => navigateToPath(APP_PATH, setPathname)}
-        onNavigate={nextPath => navigateToPath(nextPath, setPathname)}
-      />
+      <HappyProvider>
+        <PublicSiteContent
+          pathname={pathname}
+          onNavigate={nextPath => navigateToPath(nextPath, setPathname)}
+        />
+      </HappyProvider>
     );
   }
 
