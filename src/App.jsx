@@ -226,15 +226,9 @@ function PublicSiteContent({ pathname, onNavigate }) {
 
     setIsAuthScreenRequested(false);
     setAuthScreenMode('login');
-    onNavigate(APP_PATH);
-  }, [authUser, isAuthScreenRequested, onNavigate]);
+  }, [authUser, isAuthScreenRequested]);
 
   const openAuthScreen = (mode = 'login') => {
-    if (authUser) {
-      onNavigate(APP_PATH);
-      return;
-    }
-
     setAuthScreenMode(mode);
     setIsAuthScreenRequested(true);
   };
