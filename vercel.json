@@ -17,6 +17,22 @@
       "destination": "/index.html"
     },
     {
+      "source": "/account-delete",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/account-delete/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/inquiries",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/inquiries/(.*)",
+      "destination": "/index.html"
+    },
+    {
       "source": "/qna",
       "destination": "/index.html"
     },

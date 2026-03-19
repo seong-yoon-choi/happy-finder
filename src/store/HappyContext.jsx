@@ -2,6 +2,12 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import { getTreeInfo } from '../utils/progress';
+import {
+  checkNativeNotificationPermission,
+  isNativeNotificationPlatform,
+  requestNativeNotificationPermission,
+  syncNativeReminderNotifications
+} from '../lib/localNotifications';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getAppRedirectUrl } from '../lib/routes';
 
@@ -602,6 +608,10 @@ export const HappyProvider = ({ children }) => {
   });
 
   const [notificationPermission, setNotificationPermission] = useState(() => {
+    if (isNativeNotificationPlatform()) {
+      return 'default';
+    }
+
     if (typeof window === 'undefined' || !('Notification' in window)) {
       return 'unsupported';
     }
@@ -629,6 +639,28 @@ export const HappyProvider = ({ children }) => {
   useEffect(() => {
     isPasswordRecoveryRef.current = isPasswordRecovery;
   }, [isPasswordRecovery]);
+
+  useEffect(() => {
+    if (!isNativeNotificationPlatform()) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const syncPermission = async () => {
+      const permission = await checkNativeNotificationPermission();
+
+      if (isMounted) {
+        setNotificationPermission(permission);
+      }
+    };
+
+    syncPermission();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -925,6 +957,33 @@ export const HappyProvider = ({ children }) => {
   }, [authUser?.id, items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
+    if (!isNativeNotificationPlatform()) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const syncReminders = async () => {
+      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled);
+      const permission = await checkNativeNotificationPermission();
+
+      if (isMounted) {
+        setNotificationPermission(permission);
+      }
+    };
+
+    syncReminders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [reminderSettings.enabled, reminderSettings.reminders]);
+
+  useEffect(() => {
+    if (isNativeNotificationPlatform()) {
+      return undefined;
+    }
+
     if (typeof window === 'undefined' || !reminderSettings.enabled || reminderSettings.reminders.length === 0) {
       return undefined;
     }
@@ -1769,6 +1828,12 @@ export const HappyProvider = ({ children }) => {
   };
 
   const requestNotificationPermission = async () => {
+    if (isNativeNotificationPlatform()) {
+      const permission = await requestNativeNotificationPermission();
+      setNotificationPermission(permission);
+      return permission;
+    }
+
     if (typeof window === 'undefined' || !('Notification' in window)) {
       setNotificationPermission('unsupported');
       return 'unsupported';

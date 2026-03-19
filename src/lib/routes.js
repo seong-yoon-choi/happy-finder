@@ -1,5 +1,7 @@
 export const APP_PATH = '/app';
 export const PASSWORD_RESET_PATH = '/password-reset';
+export const ACCOUNT_DELETE_PATH = '/account-delete';
+export const ADMIN_INQUIRIES_PATH = '/admin/inquiries';
 export const SUPPORT_PATH = '/support';
 export const QNA_PATH = '/qna';
 export const FEEDBACK_PATH = '/feedback';
@@ -15,6 +17,8 @@ export const normalizePath = (value) => {
 
 export const isAppPath = (value) => normalizePath(value) === APP_PATH;
 export const isPasswordResetPath = (value) => normalizePath(value) === PASSWORD_RESET_PATH;
+export const isAccountDeletePath = (value) => normalizePath(value) === ACCOUNT_DELETE_PATH;
+export const isAdminInquiriesPath = (value) => normalizePath(value) === ADMIN_INQUIRIES_PATH;
 export const isSupportPath = (value) => normalizePath(value) === SUPPORT_PATH;
 export const isQnaPath = (value) => normalizePath(value) === QNA_PATH;
 export const isFeedbackPath = (value) => normalizePath(value) === FEEDBACK_PATH;
@@ -52,7 +56,7 @@ export const getAppRedirectUrl = () => {
   return `${window.location.origin}${APP_PATH}`;
 };
 
-export const getPasswordResetWebUrl = (session) => {
+export const getPublicWebUrl = (pathname = '/') => {
   if (typeof window === 'undefined') {
     return undefined;
   }
@@ -69,7 +73,20 @@ export const getPasswordResetWebUrl = (session) => {
   }
 
   const url = new URL(appBaseUrl);
-  url.pathname = PASSWORD_RESET_PATH;
+  url.pathname = normalizePath(pathname);
+  url.search = '';
+  url.hash = '';
+  return url.toString();
+};
+
+export const getPasswordResetWebUrl = (session) => {
+  const urlString = getPublicWebUrl(PASSWORD_RESET_PATH);
+
+  if (!urlString) {
+    return undefined;
+  }
+
+  const url = new URL(urlString);
   url.searchParams.delete('auth');
 
   const accessToken = typeof session?.access_token === 'string' ? session.access_token : '';

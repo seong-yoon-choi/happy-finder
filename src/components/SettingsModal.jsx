@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useHappy } from '../store/HappyContext';
 import { openExternalUrl } from '../lib/externalBrowser';
-import { getPasswordResetWebUrl } from '../lib/routes';
+import { SUPPORT_PATH, getPasswordResetWebUrl, getPublicWebUrl } from '../lib/routes';
 import './SettingsModal.css';
 
 const DEFAULT_REMINDER_TIME = '20:00';
@@ -272,6 +272,18 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     onClose();
   };
 
+  const handleOpenSupport = async () => {
+    clearAuthFeedback();
+    resetAccountDangerState();
+    const supportUrl = getPublicWebUrl(SUPPORT_PATH);
+
+    if (!supportUrl) {
+      return;
+    }
+
+    await openExternalUrl(supportUrl);
+  };
+
   const handleTogglePasswordReset = async () => {
     clearAuthFeedback();
     resetAccountDangerState();
@@ -398,6 +410,14 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                       disabled={isAuthBusy}
                     >
                       닉네임 바꾸기
+                    </button>
+                    <button
+                      type="button"
+                      className="settings-secondary-btn"
+                      onClick={handleOpenSupport}
+                      disabled={isAuthBusy}
+                    >
+                      QnA &amp; Feedback
                     </button>
                     <button
                       type="button"

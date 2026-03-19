@@ -9,12 +9,16 @@ import FirstLoginSetupModal from './components/FirstLoginSetupModal';
 import Home from './views/Home';
 import Profile from './views/Profile';
 import LandingPage from './views/LandingPage';
+import AdminInquiriesPage from './views/AdminInquiriesPage';
+import AccountDeletePage from './views/AccountDeletePage';
 import PasswordResetPage from './views/PasswordResetPage';
 import SupportPage from './views/SupportPage';
 import {
   APP_PATH,
+  isAdminInquiriesPath,
   clearRequestedAuthModeInUrl,
   getRequestedAuthModeFromUrl,
+  isAccountDeletePath,
   isAppPath,
   isPasswordResetPath,
   isFeedbackPath,
@@ -201,6 +205,18 @@ function PasswordResetRoute() {
   );
 }
 
+function AccountDeleteRoute() {
+  return (
+    <AccountDeletePage />
+  );
+}
+
+function AdminInquiriesRoute() {
+  return (
+    <AdminInquiriesPage />
+  );
+}
+
 function App() {
   const [pathname, setPathname] = useState(() => {
     if (typeof window === 'undefined') {
@@ -224,13 +240,29 @@ function App() {
   }, []);
 
   if (isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname)) {
-    return <SupportPage onNavigate={nextPath => navigateToPath(nextPath, setPathname)} />;
+    return <SupportPage pathname={pathname} onNavigate={nextPath => navigateToPath(nextPath, setPathname)} />;
   }
 
   if (isPasswordResetPath(pathname)) {
     return (
       <HappyProvider>
         <PasswordResetRoute />
+      </HappyProvider>
+    );
+  }
+
+  if (isAccountDeletePath(pathname)) {
+    return (
+      <HappyProvider>
+        <AccountDeleteRoute />
+      </HappyProvider>
+    );
+  }
+
+  if (isAdminInquiriesPath(pathname)) {
+    return (
+      <HappyProvider>
+        <AdminInquiriesRoute />
       </HappyProvider>
     );
   }
