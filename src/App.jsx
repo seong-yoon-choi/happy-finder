@@ -219,7 +219,22 @@ function PublicSiteContent({ pathname, onNavigate }) {
     clearRequestedAuthModeInUrl();
   }, []);
 
+  useEffect(() => {
+    if (!authUser || !isAuthScreenRequested) {
+      return;
+    }
+
+    setIsAuthScreenRequested(false);
+    setAuthScreenMode('login');
+    onNavigate(APP_PATH);
+  }, [authUser, isAuthScreenRequested, onNavigate]);
+
   const openAuthScreen = (mode = 'login') => {
+    if (authUser) {
+      onNavigate(APP_PATH);
+      return;
+    }
+
     setAuthScreenMode(mode);
     setIsAuthScreenRequested(true);
   };
