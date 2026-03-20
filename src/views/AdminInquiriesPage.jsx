@@ -159,13 +159,25 @@ const AdminInquiriesPage = () => {
       const message = typeof error?.message === 'string' ? error.message : '';
       setStatus({
         type: 'error',
-        message: message.includes('missing_recipient_email')
-          ? '문의자의 이메일이 없어 답변 메일을 보낼 수 없어요.'
-          : message.includes('email_send_failed')
-            ? '답변 메일을 보내지 못했어요. 메일 API 설정을 확인해주세요.'
-            : message.includes('permission') || message.includes('forbidden')
-              ? '답변을 보낼 권한이 없어요. 관리자 계정과 함수 배포 상태를 확인해주세요.'
-              : '답변 전송 중 문제가 생겼어요.'
+        message: message.includes('server_not_configured')
+          ? '메일 발송 함수 설정이 비어 있어요. RESEND_API_KEY와 SUPPORT_EMAIL_FROM을 Supabase secrets에 넣어주세요.'
+          : message.includes('reply_save_failed')
+            ? '답변 저장용 컬럼이 없거나 DB 저장에 실패했어요. website_inquiries_replies.sql 적용 여부를 확인해주세요.'
+            : message.includes('inquiry_not_found')
+              ? '해당 문의를 다시 찾지 못했어요. 새로고침 후 다시 시도해주세요.'
+              : message.includes('email_send_failed')
+                ? '메일 발송 서비스에서 오류가 났어요. Resend 설정을 확인해주세요.'
+                : message.includes('verify a domain')
+                  ? '발신 이메일 도메인이 아직 Resend에서 검증되지 않았어요. verified domain 주소를 SUPPORT_EMAIL_FROM으로 설정해주세요.'
+                  : message.includes('You can only send testing emails')
+                    ? 'Resend 테스트 발신 주소는 검증된 수신자에게만 보낼 수 있어요. 운영용 발신 도메인으로 바꿔주세요.'
+                    : message.includes('missing_recipient_email')
+                      ? '문의자의 이메일이 없어 답변 메일을 보낼 수 없어요.'
+                      : message.includes('permission') || message.includes('forbidden')
+                        ? '답변을 보낼 권한이 없어요. 관리자 계정과 함수 배포 상태를 확인해주세요.'
+                        : message.includes('edge function returned a non-2xx')
+                          ? '답변 함수가 실패했어요. Supabase 함수 로그와 secrets를 확인해주세요.'
+                          : '답변 전송 중 문제가 생겼어요.'
       });
     } finally {
       setReplyingId('');

@@ -50,6 +50,14 @@ export const replyAdminInquiry = async ({ inquiryId, replyMessage }) => {
       }
     }
 
+    if (typeof error?.context?.text === 'function') {
+      const text = await error.context.text().catch(() => '');
+
+      if (typeof text === 'string' && text.trim()) {
+        throw new Error(text.trim());
+      }
+    }
+
     throw error;
   }
 
