@@ -48,6 +48,14 @@ export const replyAdminInquiry = async ({ inquiryId, replyMessage }) => {
       if (payload?.error) {
         throw new Error(String(payload.error));
       }
+
+      if (payload?.message) {
+        throw new Error(String(payload.message));
+      }
+
+      if (payload?.code) {
+        throw new Error(String(payload.code));
+      }
     }
 
     if (typeof error?.context?.text === 'function') {

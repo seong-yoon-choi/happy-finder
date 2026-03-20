@@ -161,6 +161,8 @@ const AdminInquiriesPage = () => {
         type: 'error',
         message: message.includes('server_not_configured')
           ? '메일 발송 함수 설정이 비어 있어요. RESEND_API_KEY와 SUPPORT_EMAIL_FROM을 Supabase secrets에 넣어주세요.'
+          : message.includes('Requested function was not found') || message.includes('NOT_FOUND')
+            ? 'reply-website-inquiry 함수가 프로덕션 Supabase에 아직 배포되지 않았어요. Edge Function을 deploy 해주세요.'
           : message.includes('reply_save_failed')
             ? '답변 저장용 컬럼이 없거나 DB 저장에 실패했어요. website_inquiries_replies.sql 적용 여부를 확인해주세요.'
             : message.includes('inquiry_not_found')
