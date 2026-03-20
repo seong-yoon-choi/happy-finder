@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import AuthScreen from '../components/AuthScreen';
 import { listAdminInquiries, replyAdminInquiry } from '../lib/adminInquiries';
 import { isAdminEmail } from '../lib/adminAccess';
-import { APP_PATH } from '../lib/routes';
+import { PROFILE_PATH } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './AdminInquiriesPage.css';
 
@@ -245,7 +245,7 @@ const AdminInquiriesPage = () => {
     <div className="admin-inquiries-route">
       <div className="admin-inquiries-page">
         <div className="admin-inquiries-header">
-          <a href={APP_PATH} className="admin-inquiries-secondary-link">
+          <a href={PROFILE_PATH} className="admin-inquiries-secondary-link">
             뒤로 돌아가기
           </a>
         </div>
@@ -271,16 +271,16 @@ const AdminInquiriesPage = () => {
               >
                 로그인하기
               </button>
-              <a href={APP_PATH} className="admin-inquiries-secondary-link">
-                앱으로 돌아가기
+              <a href={PROFILE_PATH} className="admin-inquiries-secondary-link">
+                웹으로 돌아가기
               </a>
             </div>
           </div>
         ) : !isAdmin ? (
           <div className="admin-inquiries-empty">
             <p>현재 로그인한 계정은 관리자 권한이 없어요.</p>
-            <a href={APP_PATH} className="admin-inquiries-secondary-link">
-              앱으로 돌아가기
+            <a href={PROFILE_PATH} className="admin-inquiries-secondary-link">
+              웹으로 돌아가기
             </a>
           </div>
         ) : (
@@ -338,14 +338,10 @@ const AdminInquiriesPage = () => {
                       aria-expanded={isExpanded}
                     >
                       <div className="admin-inquiries-card-toggle-main">
-                        <span className={`admin-inquiries-type ${inquiry.submission_type}`}>
-                          {inquiry.submission_type}
-                        </span>
                         <h2>{inquiry.subject || '(제목 없음)'}</h2>
                       </div>
 
                       <div className="admin-inquiries-card-toggle-side">
-                        <span className="admin-inquiries-date">{formatDateTime(inquiry.created_at)}</span>
                         <span className={`admin-inquiries-chevron ${isExpanded ? 'expanded' : ''}`}>
                           ▾
                         </span>
@@ -355,6 +351,8 @@ const AdminInquiriesPage = () => {
                     {isExpanded && (
                       <div className="admin-inquiries-card-content">
                         <div className="admin-inquiries-meta">
+                          <span>유형: {inquiry.submission_type}</span>
+                          <span>등록: {formatDateTime(inquiry.created_at)}</span>
                           <span>이메일: {inquiry.email || '-'}</span>
                         </div>
 
