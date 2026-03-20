@@ -82,6 +82,18 @@ export const replyAdminInquiry = async ({ inquiryId, replyMessage }) => {
     if (typeof error?.context?.json === 'function') {
       const payload = await error.context.json().catch(() => null);
 
+      if (payload?.error === 'invalid_user') {
+        throw new Error('INVALID_ADMIN_SESSION');
+      }
+
+      if (payload?.error === 'missing_authorization') {
+        throw new Error('AUTH_SESSION_MISSING');
+      }
+
+      if (payload?.message === 'Missing authorization header') {
+        throw new Error('AUTH_SESSION_MISSING');
+      }
+
       if (payload?.error) {
         throw new Error(String(payload.error));
       }

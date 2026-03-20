@@ -37,6 +37,71 @@ const formatDateTime = value => {
   }).format(date);
 };
 
+const getReplyErrorMessage = rawMessage => {
+  const message = typeof rawMessage === 'string' ? rawMessage : '';
+
+  if (
+    message.includes('AUTH_SESSION_MISSING')
+    || message.includes('INVALID_ADMIN_SESSION')
+    || message.includes('missing_authorization')
+    || message.includes('Missing authorization header')
+    || message.includes('invalid_user')
+  ) {
+    return '로그인 세션이 답변 함수로 전달되지 않았거나 만료됐어요. 로그아웃 후 다시 로그인해서 시도해주세요.';
+  }
+
+  if (message.includes('server_not_configured')) {
+    return '메일 발송 설정이 비어 있어요. Supabase secrets에 SMTP_PASSWORD 또는 RESEND_API_KEY를 넣어주세요.';
+  }
+
+  if (message.includes('Requested function was not found') || message.includes('NOT_FOUND')) {
+    return 'reply-website-inquiry 함수가 프로덕션 Supabase에 아직 배포되지 않았어요.';
+  }
+
+  if (message.includes('reply_save_failed')) {
+    return '답변 저장은 실패했어요. website_inquiries_replies.sql 적용과 DB 권한을 확인해주세요.';
+  }
+
+  if (message.includes('inquiry_not_found')) {
+    return '해당 문의를 다시 찾지 못했어요. 새로고침 후 다시 시도해주세요.';
+  }
+
+  if (
+    message.includes('EAUTH')
+    || message.includes('535')
+    || message.includes('Invalid login')
+    || message.includes('authentication')
+  ) {
+    return 'SMTP 로그인에 실패했어요. SMTP 사용자명과 비밀번호를 확인해주세요.';
+  }
+
+  if (
+    message.includes('ECONNECTION')
+    || message.includes('ETIMEDOUT')
+    || message.includes('ESOCKET')
+  ) {
+    return 'SMTP 서버 연결에 실패했어요. SMTP_HOST, SMTP_PORT, SMTP_SECURE 설정을 확인해주세요.';
+  }
+
+  if (message.includes('550') || message.includes('553') || message.includes('554')) {
+    return '발신 주소가 SMTP 서버에서 거부됐어요. SUPPORT_EMAIL_FROM과 발신 도메인 설정을 확인해주세요.';
+  }
+
+  if (message.includes('missing_recipient_email')) {
+    return '문의자 이메일이 없어 답변 메일을 보낼 수 없어요.';
+  }
+
+  if (message.includes('permission') || message.includes('forbidden')) {
+    return '답변을 보낼 권한이 없어요. 관리자 계정인지 확인해주세요.';
+  }
+
+  if (message.includes('edge function returned a non-2xx')) {
+    return '답변 함수가 실패했어요. Supabase function logs와 SMTP secrets를 확인해주세요.';
+  }
+
+  return '답변 전송 중 문제가 생겼어요.';
+};
+
 const AdminInquiriesPage = () => {
   const { authUser, isAuthLoading } = useHappy();
   const [isAuthScreenOpen, setIsAuthScreenOpen] = useState(false);
@@ -156,30 +221,9 @@ const AdminInquiriesPage = () => {
         message: '답변을 저장했고 해당 이메일로 메일을 보냈어요.'
       });
     } catch (error) {
-      const message = typeof error?.message === 'string' ? error.message : '';
       setStatus({
         type: 'error',
-        message: message.includes('server_not_configured')
-          ? '메일 발송 설정이 비어 있어요. Supabase secrets에 SMTP_PASSWORD 또는 RESEND_API_KEY를 넣어주세요.'
-          : message.includes('Requested function was not found') || message.includes('NOT_FOUND')
-            ? 'reply-website-inquiry 함수가 프로덕션 Supabase에 아직 배포되지 않았어요.'
-            : message.includes('reply_save_failed')
-              ? '답변 저장은 실패했어요. website_inquiries_replies.sql 적용과 DB 권한을 확인해주세요.'
-              : message.includes('inquiry_not_found')
-                ? '해당 문의를 다시 찾지 못했어요. 새로고침 후 다시 시도해주세요.'
-                : message.includes('EAUTH') || message.includes('535') || message.includes('Invalid login') || message.includes('authentication')
-                  ? 'SMTP 로그인에 실패했어요. SMTP 사용자명과 비밀번호를 확인해주세요.'
-                  : message.includes('ECONNECTION') || message.includes('ETIMEDOUT') || message.includes('ESOCKET')
-                    ? 'SMTP 서버 연결에 실패했어요. SMTP_HOST, SMTP_PORT, SMTP_SECURE 설정을 확인해주세요.'
-                    : message.includes('550') || message.includes('553') || message.includes('554')
-                      ? '발신 주소가 SMTP 서버에서 거부됐어요. SUPPORT_EMAIL_FROM과 발신 도메인 설정을 확인해주세요.'
-                      : message.includes('missing_recipient_email')
-                        ? '문의자 이메일이 없어 답변 메일을 보낼 수 없어요.'
-                        : message.includes('permission') || message.includes('forbidden')
-                          ? '답변을 보낼 권한이 없어요. 관리자 계정인지 확인해주세요.'
-                          : message.includes('edge function returned a non-2xx')
-                            ? '답변 함수가 실패했어요. Supabase function logs와 SMTP secrets를 확인해주세요.'
-                            : '답변 전송 중 문제가 생겼어요.'
+        message: getReplyErrorMessage(error?.message)
       });
     } finally {
       setReplyingId('');
