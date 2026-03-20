@@ -246,15 +246,15 @@ const AdminInquiriesPage = () => {
     <div className="admin-inquiries-route">
       <div className="admin-inquiries-page">
         <div className="admin-inquiries-header">
-          <a href={WEB_HOME_PATH} className="admin-inquiries-secondary-link">
+          <div className="admin-inquiries-copy">
+            <span className="admin-inquiries-eyebrow">ADMIN</span>
+            <h1>QnA &amp; Feedback 관리자</h1>
+            <p>제목 목록에서 항목을 열어 문의 내용과 답변을 확인할 수 있어요.</p>
+          </div>
+
+          <a href={WEB_HOME_PATH} className="admin-inquiries-secondary-link admin-inquiries-back-link">
             뒤로 돌아가기
           </a>
-        </div>
-
-        <div className="admin-inquiries-copy">
-          <span className="admin-inquiries-eyebrow">ADMIN</span>
-          <h1>QnA &amp; Feedback 관리자</h1>
-          <p>제목 목록에서 항목을 열어 문의 내용과 답변을 확인할 수 있어요.</p>
         </div>
 
         {isAuthLoading ? (

@@ -26,13 +26,16 @@
 
 .admin-inquiries-header {
   display: flex;
-  justify-content: flex-start;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .admin-inquiries-copy {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1 1 auto;
 }
 
 .admin-inquiries-copy h1 {
@@ -142,6 +145,11 @@
 
 .dark-theme .admin-inquiries-secondary-link {
   background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-inquiries-back-link {
+  flex: 0 0 auto;
+  align-self: flex-start;
 }
 
 .admin-inquiries-summary {
@@ -343,6 +351,14 @@
 
   .admin-inquiries-page {
     padding: 24px 18px;
+  }
+
+  .admin-inquiries-header {
+    flex-direction: column;
+  }
+
+  .admin-inquiries-back-link {
+    width: 100%;
   }
 
   .admin-inquiries-card-top {
