@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import AuthScreen from '../components/AuthScreen';
-import { listAdminInquiries, updateAdminInquiryStatus } from '../lib/adminInquiries';
+import { listAdminInquiries, replyAdminInquiry } from '../lib/adminInquiries';
 import { isAdminEmail } from '../lib/adminAccess';
 import { APP_PATH } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
@@ -10,14 +10,6 @@ const emptyStatus = {
   type: 'idle',
   message: ''
 };
-
-const statusOptions = [
-  { value: 'all', label: '전체 상태' },
-  { value: 'received', label: 'received' },
-  { value: 'reviewing', label: 'reviewing' },
-  { value: 'resolved', label: 'resolved' },
-  { value: 'archived', label: 'archived' }
-];
 
 const typeOptions = [
   { value: 'all', label: '전체 유형' },
@@ -49,11 +41,11 @@ const AdminInquiriesPage = () => {
   const { authUser, isAuthLoading } = useHappy();
   const [isAuthScreenOpen, setIsAuthScreenOpen] = useState(false);
   const [inquiries, setInquiries] = useState([]);
+  const [replyDrafts, setReplyDrafts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState(emptyStatus);
   const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [updatingId, setUpdatingId] = useState('');
+  const [replyingId, setReplyingId] = useState('');
 
   const isAdmin = isAdminEmail(authUser?.email);
 
@@ -68,12 +60,23 @@ const AdminInquiriesPage = () => {
     try {
       const nextInquiries = await listAdminInquiries();
       setInquiries(nextInquiries);
+      setReplyDrafts(prev => {
+        const nextDrafts = { ...prev };
+
+        nextInquiries.forEach(inquiry => {
+          if (typeof nextDrafts[inquiry.id] !== 'string') {
+            nextDrafts[inquiry.id] = typeof inquiry.admin_reply === 'string' ? inquiry.admin_reply : '';
+          }
+        });
+
+        return nextDrafts;
+      });
     } catch (error) {
       const message = typeof error?.message === 'string' ? error.message : '';
       setStatus({
         type: 'error',
         message: message.includes('permission')
-          ? '관리자 권한이 없거나 Supabase 정책이 아직 배포되지 않았어요.'
+          ? '관리자 권한이 없거나 Supabase 정책이 아직 적용되지 않았어요.'
           : '문의 목록을 불러오지 못했어요.'
       });
     } finally {
@@ -99,35 +102,73 @@ const AdminInquiriesPage = () => {
 
   const filteredInquiries = useMemo(() => {
     return inquiries.filter(inquiry => {
-      const matchesType = typeFilter === 'all' || inquiry.submission_type === typeFilter;
-      const matchesStatus = statusFilter === 'all' || inquiry.status === statusFilter;
-      return matchesType && matchesStatus;
+      return typeFilter === 'all' || inquiry.submission_type === typeFilter;
     });
-  }, [inquiries, statusFilter, typeFilter]);
+  }, [inquiries, typeFilter]);
 
-  const handleStatusChange = async (id, nextStatus) => {
-    setUpdatingId(id);
+  const handleReplyDraftChange = id => event => {
+    const nextValue = event.target.value;
+    setReplyDrafts(prev => ({
+      ...prev,
+      [id]: nextValue
+    }));
+  };
+
+  const handleReplySubmit = async inquiry => {
+    const replyMessage = typeof replyDrafts[inquiry.id] === 'string'
+      ? replyDrafts[inquiry.id].trim()
+      : '';
+
+    if (!replyMessage) {
+      setStatus({
+        type: 'error',
+        message: '답변 내용을 입력해주세요.'
+      });
+      return;
+    }
+
+    if (!inquiry.email) {
+      setStatus({
+        type: 'error',
+        message: '이 문의에는 이메일이 없어 답변 메일을 보낼 수 없어요.'
+      });
+      return;
+    }
+
+    setReplyingId(inquiry.id);
     setStatus(emptyStatus);
 
     try {
-      const updatedInquiry = await updateAdminInquiryStatus(id, nextStatus);
-      setInquiries(prev => prev.map(inquiry => (
-        inquiry.id === id ? updatedInquiry : inquiry
+      const updatedInquiry = await replyAdminInquiry({
+        inquiryId: inquiry.id,
+        replyMessage
+      });
+
+      setInquiries(prev => prev.map(entry => (
+        entry.id === inquiry.id ? updatedInquiry : entry
       )));
+      setReplyDrafts(prev => ({
+        ...prev,
+        [inquiry.id]: updatedInquiry.admin_reply || replyMessage
+      }));
       setStatus({
         type: 'success',
-        message: '문의 상태를 업데이트했어요.'
+        message: '답변을 저장했고, 해당 이메일로 메일도 보냈어요.'
       });
     } catch (error) {
       const message = typeof error?.message === 'string' ? error.message : '';
       setStatus({
         type: 'error',
-        message: message.includes('permission')
-          ? '상태를 변경할 권한이 없어요. 정책 배포 상태를 확인해주세요.'
-          : '문의 상태를 업데이트하지 못했어요.'
+        message: message.includes('missing_recipient_email')
+          ? '문의자의 이메일이 없어 답변 메일을 보낼 수 없어요.'
+          : message.includes('email_send_failed')
+            ? '답변 메일을 보내지 못했어요. 메일 API 설정을 확인해주세요.'
+            : message.includes('permission') || message.includes('forbidden')
+              ? '답변을 보낼 권한이 없어요. 관리자 계정과 함수 배포 상태를 확인해주세요.'
+              : '답변 전송 중 문제가 생겼어요.'
       });
     } finally {
-      setUpdatingId('');
+      setReplyingId('');
     }
   };
 
@@ -137,7 +178,7 @@ const AdminInquiriesPage = () => {
         <div className="admin-inquiries-copy">
           <span className="admin-inquiries-eyebrow">ADMIN</span>
           <h1>QnA &amp; Feedback 관리자</h1>
-          <p>문의와 피드백을 확인하고 처리 상태를 관리하는 전용 페이지입니다.</p>
+          <p>문의와 피드백을 확인하고, 관리자 답변을 바로 이메일로 보낼 수 있어요.</p>
         </div>
 
         {isAuthLoading ? (
@@ -146,7 +187,7 @@ const AdminInquiriesPage = () => {
           </div>
         ) : !authUser ? (
           <div className="admin-inquiries-empty">
-            <p>관리자 페이지를 보려면 먼저 로그인해야 합니다.</p>
+            <p>관리자 페이지를 보려면 먼저 로그인해주세요.</p>
             <div className="admin-inquiries-actions">
               <button
                 type="button"
@@ -162,7 +203,7 @@ const AdminInquiriesPage = () => {
           </div>
         ) : !isAdmin ? (
           <div className="admin-inquiries-empty">
-            <p>현재 로그인한 계정은 관리자 권한이 없습니다.</p>
+            <p>현재 로그인한 계정은 관리자 권한이 없어요.</p>
             <a href={APP_PATH} className="admin-inquiries-secondary-link">
               앱으로 돌아가기
             </a>
@@ -181,24 +222,13 @@ const AdminInquiriesPage = () => {
                 </select>
               </label>
 
-              <label>
-                상태
-                <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
-                  {statusOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
               <button
                 type="button"
                 className="admin-inquiries-refresh-btn"
                 onClick={loadInquiries}
                 disabled={isLoading}
               >
-                {isLoading ? '새로고침 중...' : '새로고침'}
+                {isLoading ? '불러오는 중...' : '새로고침'}
               </button>
             </div>
 
@@ -213,46 +243,86 @@ const AdminInquiriesPage = () => {
             </div>
 
             <div className="admin-inquiries-list">
-              {filteredInquiries.map(inquiry => (
-                <article key={inquiry.id} className="admin-inquiries-card">
-                  <div className="admin-inquiries-card-top">
-                    <div>
-                      <span className={`admin-inquiries-type ${inquiry.submission_type}`}>
-                        {inquiry.submission_type}
-                      </span>
-                      <h2>{inquiry.subject || '(제목 없음)'}</h2>
+              {filteredInquiries.map(inquiry => {
+                const draftReply = typeof replyDrafts[inquiry.id] === 'string'
+                  ? replyDrafts[inquiry.id]
+                  : (inquiry.admin_reply || '');
+                const hasRecipientEmail = typeof inquiry.email === 'string' && inquiry.email.trim();
+                const hasExistingReply = typeof inquiry.admin_reply === 'string' && inquiry.admin_reply.trim();
+
+                return (
+                  <article key={inquiry.id} className="admin-inquiries-card">
+                    <div className="admin-inquiries-card-top">
+                      <div>
+                        <span className={`admin-inquiries-type ${inquiry.submission_type}`}>
+                          {inquiry.submission_type}
+                        </span>
+                        <h2>{inquiry.subject || '(제목 없음)'}</h2>
+                      </div>
+
+                      <div className="admin-inquiries-card-side">
+                        <span className="admin-inquiries-date">{formatDateTime(inquiry.created_at)}</span>
+                        {inquiry.replied_at && (
+                          <span className="admin-inquiries-replied-at">
+                            최근 답변: {formatDateTime(inquiry.replied_at)}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <label className="admin-inquiries-status-field">
-                      상태
-                      <select
-                        value={inquiry.status}
-                        onChange={event => handleStatusChange(inquiry.id, event.target.value)}
-                        disabled={updatingId === inquiry.id}
-                      >
-                        {statusOptions.filter(option => option.value !== 'all').map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.value}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
+                    <div className="admin-inquiries-meta">
+                      <span>이메일: {inquiry.email || '-'}</span>
+                    </div>
 
-                  <div className="admin-inquiries-meta">
-                    <span>이름: {inquiry.name || '-'}</span>
-                    <span>이메일: {inquiry.email || '-'}</span>
-                    <span>접수: {formatDateTime(inquiry.created_at)}</span>
-                    {Number.isFinite(inquiry.score) && <span>만족도: {inquiry.score}</span>}
-                  </div>
+                    <p className="admin-inquiries-message">{inquiry.message}</p>
 
-                  <p className="admin-inquiries-message">{inquiry.message}</p>
-                </article>
-              ))}
+                    {hasExistingReply && (
+                      <div className="admin-inquiries-reply-history">
+                        <strong>현재 저장된 답변</strong>
+                        <p>{inquiry.admin_reply}</p>
+                        {inquiry.replied_by_email && (
+                          <span>답변자: {inquiry.replied_by_email}</span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="admin-inquiries-reply-box">
+                      <label className="admin-inquiries-reply-field">
+                        <span>관리자 답변</span>
+                        <textarea
+                          value={draftReply}
+                          onChange={handleReplyDraftChange(inquiry.id)}
+                          placeholder={hasRecipientEmail ? '문의자에게 보낼 답변을 입력해주세요.' : '이 문의에는 이메일이 없어 답변 메일을 보낼 수 없어요.'}
+                          rows="6"
+                          maxLength="5000"
+                          disabled={replyingId === inquiry.id}
+                        />
+                      </label>
+
+                      <div className="admin-inquiries-reply-actions">
+                        {!hasRecipientEmail && (
+                          <div className="admin-inquiries-inline-note">
+                            이메일이 없는 문의는 메일 발송이 불가능해요.
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          className="admin-inquiries-primary-btn"
+                          onClick={() => handleReplySubmit(inquiry)}
+                          disabled={replyingId === inquiry.id || !hasRecipientEmail || !draftReply.trim()}
+                        >
+                          {replyingId === inquiry.id ? '보내는 중...' : hasExistingReply ? '답변 다시 보내기' : '답변 보내기'}
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
 
               {filteredInquiries.length === 0 && (
                 <div className="admin-inquiries-note">
-                  현재 조건에 맞는 문의가 없습니다.
+                  현재 조건에 맞는 문의가 없어요.
                 </div>
               )}
             </div>

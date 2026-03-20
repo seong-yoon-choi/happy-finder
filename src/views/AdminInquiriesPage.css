@@ -7,7 +7,7 @@
 }
 
 .admin-inquiries-page {
-  width: min(100%, 920px);
+  width: min(100%, 980px);
   padding: 28px 24px;
   display: flex;
   flex-direction: column;
@@ -71,24 +71,23 @@
 }
 
 .admin-inquiries-toolbar {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 200px)) auto;
-  gap: 12px;
+  display: flex;
   align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.admin-inquiries-toolbar label,
-.admin-inquiries-status-field {
+.admin-inquiries-toolbar label {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 180px;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-dark);
 }
 
-.admin-inquiries-toolbar select,
-.admin-inquiries-status-field select {
+.admin-inquiries-toolbar select {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid rgba(255, 142, 139, 0.22);
@@ -98,8 +97,7 @@
   font: inherit;
 }
 
-.dark-theme .admin-inquiries-toolbar select,
-.dark-theme .admin-inquiries-status-field select {
+.dark-theme .admin-inquiries-toolbar select {
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -177,6 +175,16 @@
   font-size: 1.08rem;
 }
 
+.admin-inquiries-card-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 160px;
+  color: var(--text-light);
+  font-size: 0.84rem;
+}
+
 .admin-inquiries-type {
   padding: 6px 10px;
   display: inline-flex;
@@ -208,11 +216,73 @@
   color: var(--text-dark);
 }
 
+.admin-inquiries-reply-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 142, 139, 0.08);
+  color: var(--text-dark);
+}
+
+.admin-inquiries-reply-history p {
+  white-space: pre-wrap;
+}
+
+.admin-inquiries-reply-history span {
+  color: var(--text-light);
+  font-size: 0.86rem;
+}
+
+.admin-inquiries-reply-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-inquiries-reply-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.admin-inquiries-reply-field textarea {
+  width: 100%;
+  min-height: 148px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 142, 139, 0.22);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text-dark);
+  font: inherit;
+  resize: vertical;
+}
+
+.dark-theme .admin-inquiries-reply-field textarea {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-inquiries-reply-field textarea:focus {
+  outline: none;
+  border-color: rgba(255, 142, 139, 0.7);
+  box-shadow: 0 0 0 4px rgba(255, 142, 139, 0.12);
+}
+
+.admin-inquiries-reply-actions,
 .admin-inquiries-actions,
 .admin-inquiries-empty {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.admin-inquiries-inline-note {
+  font-size: 0.88rem;
+  color: var(--text-light);
 }
 
 @media (max-width: 768px) {
@@ -224,11 +294,12 @@
     padding: 24px 18px;
   }
 
-  .admin-inquiries-toolbar {
-    grid-template-columns: 1fr;
-  }
-
   .admin-inquiries-card-top {
     flex-direction: column;
+  }
+
+  .admin-inquiries-card-side {
+    align-items: flex-start;
+    min-width: 0;
   }
 }

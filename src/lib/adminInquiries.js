@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const WEBSITE_INQUIRIES_TABLE = 'website_inquiries';
+const REPLY_WEBSITE_INQUIRY_FUNCTION = 'reply-website-inquiry';
 
 const ensureSupabase = () => {
   if (!isSupabaseConfigured || !supabase) {
@@ -23,19 +24,38 @@ export const listAdminInquiries = async () => {
   return Array.isArray(data) ? data : [];
 };
 
-export const updateAdminInquiryStatus = async (id, status) => {
+export const replyAdminInquiry = async ({ inquiryId, replyMessage }) => {
   ensureSupabase();
 
-  const { data, error } = await supabase
-    .from(WEBSITE_INQUIRIES_TABLE)
-    .update({ status })
-    .eq('id', id)
-    .select('*')
-    .single();
+  const normalizedInquiryId = typeof inquiryId === 'string' ? inquiryId.trim() : '';
+  const normalizedReplyMessage = typeof replyMessage === 'string' ? replyMessage.trim() : '';
+
+  if (!normalizedInquiryId || !normalizedReplyMessage) {
+    throw new Error('INVALID_REPLY');
+  }
+
+  const { data, error } = await supabase.functions.invoke(REPLY_WEBSITE_INQUIRY_FUNCTION, {
+    body: {
+      inquiryId: normalizedInquiryId,
+      replyMessage: normalizedReplyMessage
+    }
+  });
 
   if (error) {
+    if (typeof error?.context?.json === 'function') {
+      const payload = await error.context.json().catch(() => null);
+
+      if (payload?.error) {
+        throw new Error(String(payload.error));
+      }
+    }
+
     throw error;
   }
 
-  return data;
+  if (!data?.inquiry) {
+    throw new Error('INVALID_REPLY_RESPONSE');
+  }
+
+  return data.inquiry;
 };

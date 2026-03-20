@@ -4,6 +4,20 @@ import { ADMIN_INQUIRIES_PATH, APP_PATH, SUPPORT_PATH } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './WebProfilePage.css';
 
+const ChevronIcon = ({ isOpen = false }) => (
+  <span className={`web-profile-chevron ${isOpen ? 'open' : ''}`.trim()} aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" focusable="false">
+      <path
+        d="M5 7.5L10 12.5L15 7.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  </span>
+);
+
 const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
   const {
     authUser,
@@ -16,6 +30,7 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
   } = useHappy();
   const [confirmationEmail, setConfirmationEmail] = useState('');
   const [isDeleteCompleted, setIsDeleteCompleted] = useState(false);
+  const [isDeleteSectionOpen, setIsDeleteSectionOpen] = useState(false);
 
   const normalizedEmail = confirmationEmail.trim().toLowerCase();
   const accountEmail = typeof authUser?.email === 'string' ? authUser.email : '';
@@ -43,6 +58,7 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
 
     if (result?.success) {
       setIsDeleteCompleted(true);
+      setIsDeleteSectionOpen(false);
       setConfirmationEmail('');
     }
   };
@@ -52,8 +68,21 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
 
     if (result?.success) {
       setConfirmationEmail('');
+      setIsDeleteSectionOpen(false);
       onNavigate?.('/');
     }
+  };
+
+  const handleToggleDeleteSection = () => {
+    setIsDeleteSectionOpen(prev => {
+      const next = !prev;
+
+      if (!next) {
+        setConfirmationEmail('');
+      }
+
+      return next;
+    });
   };
 
   return (
@@ -142,53 +171,63 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
                   onClick={handleSignOut}
                   disabled={isAuthBusy}
                 >
-                  {isAuthBusy ? '처리 중..' : '로그아웃'}
+                  {isAuthBusy ? '처리 중...' : '로그아웃'}
                 </button>
               </div>
             </section>
 
             <section className="web-profile-card web-profile-danger">
-              <div className="web-profile-section-head">
-                <div>
-                  <span className="web-profile-badge danger">DELETE</span>
-                  <h2>계정 삭제</h2>
-                </div>
-                <p>현재 이메일을 다시 입력하면 계정 삭제를 진행할 수 있어요.</p>
-              </div>
+              <button
+                type="button"
+                className={`web-profile-danger-toggle ${isDeleteSectionOpen ? 'open' : ''}`}
+                onClick={handleToggleDeleteSection}
+                aria-expanded={isDeleteSectionOpen}
+              >
+                <span>계정 삭제</span>
+                <ChevronIcon isOpen={isDeleteSectionOpen} />
+              </button>
 
-              <div className="web-profile-account-box">
-                <strong>{accountEmail}</strong>
-                <span>삭제 후에는 계정과 저장 기록을 되돌릴 수 없어요.</span>
-              </div>
+              {isDeleteSectionOpen && (
+                <>
+                  <div className="web-profile-section-head">
+                    <p>현재 이메일을 다시 입력하면 계정 삭제를 진행할 수 있어요.</p>
+                  </div>
 
-              <label className="web-profile-field">
-                <span>이메일 확인</span>
-                <input
-                  type="email"
-                  value={confirmationEmail}
-                  onChange={event => setConfirmationEmail(event.target.value)}
-                  placeholder={accountEmail || '이메일 주소'}
-                  autoComplete="email"
-                  disabled={isAuthBusy}
-                />
-              </label>
+                  <div className="web-profile-account-box">
+                    <strong>{accountEmail}</strong>
+                    <span>삭제 후에는 계정과 저장 기록을 되돌릴 수 없어요.</span>
+                  </div>
 
-              {authFeedback.message && (
-                <div className={`web-profile-feedback ${authFeedback.type === 'error' ? 'error' : 'success'}`}>
-                  {authFeedback.message}
-                </div>
+                  <label className="web-profile-field">
+                    <span>이메일 확인</span>
+                    <input
+                      type="email"
+                      value={confirmationEmail}
+                      onChange={event => setConfirmationEmail(event.target.value)}
+                      placeholder={accountEmail || '이메일 주소'}
+                      autoComplete="email"
+                      disabled={isAuthBusy}
+                    />
+                  </label>
+
+                  {authFeedback.message && (
+                    <div className={`web-profile-feedback ${authFeedback.type === 'error' ? 'error' : 'success'}`}>
+                      {authFeedback.message}
+                    </div>
+                  )}
+
+                  <div className="web-profile-actions">
+                    <button
+                      type="button"
+                      className="web-profile-danger-btn"
+                      onClick={handleDeleteAccount}
+                      disabled={isAuthBusy || !isConfirmationMatched}
+                    >
+                      {isAuthBusy ? '처리 중...' : '계정 삭제'}
+                    </button>
+                  </div>
+                </>
               )}
-
-              <div className="web-profile-actions">
-                <button
-                  type="button"
-                  className="web-profile-danger-btn"
-                  onClick={handleDeleteAccount}
-                  disabled={isAuthBusy || !isConfirmationMatched}
-                >
-                  {isAuthBusy ? '처리 중..' : '계정 삭제'}
-                </button>
-              </div>
             </section>
           </>
         )}
