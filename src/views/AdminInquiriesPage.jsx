@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import AuthScreen from '../components/AuthScreen';
 import { listAdminInquiries, replyAdminInquiry } from '../lib/adminInquiries';
 import { isAdminEmail } from '../lib/adminAccess';
-import { PROFILE_PATH } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './AdminInquiriesPage.css';
 
@@ -10,6 +9,8 @@ const emptyStatus = {
   type: 'idle',
   message: ''
 };
+
+const WEB_HOME_PATH = '/';
 
 const typeOptions = [
   { value: 'all', label: '전체 유형' },
@@ -245,7 +246,7 @@ const AdminInquiriesPage = () => {
     <div className="admin-inquiries-route">
       <div className="admin-inquiries-page">
         <div className="admin-inquiries-header">
-          <a href={PROFILE_PATH} className="admin-inquiries-secondary-link">
+          <a href={WEB_HOME_PATH} className="admin-inquiries-secondary-link">
             뒤로 돌아가기
           </a>
         </div>
@@ -271,7 +272,7 @@ const AdminInquiriesPage = () => {
               >
                 로그인하기
               </button>
-              <a href={PROFILE_PATH} className="admin-inquiries-secondary-link">
+              <a href={WEB_HOME_PATH} className="admin-inquiries-secondary-link">
                 웹으로 돌아가기
               </a>
             </div>
@@ -279,7 +280,7 @@ const AdminInquiriesPage = () => {
         ) : !isAdmin ? (
           <div className="admin-inquiries-empty">
             <p>현재 로그인한 계정은 관리자 권한이 없어요.</p>
-            <a href={PROFILE_PATH} className="admin-inquiries-secondary-link">
+            <a href={WEB_HOME_PATH} className="admin-inquiries-secondary-link">
               웹으로 돌아가기
             </a>
           </div>
