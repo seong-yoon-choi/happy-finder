@@ -111,6 +111,7 @@ const AdminInquiriesPage = () => {
   const [status, setStatus] = useState(emptyStatus);
   const [typeFilter, setTypeFilter] = useState('all');
   const [replyingId, setReplyingId] = useState('');
+  const [expandedId, setExpandedId] = useState('');
 
   const isAdmin = isAdminEmail(authUser?.email);
 
@@ -135,6 +136,14 @@ const AdminInquiriesPage = () => {
         });
 
         return nextDrafts;
+      });
+
+      setExpandedId(currentExpandedId => {
+        if (!currentExpandedId) {
+          return '';
+        }
+
+        return nextInquiries.some(inquiry => inquiry.id === currentExpandedId) ? currentExpandedId : '';
       });
     } catch (error) {
       const message = typeof error?.message === 'string' ? error.message : '';
@@ -166,9 +175,7 @@ const AdminInquiriesPage = () => {
   }, [isAdmin]);
 
   const filteredInquiries = useMemo(() => {
-    return inquiries.filter(inquiry => {
-      return typeFilter === 'all' || inquiry.submission_type === typeFilter;
-    });
+    return inquiries.filter(inquiry => typeFilter === 'all' || inquiry.submission_type === typeFilter);
   }, [inquiries, typeFilter]);
 
   const handleReplyDraftChange = id => event => {
@@ -177,6 +184,10 @@ const AdminInquiriesPage = () => {
       ...prev,
       [id]: nextValue
     }));
+  };
+
+  const handleToggleInquiry = inquiryId => {
+    setExpandedId(current => (current === inquiryId ? '' : inquiryId));
   };
 
   const handleReplySubmit = async inquiry => {
@@ -233,10 +244,16 @@ const AdminInquiriesPage = () => {
   return (
     <div className="admin-inquiries-route">
       <div className="admin-inquiries-page">
+        <div className="admin-inquiries-header">
+          <a href={APP_PATH} className="admin-inquiries-secondary-link">
+            뒤로 돌아가기
+          </a>
+        </div>
+
         <div className="admin-inquiries-copy">
           <span className="admin-inquiries-eyebrow">ADMIN</span>
           <h1>QnA &amp; Feedback 관리자</h1>
-          <p>문의와 피드백을 확인하고, 관리자 답변을 바로 이메일로 보낼 수 있어요.</p>
+          <p>제목 목록에서 항목을 열어 문의 내용과 답변을 확인할 수 있어요.</p>
         </div>
 
         {isAuthLoading ? (
@@ -307,73 +324,87 @@ const AdminInquiriesPage = () => {
                   : (inquiry.admin_reply || '');
                 const hasRecipientEmail = typeof inquiry.email === 'string' && inquiry.email.trim();
                 const hasExistingReply = typeof inquiry.admin_reply === 'string' && inquiry.admin_reply.trim();
+                const isExpanded = expandedId === inquiry.id;
 
                 return (
-                  <article key={inquiry.id} className="admin-inquiries-card">
-                    <div className="admin-inquiries-card-top">
-                      <div>
+                  <article
+                    key={inquiry.id}
+                    className={`admin-inquiries-card ${isExpanded ? 'expanded' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className="admin-inquiries-card-toggle"
+                      onClick={() => handleToggleInquiry(inquiry.id)}
+                      aria-expanded={isExpanded}
+                    >
+                      <div className="admin-inquiries-card-toggle-main">
                         <span className={`admin-inquiries-type ${inquiry.submission_type}`}>
                           {inquiry.submission_type}
                         </span>
                         <h2>{inquiry.subject || '(제목 없음)'}</h2>
                       </div>
 
-                      <div className="admin-inquiries-card-side">
+                      <div className="admin-inquiries-card-toggle-side">
                         <span className="admin-inquiries-date">{formatDateTime(inquiry.created_at)}</span>
-                        {inquiry.replied_at && (
-                          <span className="admin-inquiries-replied-at">
-                            최근 답변: {formatDateTime(inquiry.replied_at)}
-                          </span>
-                        )}
+                        <span className={`admin-inquiries-chevron ${isExpanded ? 'expanded' : ''}`}>
+                          ▾
+                        </span>
                       </div>
-                    </div>
+                    </button>
 
-                    <div className="admin-inquiries-meta">
-                      <span>이메일: {inquiry.email || '-'}</span>
-                    </div>
+                    {isExpanded && (
+                      <div className="admin-inquiries-card-content">
+                        <div className="admin-inquiries-meta">
+                          <span>이메일: {inquiry.email || '-'}</span>
+                        </div>
 
-                    <p className="admin-inquiries-message">{inquiry.message}</p>
+                        <p className="admin-inquiries-message">{inquiry.message}</p>
 
-                    {hasExistingReply && (
-                      <div className="admin-inquiries-reply-history">
-                        <strong>현재 저장된 답변</strong>
-                        <p>{inquiry.admin_reply}</p>
-                        {inquiry.replied_by_email && (
-                          <span>답변자: {inquiry.replied_by_email}</span>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="admin-inquiries-reply-box">
-                      <label className="admin-inquiries-reply-field">
-                        <span>관리자 답변</span>
-                        <textarea
-                          value={draftReply}
-                          onChange={handleReplyDraftChange(inquiry.id)}
-                          placeholder={hasRecipientEmail ? '문의자에게 보낼 답변을 입력해주세요.' : '이 문의에는 이메일이 없어 답변 메일을 보낼 수 없어요.'}
-                          rows="6"
-                          maxLength="5000"
-                          disabled={replyingId === inquiry.id}
-                        />
-                      </label>
-
-                      <div className="admin-inquiries-reply-actions">
-                        {!hasRecipientEmail && (
-                          <div className="admin-inquiries-inline-note">
-                            이메일이 없는 문의는 메일 발송이 불가능해요.
+                        {hasExistingReply && (
+                          <div className="admin-inquiries-reply-history">
+                            <strong>현재 저장된 답변</strong>
+                            <p>{inquiry.admin_reply}</p>
+                            {inquiry.replied_by_email && (
+                              <span>답변자: {inquiry.replied_by_email}</span>
+                            )}
+                            {inquiry.replied_at && (
+                              <span>최근 답변: {formatDateTime(inquiry.replied_at)}</span>
+                            )}
                           </div>
                         )}
 
-                        <button
-                          type="button"
-                          className="admin-inquiries-primary-btn"
-                          onClick={() => handleReplySubmit(inquiry)}
-                          disabled={replyingId === inquiry.id || !hasRecipientEmail || !draftReply.trim()}
-                        >
-                          {replyingId === inquiry.id ? '보내는 중...' : hasExistingReply ? '답변 다시 보내기' : '답변 보내기'}
-                        </button>
+                        <div className="admin-inquiries-reply-box">
+                          <label className="admin-inquiries-reply-field">
+                            <span>관리자 답변</span>
+                            <textarea
+                              value={draftReply}
+                              onChange={handleReplyDraftChange(inquiry.id)}
+                              placeholder={hasRecipientEmail ? '문의자에게 보낼 답변을 입력해주세요.' : '이 문의에는 이메일이 없어 답변 메일을 보낼 수 없어요.'}
+                              rows="6"
+                              maxLength="5000"
+                              disabled={replyingId === inquiry.id}
+                            />
+                          </label>
+
+                          <div className="admin-inquiries-reply-actions">
+                            {!hasRecipientEmail && (
+                              <div className="admin-inquiries-inline-note">
+                                이메일이 없는 문의는 메일 발송이 불가능해요.
+                              </div>
+                            )}
+
+                            <button
+                              type="button"
+                              className="admin-inquiries-primary-btn"
+                              onClick={() => handleReplySubmit(inquiry)}
+                              disabled={replyingId === inquiry.id || !hasRecipientEmail || !draftReply.trim()}
+                            >
+                              {replyingId === inquiry.id ? '보내는 중...' : hasExistingReply ? '답변 다시 보내기' : '답변 보내기'}
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </article>
                 );
               })}

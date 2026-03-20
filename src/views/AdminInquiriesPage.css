@@ -24,6 +24,11 @@
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
 }
 
+.admin-inquiries-header {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .admin-inquiries-copy {
   display: flex;
   flex-direction: column;
@@ -151,31 +156,64 @@
 }
 
 .admin-inquiries-card {
-  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
   border: 1px solid rgba(255, 142, 139, 0.18);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.7);
+  overflow: hidden;
 }
 
 .dark-theme .admin-inquiries-card {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.admin-inquiries-card-top {
+.admin-inquiries-card.expanded {
+  border-color: rgba(255, 142, 139, 0.34);
+  box-shadow: 0 12px 28px rgba(255, 142, 139, 0.12);
+}
+
+.admin-inquiries-card-toggle {
+  width: 100%;
+  padding: 18px;
   display: flex;
   justify-content: space-between;
   gap: 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
-.admin-inquiries-card-top h2 {
-  margin-top: 8px;
+.admin-inquiries-card-toggle-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-inquiries-card-toggle-main h2 {
   font-size: 1.08rem;
+  color: var(--text-dark);
 }
 
-.admin-inquiries-card-side {
+.admin-inquiries-card-toggle-side {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: fit-content;
+}
+
+.admin-inquiries-card-content {
+  padding: 0 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-top: 1px solid rgba(255, 142, 139, 0.12);
+}
+
+.admin-inquiries-card-side,
+.admin-inquiries-card-toggle-side {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -183,6 +221,19 @@
   min-width: 160px;
   color: var(--text-light);
   font-size: 0.84rem;
+}
+
+.admin-inquiries-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 1rem;
+  transition: transform 180ms ease;
+}
+
+.admin-inquiries-chevron.expanded {
+  transform: rotate(180deg);
 }
 
 .admin-inquiries-type {
@@ -298,7 +349,12 @@
     flex-direction: column;
   }
 
-  .admin-inquiries-card-side {
+  .admin-inquiries-card-toggle {
+    flex-direction: column;
+  }
+
+  .admin-inquiries-card-side,
+  .admin-inquiries-card-toggle-side {
     align-items: flex-start;
     min-width: 0;
   }
