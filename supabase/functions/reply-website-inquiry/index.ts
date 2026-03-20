@@ -1,3 +1,4 @@
+import nodemailer from 'npm:nodemailer@7';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -9,6 +10,9 @@ const WEBSITE_INQUIRIES_TABLE = 'website_inquiries';
 const DEFAULT_ADMIN_EMAILS = ['sychoi04180605@gmail.com'];
 const DEFAULT_EMAIL_SEND_ERROR = 'email_send_failed';
 const DEFAULT_RESEND_FROM = 'Happy Finder <onboarding@resend.dev>';
+const DEFAULT_SMTP_HOST = 'smtp.resend.com';
+const DEFAULT_SMTP_PORT = 465;
+const DEFAULT_SMTP_USERNAME = 'resend';
 
 const jsonResponse = (status: number, payload: Record<string, unknown>) => {
   return new Response(JSON.stringify(payload), {
@@ -55,6 +59,52 @@ const extractEmailAddress = (value: string) => {
   return value.trim();
 };
 
+const parsePort = (value: string | undefined, fallback: number) => {
+  const parsed = Number.parseInt(String(value || ''), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const parseBoolean = (value: string | undefined, fallback: boolean) => {
+  const normalized = normalizeText(value).toLowerCase();
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) {
+    return true;
+  }
+
+  if (['false', '0', 'no', 'n', 'off'].includes(normalized)) {
+    return false;
+  }
+
+  return fallback;
+};
+
+const formatSmtpError = (error: unknown) => {
+  if (!(error instanceof Error)) {
+    return DEFAULT_EMAIL_SEND_ERROR;
+  }
+
+  const smtpError = error as Error & {
+    code?: string,
+    response?: string,
+    responseCode?: number,
+    command?: string
+  };
+
+  const details = [
+    smtpError.code,
+    typeof smtpError.responseCode === 'number' ? String(smtpError.responseCode) : '',
+    smtpError.command,
+    smtpError.response,
+    smtpError.message
+  ].filter(Boolean);
+
+  return details.join(' | ') || DEFAULT_EMAIL_SEND_ERROR;
+};
+
 const createEmailHtml = ({
   replyMessage,
   inquirySubject,
@@ -88,7 +138,11 @@ const createEmailHtml = ({
 };
 
 const sendReplyEmail = async ({
-  apiKey,
+  host,
+  port,
+  secure,
+  username,
+  password,
   from,
   replyTo,
   to,
@@ -96,7 +150,11 @@ const sendReplyEmail = async ({
   html,
   text
 }: {
-  apiKey: string,
+  host: string,
+  port: number,
+  secure: boolean,
+  username: string,
+  password: string,
   from: string,
   replyTo: string,
   to: string,
@@ -104,33 +162,33 @@ const sendReplyEmail = async ({
   html: string,
   text: string
 }) => {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user: username,
+      pass: password
+    }
+  });
+
+  try {
+    const info = await transporter.sendMail({
       from,
-      to: [to],
-      reply_to: replyTo ? [replyTo] : undefined,
+      to,
+      replyTo: replyTo || undefined,
       subject,
       html,
       text
-    })
-  });
+    });
 
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    console.error('reply-website-inquiry email failed', payload);
-    const payloadMessage = typeof payload?.message === 'string'
-      ? payload.message
-      : (typeof payload?.error === 'string' ? payload.error : '');
-    throw new Error(payloadMessage || DEFAULT_EMAIL_SEND_ERROR);
+    return typeof info?.messageId === 'string' ? info.messageId : null;
+  } catch (error) {
+    console.error('reply-website-inquiry smtp failed', error);
+    throw new Error(formatSmtpError(error));
+  } finally {
+    transporter.close();
   }
-
-  return typeof payload?.id === 'string' ? payload.id : null;
 };
 
 Deno.serve(async req => {
@@ -141,7 +199,15 @@ Deno.serve(async req => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  const smtpHost = Deno.env.get('SMTP_HOST') || DEFAULT_SMTP_HOST;
+  const smtpPort = parsePort(Deno.env.get('SMTP_PORT'), DEFAULT_SMTP_PORT);
+  const smtpSecure = parseBoolean(Deno.env.get('SMTP_SECURE'), smtpPort === 465);
+  const smtpUsername = Deno.env.get('SMTP_USERNAME')
+    || Deno.env.get('SMTP_USER')
+    || DEFAULT_SMTP_USERNAME;
+  const smtpPassword = Deno.env.get('SMTP_PASSWORD')
+    || Deno.env.get('SMTP_PASS')
+    || Deno.env.get('RESEND_API_KEY');
   const supportEmailFrom = Deno.env.get('SUPPORT_EMAIL_FROM')
     || Deno.env.get('RESEND_FROM_EMAIL')
     || Deno.env.get('RESEND_FROM')
@@ -154,7 +220,7 @@ Deno.serve(async req => {
     || ''
   );
 
-  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !resendApiKey) {
+  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !smtpPassword) {
     return jsonResponse(500, { error: 'server_not_configured' });
   }
 
@@ -253,7 +319,11 @@ Deno.serve(async req => {
 
   try {
     replyEmailId = await sendReplyEmail({
-      apiKey: resendApiKey,
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
+      username: smtpUsername,
+      password: smtpPassword,
       from: supportEmailFrom,
       replyTo: supportReplyTo,
       to: inquiryEmail,

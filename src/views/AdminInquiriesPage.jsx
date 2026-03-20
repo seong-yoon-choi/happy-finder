@@ -17,7 +17,7 @@ const typeOptions = [
   { value: 'feedback', label: 'Feedback' }
 ];
 
-const formatDateTime = (value) => {
+const formatDateTime = value => {
   if (!value) {
     return '-';
   }
@@ -153,33 +153,33 @@ const AdminInquiriesPage = () => {
       }));
       setStatus({
         type: 'success',
-        message: '답변을 저장했고, 해당 이메일로 메일도 보냈어요.'
+        message: '답변을 저장했고 해당 이메일로 메일을 보냈어요.'
       });
     } catch (error) {
       const message = typeof error?.message === 'string' ? error.message : '';
       setStatus({
         type: 'error',
         message: message.includes('server_not_configured')
-          ? '메일 발송 함수 설정이 비어 있어요. .env.local이 아니라 Supabase secrets에 RESEND_API_KEY를 넣어주세요.'
+          ? '메일 발송 설정이 비어 있어요. Supabase secrets에 SMTP_PASSWORD 또는 RESEND_API_KEY를 넣어주세요.'
           : message.includes('Requested function was not found') || message.includes('NOT_FOUND')
-            ? 'reply-website-inquiry 함수가 프로덕션 Supabase에 아직 배포되지 않았어요. Edge Function을 deploy 해주세요.'
-          : message.includes('reply_save_failed')
-            ? '답변 저장용 컬럼이 없거나 DB 저장에 실패했어요. website_inquiries_replies.sql 적용 여부를 확인해주세요.'
-            : message.includes('inquiry_not_found')
-              ? '해당 문의를 다시 찾지 못했어요. 새로고침 후 다시 시도해주세요.'
-              : message.includes('email_send_failed')
-                ? '메일 발송 서비스에서 오류가 났어요. Resend 설정을 확인해주세요.'
-                : message.includes('verify a domain')
-                  ? '커스텀 발신 주소를 쓰려면 Resend에서 도메인 검증이 필요해요. 없으면 기본 onboarding 발신 주소로만 테스트하세요.'
-                  : message.includes('You can only send testing emails')
-                    ? '기본 onboarding 발신 주소는 테스트 수신 조건이 있어요. 운영용으로는 Resend 검증 도메인 발신 주소를 설정해주세요.'
-                    : message.includes('missing_recipient_email')
-                      ? '문의자의 이메일이 없어 답변 메일을 보낼 수 없어요.'
-                      : message.includes('permission') || message.includes('forbidden')
-                        ? '답변을 보낼 권한이 없어요. 관리자 계정과 함수 배포 상태를 확인해주세요.'
-                        : message.includes('edge function returned a non-2xx')
-                          ? '답변 함수가 실패했어요. Supabase 함수 로그와 secrets를 확인해주세요.'
-                          : '답변 전송 중 문제가 생겼어요.'
+            ? 'reply-website-inquiry 함수가 프로덕션 Supabase에 아직 배포되지 않았어요.'
+            : message.includes('reply_save_failed')
+              ? '답변 저장은 실패했어요. website_inquiries_replies.sql 적용과 DB 권한을 확인해주세요.'
+              : message.includes('inquiry_not_found')
+                ? '해당 문의를 다시 찾지 못했어요. 새로고침 후 다시 시도해주세요.'
+                : message.includes('EAUTH') || message.includes('535') || message.includes('Invalid login') || message.includes('authentication')
+                  ? 'SMTP 로그인에 실패했어요. SMTP 사용자명과 비밀번호를 확인해주세요.'
+                  : message.includes('ECONNECTION') || message.includes('ETIMEDOUT') || message.includes('ESOCKET')
+                    ? 'SMTP 서버 연결에 실패했어요. SMTP_HOST, SMTP_PORT, SMTP_SECURE 설정을 확인해주세요.'
+                    : message.includes('550') || message.includes('553') || message.includes('554')
+                      ? '발신 주소가 SMTP 서버에서 거부됐어요. SUPPORT_EMAIL_FROM과 발신 도메인 설정을 확인해주세요.'
+                      : message.includes('missing_recipient_email')
+                        ? '문의자 이메일이 없어 답변 메일을 보낼 수 없어요.'
+                        : message.includes('permission') || message.includes('forbidden')
+                          ? '답변을 보낼 권한이 없어요. 관리자 계정인지 확인해주세요.'
+                          : message.includes('edge function returned a non-2xx')
+                            ? '답변 함수가 실패했어요. Supabase function logs와 SMTP secrets를 확인해주세요.'
+                            : '답변 전송 중 문제가 생겼어요.'
       });
     } finally {
       setReplyingId('');
