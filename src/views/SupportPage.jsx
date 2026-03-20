@@ -51,7 +51,7 @@ const getSubmissionErrorMessage = (error, fallbackMessage) => {
   return fallbackMessage;
 };
 
-const SupportPage = ({ onNavigate, onOpenAuth, pathname }) => {
+const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthenticated = false }) => {
   const [qnaForm, setQnaForm] = useState(initialQnaForm);
   const [feedbackForm, setFeedbackForm] = useState(initialFeedbackForm);
   const [qnaStatus, setQnaStatus] = useState(emptyStatus);
@@ -60,6 +60,8 @@ const SupportPage = ({ onNavigate, onOpenAuth, pathname }) => {
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const activeTab = isFeedbackPath(pathname) ? 'feedback' : 'qna';
   const isFeedbackTab = activeTab === 'feedback';
+  const handleAccountAction = isAuthenticated ? onOpenProfile : onOpenAuth;
+  const accountActionLabel = isAuthenticated ? '프로필' : '로그인';
 
   const handleNavigate = nextPath => () => onNavigate?.(nextPath);
 
@@ -154,8 +156,12 @@ const SupportPage = ({ onNavigate, onOpenAuth, pathname }) => {
             <button type="button" className="support-nav-link-btn" onClick={handleNavigate(SUPPORT_PATH)}>
               QnA &amp; Feedback
             </button>
-            <button type="button" className="support-nav-link-btn" onClick={onOpenAuth}>
-              로그인
+            <button
+              type="button"
+              className={`support-nav-link-btn ${isAuthenticated ? 'is-authenticated' : ''}`}
+              onClick={handleAccountAction}
+            >
+              {accountActionLabel}
             </button>
             <button type="button" className="support-app-button" onClick={handleNavigate(APP_PATH)}>
               앱 열기

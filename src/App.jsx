@@ -13,8 +13,10 @@ import AdminInquiriesPage from './views/AdminInquiriesPage';
 import AccountDeletePage from './views/AccountDeletePage';
 import PasswordResetPage from './views/PasswordResetPage';
 import SupportPage from './views/SupportPage';
+import WebProfilePage from './views/WebProfilePage';
 import {
   APP_PATH,
+  PROFILE_PATH,
   isAdminInquiriesPath,
   clearRequestedAuthModeInUrl,
   getRequestedAuthModeFromUrl,
@@ -22,6 +24,7 @@ import {
   isAppPath,
   isPasswordResetPath,
   isFeedbackPath,
+  isProfilePath,
   isQnaPath,
   isSupportPath,
   normalizePath
@@ -203,9 +206,11 @@ function PublicSiteContent({ pathname, onNavigate }) {
   const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(false);
   const [authScreenMode, setAuthScreenMode] = useState('login');
   const { authUser, isPasswordRecovery } = useHappy();
+  const isAuthenticated = Boolean(authUser);
 
+  const isProfileRoute = isProfilePath(pathname);
   const isSupportRoute = isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname);
-  const isAuthScreenOpen = isPasswordRecovery || (isAuthScreenRequested && !authUser);
+  const isAuthScreenOpen = isPasswordRecovery || (isAuthScreenRequested && !isAuthenticated);
 
   useEffect(() => {
     const requestedMode = getRequestedAuthModeFromUrl();
@@ -240,17 +245,26 @@ function PublicSiteContent({ pathname, onNavigate }) {
 
   return (
     <>
-      {isSupportRoute ? (
+      {isProfileRoute ? (
+        <WebProfilePage
+          onNavigate={onNavigate}
+          onOpenAuth={() => openAuthScreen('login')}
+        />
+      ) : isSupportRoute ? (
         <SupportPage
           pathname={pathname}
           onNavigate={onNavigate}
           onOpenAuth={() => openAuthScreen('login')}
+          onOpenProfile={() => onNavigate(PROFILE_PATH)}
+          isAuthenticated={isAuthenticated}
         />
       ) : (
         <LandingPage
           onOpenApp={() => onNavigate(APP_PATH)}
           onOpenAuth={() => openAuthScreen('login')}
+          onOpenProfile={() => onNavigate(PROFILE_PATH)}
           onNavigate={onNavigate}
+          isAuthenticated={isAuthenticated}
         />
       )}
 
@@ -304,7 +318,7 @@ function App() {
     };
   }, []);
 
-  if (isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname)) {
+  if (isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname) || isProfilePath(pathname)) {
     return (
       <HappyProvider>
         <PublicSiteContent

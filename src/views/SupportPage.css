@@ -108,6 +108,14 @@
     box-shadow: var(--glass-shadow);
 }
 
+.support-nav-link-btn.is-authenticated {
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(255, 142, 139, 0.18);
+    color: var(--primary-color);
+    box-shadow: 0 10px 24px rgba(255, 142, 139, 0.12);
+}
+
 .support-app-button {
     border: none;
     cursor: pointer;

@@ -20,8 +20,10 @@ const quickFacts = [
   }
 ];
 
-const LandingPage = ({ onOpenApp, onOpenAuth, onNavigate }) => {
+const LandingPage = ({ onOpenApp, onOpenAuth, onOpenProfile, onNavigate, isAuthenticated = false }) => {
   const navigateToPath = nextPath => () => onNavigate?.(nextPath);
+  const handleAccountAction = isAuthenticated ? onOpenProfile : onOpenAuth;
+  const accountActionLabel = isAuthenticated ? '프로필' : '로그인';
 
   return (
     <div className="landing-page">
@@ -34,7 +36,13 @@ const LandingPage = ({ onOpenApp, onOpenAuth, onNavigate }) => {
 
             <div className="landing-nav-links">
               <button type="button" className="landing-nav-link-btn" onClick={navigateToPath(SUPPORT_PATH)}>QnA &amp; Feedback</button>
-              <button type="button" className="landing-nav-link-btn" onClick={onOpenAuth}>로그인</button>
+              <button
+                type="button"
+                className={`landing-nav-link-btn ${isAuthenticated ? 'is-authenticated' : ''}`}
+                onClick={handleAccountAction}
+              >
+                {accountActionLabel}
+              </button>
               <button type="button" className="landing-app-button" onClick={onOpenApp}>
                 앱 열기
               </button>
@@ -65,8 +73,12 @@ const LandingPage = ({ onOpenApp, onOpenAuth, onNavigate }) => {
                 <button type="button" className="landing-primary-cta" onClick={onOpenApp}>
                   지금 앱 열기
                 </button>
-                <button type="button" className="landing-secondary-cta" onClick={onOpenAuth}>
-                  로그인
+                <button
+                  type="button"
+                  className={`landing-secondary-cta ${isAuthenticated ? 'is-authenticated' : ''}`}
+                  onClick={handleAccountAction}
+                >
+                  {accountActionLabel}
                 </button>
               </div>
             </div>

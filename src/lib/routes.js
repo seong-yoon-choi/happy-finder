@@ -1,4 +1,5 @@
 export const APP_PATH = '/app';
+export const PROFILE_PATH = '/profile';
 export const PASSWORD_RESET_PATH = '/password-reset';
 export const ACCOUNT_DELETE_PATH = '/account-delete';
 export const ADMIN_INQUIRIES_PATH = '/admin/inquiries';
@@ -16,6 +17,7 @@ export const normalizePath = (value) => {
 };
 
 export const isAppPath = (value) => normalizePath(value) === APP_PATH;
+export const isProfilePath = (value) => normalizePath(value) === PROFILE_PATH;
 export const isPasswordResetPath = (value) => normalizePath(value) === PASSWORD_RESET_PATH;
 export const isAccountDeletePath = (value) => normalizePath(value) === ACCOUNT_DELETE_PATH;
 export const isAdminInquiriesPath = (value) => normalizePath(value) === ADMIN_INQUIRIES_PATH;
@@ -47,7 +49,13 @@ export const getAppRedirectUrl = () => {
     return undefined;
   }
 
+  const normalizedCurrentPath = normalizePath(window.location.pathname);
+  const isHttpOrigin = window.location.origin.startsWith('http');
   const overrideRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL;
+
+  if (isHttpOrigin) {
+    return `${window.location.origin}${normalizedCurrentPath}`;
+  }
 
   if (typeof overrideRedirectUrl === 'string' && overrideRedirectUrl.trim()) {
     return overrideRedirectUrl.trim();
