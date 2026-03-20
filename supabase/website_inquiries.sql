@@ -18,6 +18,12 @@ create index if not exists website_inquiries_created_at_idx
 create index if not exists website_inquiries_submission_type_idx
   on public.website_inquiries (submission_type);
 
+alter table public.website_inquiries
+  add column if not exists admin_reply text,
+  add column if not exists replied_at timestamptz,
+  add column if not exists replied_by_email text,
+  add column if not exists reply_email_id text;
+
 alter table public.website_inquiries enable row level security;
 
 drop policy if exists "Anyone can submit website inquiries" on public.website_inquiries;
@@ -25,4 +31,18 @@ create policy "Anyone can submit website inquiries"
 on public.website_inquiries
 for insert
 to anon, authenticated
-with check (true);
+with check (
+  submission_type in ('qna', 'feedback')
+  and char_length(trim(message)) between 1 and 3000
+  and (name is null or char_length(trim(name)) between 1 and 120)
+  and (email is null or email ~* '^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$')
+  and (subject is null or char_length(trim(subject)) between 1 and 200)
+  and score is null
+  and status = 'received'
+  and (page_path is null or char_length(page_path) <= 500)
+  and (user_agent is null or char_length(user_agent) <= 1000)
+  and admin_reply is null
+  and replied_at is null
+  and replied_by_email is null
+  and reply_email_id is null
+);

@@ -8,6 +8,7 @@ const corsHeaders = {
 const WEBSITE_INQUIRIES_TABLE = 'website_inquiries';
 const DEFAULT_ADMIN_EMAILS = ['sychoi04180605@gmail.com'];
 const DEFAULT_EMAIL_SEND_ERROR = 'email_send_failed';
+const DEFAULT_RESEND_FROM = 'Happy Finder <onboarding@resend.dev>';
 
 const jsonResponse = (status: number, payload: Record<string, unknown>) => {
   return new Response(JSON.stringify(payload), {
@@ -141,15 +142,19 @@ Deno.serve(async req => {
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
-  const supportEmailFrom = Deno.env.get('SUPPORT_EMAIL_FROM') || Deno.env.get('RESEND_FROM_EMAIL') || Deno.env.get('RESEND_FROM');
+  const supportEmailFrom = Deno.env.get('SUPPORT_EMAIL_FROM')
+    || Deno.env.get('RESEND_FROM_EMAIL')
+    || Deno.env.get('RESEND_FROM')
+    || DEFAULT_RESEND_FROM;
   const supportReplyTo = extractEmailAddress(
     Deno.env.get('SUPPORT_REPLY_TO')
     || Deno.env.get('RESEND_REPLY_TO')
+    || Deno.env.get('SUPPORT_CONTACT_EMAIL')
     || supportEmailFrom
     || ''
   );
 
-  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !resendApiKey || !supportEmailFrom) {
+  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !resendApiKey) {
     return jsonResponse(500, { error: 'server_not_configured' });
   }
 

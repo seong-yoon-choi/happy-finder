@@ -160,7 +160,7 @@ const AdminInquiriesPage = () => {
       setStatus({
         type: 'error',
         message: message.includes('server_not_configured')
-          ? '메일 발송 함수 설정이 비어 있어요. RESEND_API_KEY와 SUPPORT_EMAIL_FROM을 Supabase secrets에 넣어주세요.'
+          ? '메일 발송 함수 설정이 비어 있어요. .env.local이 아니라 Supabase secrets에 RESEND_API_KEY를 넣어주세요.'
           : message.includes('Requested function was not found') || message.includes('NOT_FOUND')
             ? 'reply-website-inquiry 함수가 프로덕션 Supabase에 아직 배포되지 않았어요. Edge Function을 deploy 해주세요.'
           : message.includes('reply_save_failed')
@@ -170,9 +170,9 @@ const AdminInquiriesPage = () => {
               : message.includes('email_send_failed')
                 ? '메일 발송 서비스에서 오류가 났어요. Resend 설정을 확인해주세요.'
                 : message.includes('verify a domain')
-                  ? '발신 이메일 도메인이 아직 Resend에서 검증되지 않았어요. verified domain 주소를 SUPPORT_EMAIL_FROM으로 설정해주세요.'
+                  ? '커스텀 발신 주소를 쓰려면 Resend에서 도메인 검증이 필요해요. 없으면 기본 onboarding 발신 주소로만 테스트하세요.'
                   : message.includes('You can only send testing emails')
-                    ? 'Resend 테스트 발신 주소는 검증된 수신자에게만 보낼 수 있어요. 운영용 발신 도메인으로 바꿔주세요.'
+                    ? '기본 onboarding 발신 주소는 테스트 수신 조건이 있어요. 운영용으로는 Resend 검증 도메인 발신 주소를 설정해주세요.'
                     : message.includes('missing_recipient_email')
                       ? '문의자의 이메일이 없어 답변 메일을 보낼 수 없어요.'
                       : message.includes('permission') || message.includes('forbidden')
