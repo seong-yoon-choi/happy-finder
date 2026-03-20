@@ -9,6 +9,40 @@ const ensureSupabase = () => {
   }
 };
 
+const getAuthHeaders = async () => {
+  ensureSupabase();
+
+  let { data, error } = await supabase.auth.getSession();
+
+  if (error) {
+    throw error;
+  }
+
+  let session = data?.session ?? null;
+
+  if (!session?.access_token) {
+    const refreshResult = await supabase.auth.refreshSession();
+
+    if (refreshResult.error) {
+      throw refreshResult.error;
+    }
+
+    session = refreshResult.data?.session ?? null;
+  }
+
+  const accessToken = typeof session?.access_token === 'string'
+    ? session.access_token.trim()
+    : '';
+
+  if (!accessToken) {
+    throw new Error('AUTH_SESSION_MISSING');
+  }
+
+  return {
+    Authorization: `Bearer ${accessToken}`
+  };
+};
+
 export const listAdminInquiries = async () => {
   ensureSupabase();
 
@@ -34,11 +68,14 @@ export const replyAdminInquiry = async ({ inquiryId, replyMessage }) => {
     throw new Error('INVALID_REPLY');
   }
 
+  const headers = await getAuthHeaders();
+
   const { data, error } = await supabase.functions.invoke(REPLY_WEBSITE_INQUIRY_FUNCTION, {
     body: {
       inquiryId: normalizedInquiryId,
       replyMessage: normalizedReplyMessage
-    }
+    },
+    headers
   });
 
   if (error) {
