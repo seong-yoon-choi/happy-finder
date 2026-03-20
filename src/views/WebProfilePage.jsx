@@ -88,10 +88,20 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
   return (
     <div className="web-profile-route">
       <div className="web-profile-page">
-        <div className="web-profile-copy">
-          <span className="web-profile-eyebrow">PROFILE</span>
-          <h1>웹 프로필</h1>
-          <p>공개 웹에서 계정 상태를 확인하고, 필요한 계정 작업을 진행할 수 있어요.</p>
+        <div className="web-profile-header">
+          <div className="web-profile-copy">
+            <span className="web-profile-eyebrow">PROFILE</span>
+            <h1>웹 프로필</h1>
+            <p>공개 웹에서 계정 상태를 확인하고, 필요한 계정 작업을 진행할 수 있어요.</p>
+          </div>
+
+          <button
+            type="button"
+            className="web-profile-secondary-btn web-profile-back-btn"
+            onClick={() => onNavigate?.('/')}
+          >
+            뒤로가기
+          </button>
         </div>
 
         {isAuthLoading ? (
