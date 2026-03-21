@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { submitWebsiteIntake } from '../lib/websiteIntake';
-import { APP_PATH, FEEDBACK_PATH, QNA_PATH, SUPPORT_PATH, isFeedbackPath } from '../lib/routes';
+import { ACCOUNT_DELETE_PATH, APP_PATH, FEEDBACK_PATH, QNA_PATH, SUPPORT_PATH, isFeedbackPath } from '../lib/routes';
 import './SupportPage.css';
 
 const emptyStatus = {
@@ -322,6 +322,15 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
             </section>
           )}
         </main>
+
+        <footer className="support-footer">
+          <a href="/terms/index.html">이용약관</a>
+          <a href="/privacy/index.html">개인정보처리방침</a>
+          <a href="/marketing/index.html">마케팅 수신 동의</a>
+          <button type="button" className="support-footer-link-btn" onClick={handleNavigate(ACCOUNT_DELETE_PATH)}>
+            계정 삭제
+          </button>
+        </footer>
       </div>
     </div>
   );

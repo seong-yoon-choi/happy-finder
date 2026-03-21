@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Happy Finder</string>
     <string name="title_activity_main">Happy Finder</string>
-    <string name="package_name">net.happayfinder.app</string>
-    <string name="custom_url_scheme">net.happayfinder.app</string>
+    <string name="package_name">net.happyfinder.app</string>
+    <string name="custom_url_scheme">happyfinder</string>
 </resources>

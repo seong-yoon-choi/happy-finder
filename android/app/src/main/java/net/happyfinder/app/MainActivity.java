@@ -1,4 +1,4 @@
-package net.happayfinder.app;
+package net.happyfinder.app;
 
 import com.getcapacitor.BridgeActivity;
 

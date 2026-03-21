@@ -1,5 +1,5 @@
 import React from 'react';
-import { SUPPORT_PATH } from '../lib/routes';
+import { ACCOUNT_DELETE_PATH, SUPPORT_PATH } from '../lib/routes';
 import './LandingPage.css';
 
 const quickFacts = [
@@ -111,6 +111,9 @@ const LandingPage = ({ onOpenApp, onOpenAuth, onOpenProfile, onNavigate, isAuthe
             <a href="/terms/index.html">이용약관</a>
             <a href="/privacy/index.html">개인정보처리방침</a>
             <a href="/marketing/index.html">마케팅 수신 동의</a>
+            <button type="button" className="landing-footer-link-btn" onClick={navigateToPath(ACCOUNT_DELETE_PATH)}>
+              계정 삭제
+            </button>
           </div>
         </footer>
       </div>

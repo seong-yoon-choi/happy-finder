@@ -25,7 +25,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="happayfinder" android:host="auth" android:pathPrefix="/reset" />
+                <data android:scheme="happyfinder" android:host="auth" android:pathPrefix="/reset" />
             </intent-filter>
         </activity>
 
