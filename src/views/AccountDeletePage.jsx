@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import AuthScreen from '../components/AuthScreen';
 import { useHappy } from '../store/HappyContext';
-import { APP_PATH } from '../lib/routes';
 import './AccountDeletePage.css';
+
+const WEB_HOME_PATH = '/';
 
 const AccountDeletePage = () => {
   const {
@@ -22,12 +23,16 @@ const AccountDeletePage = () => {
   }, [clearAuthFeedback]);
 
   useEffect(() => {
-    if (!authUser) {
-      return;
-    }
+    const syncAuthenticatedState = () => {
+      if (!authUser) {
+        return;
+      }
 
-    setIsAuthScreenOpen(false);
-    setConfirmationEmail('');
+      setIsAuthScreenOpen(false);
+      setConfirmationEmail('');
+    };
+
+    syncAuthenticatedState();
   }, [authUser]);
 
   const normalizedEmail = confirmationEmail.trim().toLowerCase();
@@ -53,7 +58,6 @@ const AccountDeletePage = () => {
         <div className="account-delete-copy">
           <span className="account-delete-eyebrow">ACCOUNT</span>
           <h1>계정 삭제</h1>
-          <p>앱 밖에서도 계정과 저장 데이터를 삭제할 수 있는 전용 페이지입니다.</p>
         </div>
 
         {isAuthLoading ? (
@@ -64,8 +68,8 @@ const AccountDeletePage = () => {
           <div className="account-delete-success">
             <strong>계정 삭제가 완료됐어요.</strong>
             <p>Happy Finder에 저장된 계정과 연결 데이터가 삭제됐습니다.</p>
-            <a href={APP_PATH} className="account-delete-link">
-              앱으로 돌아가기
+            <a href={WEB_HOME_PATH} className="account-delete-link">
+              홈으로 돌아가기
             </a>
           </div>
         ) : authUser ? (
@@ -94,7 +98,7 @@ const AccountDeletePage = () => {
             )}
 
             <div className="account-delete-actions">
-              <a href={APP_PATH} className="account-delete-secondary-link">
+              <a href={WEB_HOME_PATH} className="account-delete-secondary-link">
                 취소
               </a>
               <button
@@ -118,8 +122,8 @@ const AccountDeletePage = () => {
               >
                 로그인하기
               </button>
-              <a href={APP_PATH} className="account-delete-secondary-link">
-                앱으로 돌아가기
+              <a href={WEB_HOME_PATH} className="account-delete-secondary-link">
+                홈으로 돌아가기
               </a>
             </div>
           </div>

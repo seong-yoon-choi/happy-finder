@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useHappy } from '../store/HappyContext';
-import { APP_PATH } from '../lib/routes';
 import { supabase } from '../lib/supabase';
 import './PasswordResetPage.css';
+
+const WEB_HOME_PATH = '/';
 
 const readTransferredSession = () => {
   if (typeof window === 'undefined') {
@@ -65,15 +66,17 @@ const PasswordResetPage = () => {
       return undefined;
     }
 
-    if (!supabase) {
-      setLocalError('비밀번호 재설정 화면을 열 수 없어요. Supabase 설정을 먼저 확인해주세요.');
-      clearTransferredSessionFromUrl();
-      return undefined;
-    }
-
     let isMounted = true;
 
     const applyTransferredSession = async () => {
+      if (!supabase) {
+        if (isMounted) {
+          setLocalError('비밀번호 재설정 화면을 열 수 없어요. Supabase 설정을 먼저 확인해주세요.');
+        }
+        clearTransferredSessionFromUrl();
+        return;
+      }
+
       setIsPreparingSession(true);
       const { error } = await supabase.auth.setSession(transferredSession);
       clearTransferredSessionFromUrl();
@@ -189,8 +192,8 @@ const PasswordResetPage = () => {
         ) : (
           <div className="password-reset-empty">
             <p>이 페이지는 로그인된 상태에서 열어야 해요. 설정에서 비밀번호 재설정을 다시 눌러주세요.</p>
-            <a href={APP_PATH} className="password-reset-link">
-              앱으로 돌아가기
+            <a href={WEB_HOME_PATH} className="password-reset-link">
+              홈으로 돌아가기
             </a>
           </div>
         )}

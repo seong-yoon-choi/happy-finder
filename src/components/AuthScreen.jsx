@@ -30,30 +30,30 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const [localFeedback, setLocalFeedback] = useState('');
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    const syncScreenState = () => {
+      if (!isOpen) {
+        return;
+      }
 
-    if (isPasswordRecovery) {
-      setMode('reset-password');
+      if (isPasswordRecovery) {
+        setMode('reset-password');
+        setPassword('');
+        setConfirmPassword('');
+        setLocalFeedback('');
+        return;
+      }
+
+      if (!initialMode) {
+        return;
+      }
+
+      setMode(initialMode);
       setPassword('');
       setConfirmPassword('');
       setLocalFeedback('');
-      return;
-    }
+    };
 
-    setMode(prev => (prev === 'reset-password' ? 'login' : prev));
-  }, [isOpen, isPasswordRecovery]);
-
-  useEffect(() => {
-    if (!isOpen || isPasswordRecovery || !initialMode) {
-      return;
-    }
-
-    setMode(initialMode);
-    setPassword('');
-    setConfirmPassword('');
-    setLocalFeedback('');
+    syncScreenState();
   }, [initialMode, isOpen, isPasswordRecovery]);
 
   if (!isOpen) {

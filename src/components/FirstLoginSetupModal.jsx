@@ -14,12 +14,16 @@ const FirstLoginSetupModal = ({
   const [feedback, setFeedback] = useState('');
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    const resetModalState = () => {
+      if (!isOpen) {
+        return;
+      }
 
-    setHasAcceptedMarketing(Boolean(initialValues.hasAcceptedMarketing));
-    setFeedback('');
+      setHasAcceptedMarketing(Boolean(initialValues.hasAcceptedMarketing));
+      setFeedback('');
+    };
+
+    resetModalState();
   }, [initialValues.hasAcceptedMarketing, isOpen]);
 
   if (!isOpen) {

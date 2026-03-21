@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { isAdminEmail } from '../lib/adminAccess';
-import { ADMIN_INQUIRIES_PATH, APP_PATH, SUPPORT_PATH } from '../lib/routes';
+import { ADMIN_INQUIRIES_PATH } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './WebProfilePage.css';
 
@@ -95,13 +95,25 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
             <p>공개 웹에서 계정 상태를 확인하고, 필요한 계정 작업을 진행할 수 있어요.</p>
           </div>
 
-          <button
-            type="button"
-            className="web-profile-secondary-btn web-profile-back-btn"
-            onClick={() => onNavigate?.('/')}
-          >
-            뒤로가기
-          </button>
+          <div className="web-profile-header-actions">
+            {authUser && isAdmin && (
+              <button
+                type="button"
+                className="web-profile-secondary-btn web-profile-header-btn"
+                onClick={() => onNavigate?.(ADMIN_INQUIRIES_PATH)}
+              >
+                관리자 페이지로 이동
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="web-profile-secondary-btn web-profile-back-btn"
+              onClick={() => onNavigate?.('/')}
+            >
+              뒤로가기
+            </button>
+          </div>
         </div>
 
         {isAuthLoading ? (
@@ -151,30 +163,7 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
                 <p>{accountEmail}</p>
               </div>
 
-              <div className="web-profile-actions web-profile-actions-grid">
-                <button
-                  type="button"
-                  className="web-profile-primary-btn"
-                  onClick={() => onNavigate?.(APP_PATH)}
-                >
-                  앱 열기
-                </button>
-                <button
-                  type="button"
-                  className="web-profile-secondary-btn"
-                  onClick={() => onNavigate?.(SUPPORT_PATH)}
-                >
-                  QnA &amp; Feedback
-                </button>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    className="web-profile-secondary-btn"
-                    onClick={() => onNavigate?.(ADMIN_INQUIRIES_PATH)}
-                  >
-                    관리자 페이지로 이동
-                  </button>
-                )}
+              <div className="web-profile-actions">
                 <button
                   type="button"
                   className="web-profile-secondary-btn"

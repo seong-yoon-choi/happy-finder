@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import AuthScreen from '../components/AuthScreen';
 import { listAdminInquiries, replyAdminInquiry } from '../lib/adminInquiries';
 import { isAdminEmail } from '../lib/adminAccess';
@@ -116,7 +116,7 @@ const AdminInquiriesPage = () => {
 
   const isAdmin = isAdminEmail(authUser?.email);
 
-  const loadInquiries = async () => {
+  const loadInquiries = useCallback(async () => {
     if (!isAdmin) {
       return;
     }
@@ -157,7 +157,7 @@ const AdminInquiriesPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!authUser) {
@@ -173,7 +173,7 @@ const AdminInquiriesPage = () => {
     }
 
     loadInquiries();
-  }, [isAdmin]);
+  }, [isAdmin, loadInquiries]);
 
   const filteredInquiries = useMemo(() => {
     return inquiries.filter(inquiry => typeFilter === 'all' || inquiry.submission_type === typeFilter);

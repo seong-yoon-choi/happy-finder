@@ -31,6 +31,14 @@
   gap: 16px;
 }
 
+.web-profile-header-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
 .web-profile-copy {
   display: flex;
   flex-direction: column;
@@ -218,6 +226,7 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+.web-profile-header-btn,
 .web-profile-back-btn {
   flex: 0 0 auto;
   min-height: 44px;
@@ -279,6 +288,12 @@
     flex-direction: column;
   }
 
+  .web-profile-header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .web-profile-header-btn,
   .web-profile-back-btn {
     width: 100%;
   }

@@ -48,12 +48,13 @@ const navigateToPath = (nextPath, onNavigate) => {
 };
 
 function AppContent() {
+  const initialRequestedMode = getRequestedAuthModeFromUrl();
   const [currentView, setCurrentView] = useState('home');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(false);
-  const [authScreenMode, setAuthScreenMode] = useState('login');
+  const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(() => Boolean(initialRequestedMode));
+  const [authScreenMode, setAuthScreenMode] = useState(() => initialRequestedMode || 'login');
   const [isAgreementModalRequested, setIsAgreementModalRequested] = useState(false);
-  const [isAgreementModalDismissed, setIsAgreementModalDismissed] = useState(false);
+  const [dismissedAgreementUserId, setDismissedAgreementUserId] = useState(null);
   const [isNicknameModalRequested, setIsNicknameModalRequested] = useState(false);
 
   const {
@@ -83,6 +84,8 @@ function AppContent() {
       && !needsAgreementSetup
       && !authUserOnboarding.nickname
   );
+  const activeAgreementUserId = needsAgreementSetup && authUser?.id ? authUser.id : null;
+  const isAgreementModalDismissed = Boolean(activeAgreementUserId && dismissedAgreementUserId === activeAgreementUserId);
   const isAgreementModalOpen = Boolean(authUser) && !isGuestMode && (
     (needsAgreementSetup && !isAgreementModalDismissed)
     || isAgreementModalRequested
@@ -93,26 +96,23 @@ function AppContent() {
   );
 
   useEffect(() => {
-    setIsAgreementModalDismissed(false);
-  }, [authUser?.id]);
+    if (initialRequestedMode) {
+      clearRequestedAuthModeInUrl();
+    }
+  }, [initialRequestedMode]);
+
+  const resetAuthScreenRequest = () => {
+    setIsAuthScreenRequested(false);
+    setAuthScreenMode('login');
+  };
 
   useEffect(() => {
-    if (!needsAgreementSetup) {
-      setIsAgreementModalDismissed(false);
+    if (authUser && isAuthScreenRequested) {
+      queueMicrotask(() => {
+        resetAuthScreenRequest();
+      });
     }
-  }, [needsAgreementSetup]);
-
-  useEffect(() => {
-    const requestedMode = getRequestedAuthModeFromUrl();
-
-    if (!requestedMode) {
-      return;
-    }
-
-    setAuthScreenMode(requestedMode);
-    setIsAuthScreenRequested(true);
-    clearRequestedAuthModeInUrl();
-  }, []);
+  }, [authUser, isAuthScreenRequested]);
 
   const openAuthScreen = (mode = 'login') => {
     setAuthScreenMode(mode);
@@ -120,18 +120,19 @@ function AppContent() {
   };
 
   const closeAuthScreen = () => {
-    setIsAuthScreenRequested(false);
-    setAuthScreenMode('login');
+    resetAuthScreenRequest();
   };
 
   const openAgreementModal = () => {
-    setIsAgreementModalDismissed(false);
+    setDismissedAgreementUserId(null);
     setIsAgreementModalRequested(true);
   };
 
   const closeAgreementModal = () => {
     setIsAgreementModalRequested(false);
-    setIsAgreementModalDismissed(true);
+    if (needsAgreementSetup && authUser?.id) {
+      setDismissedAgreementUserId(authUser.id);
+    }
   };
 
   const openNicknameModal = () => {
@@ -203,8 +204,9 @@ function AppContent() {
 }
 
 function PublicSiteContent({ pathname, onNavigate }) {
-  const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(false);
-  const [authScreenMode, setAuthScreenMode] = useState('login');
+  const initialRequestedMode = getRequestedAuthModeFromUrl();
+  const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(() => Boolean(initialRequestedMode));
+  const [authScreenMode, setAuthScreenMode] = useState(() => initialRequestedMode || 'login');
   const { authUser, isPasswordRecovery } = useHappy();
   const isAuthenticated = Boolean(authUser);
 
@@ -213,24 +215,24 @@ function PublicSiteContent({ pathname, onNavigate }) {
   const isAuthScreenOpen = isPasswordRecovery || (isAuthScreenRequested && !isAuthenticated);
 
   useEffect(() => {
-    const requestedMode = getRequestedAuthModeFromUrl();
-
-    if (!requestedMode) {
-      return;
+    if (initialRequestedMode) {
+      clearRequestedAuthModeInUrl();
     }
+  }, [initialRequestedMode]);
 
-    setAuthScreenMode(requestedMode);
-    setIsAuthScreenRequested(true);
-    clearRequestedAuthModeInUrl();
-  }, []);
+  const resetAuthScreenRequest = () => {
+    setIsAuthScreenRequested(false);
+    setAuthScreenMode('login');
+  };
 
   useEffect(() => {
     if (!authUser || !isAuthScreenRequested) {
       return;
     }
 
-    setIsAuthScreenRequested(false);
-    setAuthScreenMode('login');
+    queueMicrotask(() => {
+      resetAuthScreenRequest();
+    });
   }, [authUser, isAuthScreenRequested]);
 
   const openAuthScreen = (mode = 'login') => {
@@ -239,8 +241,7 @@ function PublicSiteContent({ pathname, onNavigate }) {
   };
 
   const closeAuthScreen = () => {
-    setIsAuthScreenRequested(false);
-    setAuthScreenMode('login');
+    resetAuthScreenRequest();
   };
 
   return (
