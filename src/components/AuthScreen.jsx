@@ -7,6 +7,33 @@ const socialButtons = [
   { provider: 'google', label: 'Google로 계속하기', Icon: GoogleIcon }
 ];
 
+const PasswordVisibilityIcon = ({ isVisible = false }) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path
+      d="M2.25 12C3.93 8.71 7.38 6.5 12 6.5C16.62 6.5 20.07 8.71 21.75 12C20.07 15.29 16.62 17.5 12 17.5C7.38 17.5 3.93 15.29 2.25 12Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="3"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    />
+    {!isVisible && (
+      <path
+        d="M4 20L20 4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    )}
+  </svg>
+);
+
 const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }) => {
   const {
     isSupabaseConfigured,
@@ -286,23 +313,23 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               </label>
               <div className="auth-screen-password-field">
                 <input
-                id="auth-password"
-                type={isPasswordVisible ? 'text' : 'password'}
-                className="auth-screen-input auth-screen-input-password"
-                value={password}
-                onChange={event => setPassword(event.target.value)}
-                placeholder={isResetPasswordMode ? '새 비밀번호를 입력해주세요' : '비밀번호를 입력해주세요'}
-                autoComplete={isSignupMode || isResetPasswordMode ? 'new-password' : 'current-password'}
-                disabled={isAuthLoading || !isSupabaseConfigured}
+                  id="auth-password"
+                  type={isPasswordVisible ? 'text' : 'password'}
+                  className="auth-screen-input auth-screen-input-password"
+                  value={password}
+                  onChange={event => setPassword(event.target.value)}
+                  placeholder={isResetPasswordMode ? '새 비밀번호를 입력해주세요' : '비밀번호를 입력해주세요'}
+                  autoComplete={isSignupMode || isResetPasswordMode ? 'new-password' : 'current-password'}
+                  disabled={isAuthLoading || !isSupabaseConfigured}
                 />
                 <button
                   type="button"
                   className="auth-screen-password-toggle"
                   onClick={() => setIsPasswordVisible(prev => !prev)}
                   disabled={isAuthLoading || !isSupabaseConfigured}
-                  aria-label={isPasswordVisible ? '鍮꾨?踰덊샇 ?④린' : '鍮꾨?踰덊샇 蹂닿린'}
+                  aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
                 >
-                  {isPasswordVisible ? '?④김' : '蹂닿린'}
+                  <PasswordVisibilityIcon isVisible={isPasswordVisible} />
                 </button>
               </div>
             </>
@@ -315,23 +342,23 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               </label>
               <div className="auth-screen-password-field">
                 <input
-                id="auth-confirm-password"
-                type={isConfirmPasswordVisible ? 'text' : 'password'}
-                className="auth-screen-input auth-screen-input-password"
-                value={confirmPassword}
-                onChange={event => setConfirmPassword(event.target.value)}
-                placeholder="비밀번호를 한 번 더 입력해주세요"
-                autoComplete="new-password"
-                disabled={isAuthLoading || !isSupabaseConfigured}
+                  id="auth-confirm-password"
+                  type={isConfirmPasswordVisible ? 'text' : 'password'}
+                  className="auth-screen-input auth-screen-input-password"
+                  value={confirmPassword}
+                  onChange={event => setConfirmPassword(event.target.value)}
+                  placeholder="비밀번호를 한 번 더 입력해주세요"
+                  autoComplete="new-password"
+                  disabled={isAuthLoading || !isSupabaseConfigured}
                 />
                 <button
                   type="button"
                   className="auth-screen-password-toggle"
                   onClick={() => setIsConfirmPasswordVisible(prev => !prev)}
                   disabled={isAuthLoading || !isSupabaseConfigured}
-                  aria-label={isConfirmPasswordVisible ? '鍮꾨?踰덊샇 ?뺤씤 媛믪쓣 ?④린' : '鍮꾨?踰덊샇 ?뺤씤 媛믪쓣 蹂닿린'}
+                  aria-label={isConfirmPasswordVisible ? 'Hide password confirmation' : 'Show password confirmation'}
                 >
-                  {isConfirmPasswordVisible ? '?④김' : '蹂닿린'}
+                  <PasswordVisibilityIcon isVisible={isConfirmPasswordVisible} />
                 </button>
               </div>
             </>

@@ -200,12 +200,21 @@
     top: 50%;
     right: 14px;
     transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border: none;
     background: transparent;
     color: var(--primary-color);
-    font-size: 0.88rem;
-    font-weight: 700;
     cursor: pointer;
+}
+
+.auth-screen-password-toggle svg {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 .auth-screen-password-toggle:disabled {
