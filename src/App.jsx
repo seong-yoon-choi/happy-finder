@@ -1,4 +1,5 @@
 import React, { startTransition, useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { HappyProvider, useHappy } from './store/HappyContext';
 import NavBar from './components/NavBar';
 import CelebrationModal from './components/CelebrationModal';
@@ -31,12 +32,33 @@ import {
 } from './lib/routes';
 import './App.css';
 
+const isNativeRuntime = () => Capacitor.isNativePlatform();
+
+const resolveRuntimePath = rawPathname => {
+  const normalizedPathname = normalizePath(rawPathname);
+
+  if (!isNativeRuntime()) {
+    return normalizedPathname;
+  }
+
+  if (
+    isAppPath(normalizedPathname)
+    || isPasswordResetPath(normalizedPathname)
+    || isAccountDeletePath(normalizedPathname)
+    || isAdminInquiriesPath(normalizedPathname)
+  ) {
+    return normalizedPathname;
+  }
+
+  return APP_PATH;
+};
+
 const navigateToPath = (nextPath, onNavigate) => {
   if (typeof window === 'undefined') {
     return;
   }
 
-  const normalizedNextPath = normalizePath(nextPath);
+  const normalizedNextPath = resolveRuntimePath(nextPath);
 
   if (normalizePath(window.location.pathname) === normalizedNextPath) {
     return;
@@ -303,13 +325,25 @@ function App() {
       return '/';
     }
 
-    return normalizePath(window.location.pathname);
+    return resolveRuntimePath(window.location.pathname);
   });
 
   useEffect(() => {
+    const resolvedPathname = resolveRuntimePath(window.location.pathname);
+
+    if (resolvedPathname !== normalizePath(window.location.pathname)) {
+      window.history.replaceState({}, '', resolvedPathname);
+    }
+
     const handlePopState = () => {
+      const nextPathname = resolveRuntimePath(window.location.pathname);
+
+      if (nextPathname !== normalizePath(window.location.pathname)) {
+        window.history.replaceState({}, '', nextPathname);
+      }
+
       window.scrollTo({ top: 0, left: 0 });
-      startTransition(() => setPathname(normalizePath(window.location.pathname)));
+      startTransition(() => setPathname(nextPathname));
     };
 
     window.addEventListener('popstate', handlePopState);

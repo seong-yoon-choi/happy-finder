@@ -7,6 +7,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores([
     'dist',
+    'android/app/build/**',
     'android/app/src/main/assets/**',
     'ios/App/App/public/**',
   ]),
