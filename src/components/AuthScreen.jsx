@@ -29,6 +29,8 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const [confirmPassword, setConfirmPassword] = useState('');
   const [localFeedback, setLocalFeedback] = useState('');
   const [shouldShowPasswordResetAction, setShouldShowPasswordResetAction] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
   useEffect(() => {
     const syncScreenState = () => {
@@ -42,6 +44,8 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         setConfirmPassword('');
         setLocalFeedback('');
         setShouldShowPasswordResetAction(false);
+        setIsPasswordVisible(false);
+        setIsConfirmPasswordVisible(false);
         return;
       }
 
@@ -54,6 +58,8 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       setConfirmPassword('');
       setLocalFeedback('');
       setShouldShowPasswordResetAction(false);
+      setIsPasswordVisible(false);
+      setIsConfirmPasswordVisible(false);
     };
 
     syncScreenState();
@@ -74,6 +80,8 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     setConfirmPassword('');
     setLocalFeedback('');
     setShouldShowPasswordResetAction(false);
+    setIsPasswordVisible(false);
+    setIsConfirmPasswordVisible(false);
   };
 
   const handleClose = () => {
@@ -254,13 +262,13 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               </label>
               <input
                 id="auth-email"
-                type="text"
+                type="email"
                 name="email"
                 className="auth-screen-input"
                 value={email}
                 onChange={event => setEmail(event.target.value)}
                 placeholder="이메일 주소를 입력해주세요"
-                autoComplete="username"
+                autoComplete="email"
                 inputMode="email"
                 autoCapitalize="none"
                 autoCorrect="off"
@@ -276,16 +284,27 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               <label className="auth-screen-label" htmlFor="auth-password">
                 {isResetPasswordMode ? '새 비밀번호' : '비밀번호'}
               </label>
-              <input
+              <div className="auth-screen-password-field">
+                <input
                 id="auth-password"
-                type="password"
-                className="auth-screen-input"
+                type={isPasswordVisible ? 'text' : 'password'}
+                className="auth-screen-input auth-screen-input-password"
                 value={password}
                 onChange={event => setPassword(event.target.value)}
                 placeholder={isResetPasswordMode ? '새 비밀번호를 입력해주세요' : '비밀번호를 입력해주세요'}
                 autoComplete={isSignupMode || isResetPasswordMode ? 'new-password' : 'current-password'}
                 disabled={isAuthLoading || !isSupabaseConfigured}
-              />
+                />
+                <button
+                  type="button"
+                  className="auth-screen-password-toggle"
+                  onClick={() => setIsPasswordVisible(prev => !prev)}
+                  disabled={isAuthLoading || !isSupabaseConfigured}
+                  aria-label={isPasswordVisible ? '鍮꾨?踰덊샇 ?④린' : '鍮꾨?踰덊샇 蹂닿린'}
+                >
+                  {isPasswordVisible ? '?④김' : '蹂닿린'}
+                </button>
+              </div>
             </>
           )}
 
@@ -294,16 +313,27 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               <label className="auth-screen-label" htmlFor="auth-confirm-password">
                 비밀번호 확인
               </label>
-              <input
+              <div className="auth-screen-password-field">
+                <input
                 id="auth-confirm-password"
-                type="password"
-                className="auth-screen-input"
+                type={isConfirmPasswordVisible ? 'text' : 'password'}
+                className="auth-screen-input auth-screen-input-password"
                 value={confirmPassword}
                 onChange={event => setConfirmPassword(event.target.value)}
                 placeholder="비밀번호를 한 번 더 입력해주세요"
                 autoComplete="new-password"
                 disabled={isAuthLoading || !isSupabaseConfigured}
-              />
+                />
+                <button
+                  type="button"
+                  className="auth-screen-password-toggle"
+                  onClick={() => setIsConfirmPasswordVisible(prev => !prev)}
+                  disabled={isAuthLoading || !isSupabaseConfigured}
+                  aria-label={isConfirmPasswordVisible ? '鍮꾨?踰덊샇 ?뺤씤 媛믪쓣 ?④린' : '鍮꾨?踰덊샇 ?뺤씤 媛믪쓣 蹂닿린'}
+                >
+                  {isConfirmPasswordVisible ? '?④김' : '蹂닿린'}
+                </button>
+              </div>
             </>
           )}
 

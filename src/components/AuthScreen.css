@@ -187,6 +187,32 @@
     font-family: inherit;
 }
 
+.auth-screen-password-field {
+    position: relative;
+}
+
+.auth-screen-input-password {
+    padding-right: 82px;
+}
+
+.auth-screen-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: var(--primary-color);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-screen-password-toggle:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
 .dark-theme .auth-screen-input {
     background: rgba(255, 255, 255, 0.08);
 }
