@@ -28,6 +28,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [localFeedback, setLocalFeedback] = useState('');
+  const [shouldShowPasswordResetAction, setShouldShowPasswordResetAction] = useState(false);
 
   useEffect(() => {
     const syncScreenState = () => {
@@ -40,6 +41,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         setPassword('');
         setConfirmPassword('');
         setLocalFeedback('');
+        setShouldShowPasswordResetAction(false);
         return;
       }
 
@@ -51,6 +53,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       setPassword('');
       setConfirmPassword('');
       setLocalFeedback('');
+      setShouldShowPasswordResetAction(false);
     };
 
     syncScreenState();
@@ -70,6 +73,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     setPassword('');
     setConfirmPassword('');
     setLocalFeedback('');
+    setShouldShowPasswordResetAction(false);
   };
 
   const handleClose = () => {
@@ -137,7 +141,8 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       return;
     }
 
-    await signInWithPassword(email, password);
+    const result = await signInWithPassword(email, password);
+    setShouldShowPasswordResetAction(result?.reason === 'auth');
   };
 
   const handleContinueAsGuest = () => {
@@ -249,12 +254,18 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               </label>
               <input
                 id="auth-email"
-                type="email"
+                type="text"
+                name="email"
                 className="auth-screen-input"
                 value={email}
                 onChange={event => setEmail(event.target.value)}
                 placeholder="이메일 주소를 입력해주세요"
-                autoComplete="email"
+                autoComplete="username"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint={isResetRequestMode ? 'send' : 'next'}
                 disabled={isAuthLoading || !isSupabaseConfigured}
               />
             </>
@@ -296,7 +307,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
             </>
           )}
 
-          {mode === 'login' && (
+          {mode === 'login' && shouldShowPasswordResetAction && (
             <button
               type="button"
               className="auth-screen-inline-action"

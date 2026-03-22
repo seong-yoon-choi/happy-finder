@@ -56,6 +56,13 @@
   /* Mobile app feel */
 }
 
+input,
+textarea,
+select {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 body {
   background: linear-gradient(135deg, var(--background-start), var(--background-end));
   background-attachment: fixed;

@@ -1368,10 +1368,10 @@ export const HappyProvider = ({ children }) => {
     if (error) {
       const nextFeedback = getAuthFeedbackFromError(error, '로그인하지 못했어요.');
       setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
+      return { success: false, error: nextFeedback.message, reason: 'auth' };
     }
 
-    return { success: true };
+    return { success: true, reason: null };
   };
 
   const signUpWithPassword = async (email, password) => {
@@ -1473,7 +1473,7 @@ export const HappyProvider = ({ children }) => {
       };
 
       setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
+      return { success: false, error: nextFeedback.message, reason: 'unavailable' };
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -1485,7 +1485,7 @@ export const HappyProvider = ({ children }) => {
       };
 
       setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
     }
 
     setIsAuthBusy(true);
@@ -1501,7 +1501,7 @@ export const HappyProvider = ({ children }) => {
     if (error) {
       const nextFeedback = getAuthFeedbackFromError(error, '비밀번호 재설정 메일을 보내지 못했어요.');
       setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
     }
 
     const nextFeedback = {
