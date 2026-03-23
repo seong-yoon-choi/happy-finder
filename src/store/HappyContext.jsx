@@ -1,5 +1,5 @@
 ﻿/* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import { getTreeInfo } from '../utils/progress';
 import {
@@ -670,69 +670,6 @@ export const HappyProvider = ({ children }) => {
   const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
   const postSignOutFeedbackRef = useRef(null);
 
-  const clearInvalidAuthSession = useCallback(async (feedback = null) => {
-    const nextFeedback = feedback || {
-      type: 'error',
-      message: '삭제되었거나 만료된 계정이에요. 다시 로그인해주세요.'
-    };
-
-    postSignOutFeedbackRef.current = nextFeedback;
-
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
-
-    if (error) {
-      postSignOutFeedbackRef.current = null;
-    }
-
-    setAuthSession(null);
-    setAuthUser(null);
-    setIsGuestMode(false);
-    setIsPasswordRecovery(false);
-    setIsSignupCompletionPending(false);
-    localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-
-    if (error) {
-      setAuthFeedback(nextFeedback);
-    }
-
-    return !error;
-  }, []);
-
-  const getTrustedAuthSessionState = useCallback(async (session) => {
-    if (!session) {
-      return { session: null, user: null, invalid: false };
-    }
-
-    const { data, error } = await supabase.auth.getUser();
-
-    if (error) {
-      if (shouldResetAuthSession(error)) {
-        return { session: null, user: null, invalid: true, error };
-      }
-
-      return {
-        session,
-        user: session.user ?? null,
-        invalid: false,
-        error
-      };
-    }
-
-    if (!data?.user || data.user.deleted_at) {
-      return { session: null, user: null, invalid: true, error: null };
-    }
-
-    return {
-      session: {
-        ...session,
-        user: data.user
-      },
-      user: data.user,
-      invalid: false,
-      error: null
-    };
-  }, []);
-
   useEffect(() => {
     isPasswordRecoveryRef.current = isPasswordRecovery;
   }, [isPasswordRecovery]);
@@ -766,6 +703,61 @@ export const HappyProvider = ({ children }) => {
 
     let isMounted = true;
 
+    const resetInvalidSession = async (feedback = null) => {
+      const nextFeedback = feedback || {
+        type: 'error',
+        message: '삭제되었거나 만료된 계정이에요. 다시 로그인해주세요.'
+      };
+
+      postSignOutFeedbackRef.current = nextFeedback;
+      setAuthSession(null);
+      setAuthUser(null);
+      setIsGuestMode(false);
+      setIsPasswordRecovery(false);
+      setIsSignupCompletionPending(false);
+      localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+      setAuthFeedback(nextFeedback);
+
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+
+      if (error) {
+        postSignOutFeedbackRef.current = null;
+      }
+    };
+
+    const getTrustedSessionState = async (session) => {
+      if (!session) {
+        return { session: null, user: null, invalid: false };
+      }
+
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error) {
+        if (shouldResetAuthSession(error)) {
+          return { session: null, user: null, invalid: true };
+        }
+
+        return {
+          session,
+          user: session.user ?? null,
+          invalid: false
+        };
+      }
+
+      if (!data?.user || data.user.deleted_at) {
+        return { session: null, user: null, invalid: true };
+      }
+
+      return {
+        session: {
+          ...session,
+          user: data.user
+        },
+        user: data.user,
+        invalid: false
+      };
+    };
+
     const loadSession = async () => {
       const { data, error } = await supabase.auth.getSession();
 
@@ -781,14 +773,14 @@ export const HappyProvider = ({ children }) => {
       let nextUser = nextSession?.user ?? null;
 
       if (nextSession) {
-        const trustedSessionState = await getTrustedAuthSessionState(nextSession);
+        const trustedSessionState = await getTrustedSessionState(nextSession);
 
         if (!isMounted) {
           return;
         }
 
         if (trustedSessionState.invalid) {
-          await clearInvalidAuthSession();
+          await resetInvalidSession();
 
           if (!isMounted) {
             return;
@@ -813,99 +805,65 @@ export const HappyProvider = ({ children }) => {
     loadSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      const applyAuthStateChange = async () => {
-        if (!isMounted) {
-          return;
-        }
+      if (!isMounted) {
+        return;
+      }
 
-        const isRecoverySession = event === 'PASSWORD_RECOVERY' || hasPasswordRecoveryInUrl();
-        let nextSession = session ?? null;
-        let nextUser = session?.user ?? null;
-        const shouldValidateSession = Boolean(
-          nextSession
-          && (
-            event === 'INITIAL_SESSION'
-            || event === 'SIGNED_IN'
-            || event === 'TOKEN_REFRESHED'
-          )
-        );
+      const isRecoverySession = event === 'PASSWORD_RECOVERY' || hasPasswordRecoveryInUrl();
+      const nextSession = session ?? null;
+      const nextUser = session?.user ?? null;
 
-        if (shouldValidateSession) {
-          const trustedSessionState = await getTrustedAuthSessionState(nextSession);
+      setAuthSession(nextSession);
+      setAuthUser(nextUser);
+      if (!nextUser) {
+        setIsSignupCompletionPending(false);
+      }
+      setIsAuthLoading(false);
 
-          if (!isMounted) {
-            return;
-          }
-
-          if (trustedSessionState.invalid) {
-            await clearInvalidAuthSession();
-
-            if (!isMounted) {
-              return;
-            }
-
-            setIsAuthLoading(false);
-            return;
-          }
-
-          nextSession = trustedSessionState.session;
-          nextUser = trustedSessionState.user;
-        }
-
-        setAuthSession(nextSession);
-        setAuthUser(nextUser ?? null);
-        if (!nextUser) {
-          setIsSignupCompletionPending(false);
-        }
-        setIsAuthLoading(false);
-
-        if (event === 'SIGNED_IN') {
-          setIsGuestMode(false);
-          localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-          if (!isRecoverySession) {
-            setIsPasswordRecovery(false);
-          }
-        }
-
-        if (event === 'PASSWORD_RECOVERY') {
-          setIsGuestMode(false);
-          localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-          setIsPasswordRecovery(true);
-          setIsSignupCompletionPending(false);
-          setAuthFeedback({
-            type: 'success',
-            message: '새 비밀번호를 설정해주세요.'
-          });
-        }
-
-        if (event === 'USER_UPDATED' && isPasswordRecoveryRef.current) {
-          clearAuthRedirectState();
+      if (event === 'SIGNED_IN') {
+        setIsGuestMode(false);
+        localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+        if (!isRecoverySession) {
           setIsPasswordRecovery(false);
-          setAuthFeedback({
-            type: 'success',
-            message: '비밀번호가 새로 설정됐어요. 다시 사용할 수 있어요.'
-          });
         }
+      }
 
-        if (event === 'SIGNED_OUT') {
-          setIsGuestMode(false);
-          localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-          setIsPasswordRecovery(false);
-          setIsSignupCompletionPending(false);
-          const postSignOutFeedback = postSignOutFeedbackRef.current;
-          postSignOutFeedbackRef.current = null;
-          setAuthFeedback(postSignOutFeedback || defaultAuthFeedback);
-        }
-      };
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsGuestMode(false);
+        localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+        setIsPasswordRecovery(true);
+        setIsSignupCompletionPending(false);
+        setAuthFeedback({
+          type: 'success',
+          message: '새 비밀번호를 설정해주세요.'
+        });
+      }
 
-      applyAuthStateChange();
+      if (event === 'USER_UPDATED' && isPasswordRecoveryRef.current) {
+        clearAuthRedirectState();
+        setIsPasswordRecovery(false);
+        setAuthFeedback({
+          type: 'success',
+          message: '비밀번호가 새로 설정됐어요. 다시 사용할 수 있어요.'
+        });
+      }
+
+      if (event === 'SIGNED_OUT') {
+        setIsGuestMode(false);
+        localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+        setIsPasswordRecovery(false);
+        setIsSignupCompletionPending(false);
+        const postSignOutFeedback = postSignOutFeedbackRef.current;
+        postSignOutFeedbackRef.current = null;
+        setAuthFeedback(postSignOutFeedback || defaultAuthFeedback);
+      }
     });
 
     return () => {
       isMounted = false;
       authListener.subscription.unsubscribe();
     };
-  }, [clearInvalidAuthSession, getTrustedAuthSessionState]);
+  }, []);
 
   useEffect(() => {
     latestSnapshotStateRef.current = {

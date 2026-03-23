@@ -17,8 +17,8 @@
 
 .settings-trigger-btn {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: var(--app-safe-top);
+    right: 18px;
     width: 50px;
     height: 50px;
     border-radius: 50%;

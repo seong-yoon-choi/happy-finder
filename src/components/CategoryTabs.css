@@ -1,7 +1,7 @@
 .category-scroll-container {
     width: 100%;
-    padding: 0 16px;
-    margin-bottom: 20px;
+    padding: 0 var(--screen-side-padding);
+    margin-bottom: 26px;
     overflow-x: auto;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
@@ -15,8 +15,8 @@
 
 .category-tabs {
     display: flex;
-    gap: 12px;
-    padding: 4px 0;
+    gap: 14px;
+    padding: 6px 0 8px;
     width: max-content;
 }
 

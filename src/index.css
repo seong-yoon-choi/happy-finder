@@ -25,6 +25,11 @@
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
+  --app-safe-top: calc(18px + env(safe-area-inset-top));
+  --app-safe-bottom: calc(22px + env(safe-area-inset-bottom));
+  --screen-side-padding: 20px;
+  --screen-header-top-padding: calc(42px + env(safe-area-inset-top));
+  --screen-content-bottom-padding: calc(112px + env(safe-area-inset-bottom));
 }
 
 /* Dark Theme Variables */

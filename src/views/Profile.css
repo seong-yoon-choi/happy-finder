@@ -1,12 +1,12 @@
 .profile-view {
-    padding-bottom: 80px;
+    padding-bottom: var(--screen-content-bottom-padding);
 }
 
 .profile-header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 32px 20px 24px;
+    padding: calc(var(--screen-header-top-padding) + 8px) var(--screen-side-padding) 34px;
     text-align: center;
 }
 
@@ -17,7 +17,7 @@
     letter-spacing: -0.5px;
     line-height: 1.1;
     color: var(--primary-color);
-    margin-bottom: 20px;
+    margin-bottom: 28px;
     text-align: left;
 }
 
@@ -31,10 +31,8 @@
     justify-content: center;
     border-radius: 50%;
     box-shadow: var(--glass-shadow);
-    margin-bottom: 8px;
-    /* Reduced to make room for title */
+    margin-bottom: 14px;
     border: 2px solid var(--glass-border);
-    /* Switched white to variable for dark mode support */
 }
 
 .profile-tree-section {
@@ -57,7 +55,7 @@
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--primary-color);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     padding: 4px 12px;
     background: var(--glass-bg);
     border-radius: 12px;
@@ -96,21 +94,21 @@
 
 .profile-header h2 {
     font-size: 1.6rem;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     color: var(--text-dark);
 }
 
 .stamp-summary {
     font-size: 1.1rem;
     color: var(--text-light);
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .streak-summary {
     font-size: 1.2rem;
     font-weight: 700;
     color: var(--primary-color);
-    margin-bottom: 24px;
+    margin-bottom: 30px;
     background: var(--glass-bg);
     padding: 8px 20px;
     border-radius: 24px;
@@ -141,9 +139,9 @@
 .profile-tabs {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    padding: 0 20px;
-    margin-bottom: 24px;
+    gap: 14px;
+    padding: 0 var(--screen-side-padding);
+    margin-bottom: 30px;
 }
 
 .profile-tabs .tab-btn {
@@ -152,7 +150,7 @@
 }
 
 .profile-stamped-categories {
-    margin-bottom: 20px;
+    margin-bottom: 28px;
 }
 
 @keyframes treeTooltipEnter {
