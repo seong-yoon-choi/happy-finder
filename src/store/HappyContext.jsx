@@ -1479,7 +1479,7 @@ export const HappyProvider = ({ children }) => {
     return { success: true };
   };
 
-  const requestSignUpEmailVerification = async (email, password, options = {}) => {
+  const requestSignUpEmailVerification = async (email, options = {}) => {
     if (!supabase) {
       const nextFeedback = {
         type: 'error',
@@ -1491,33 +1491,12 @@ export const HappyProvider = ({ children }) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedPassword = password.trim();
     const isResend = options?.resend === true;
 
     if (!normalizedEmail) {
       const nextFeedback = {
         type: 'error',
         message: '이메일을 입력해주세요.'
-      };
-
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message, reason: 'validation' };
-    }
-
-    if (!normalizedPassword) {
-      const nextFeedback = {
-        type: 'error',
-        message: '비밀번호를 입력해주세요.'
-      };
-
-      setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message, reason: 'validation' };
-    }
-
-    if (normalizedPassword.length < 6) {
-      const nextFeedback = {
-        type: 'error',
-        message: '비밀번호는 6자 이상으로 입력해주세요.'
       };
 
       setAuthFeedback(nextFeedback);
@@ -1541,7 +1520,7 @@ export const HappyProvider = ({ children }) => {
     } else {
       const response = await supabase.auth.signUp({
         email: normalizedEmail,
-        password: normalizedPassword || createTemporarySignupPassword(),
+        password: createTemporarySignupPassword(),
         options: {
           data: {
             nickname: '',
@@ -1605,7 +1584,7 @@ export const HappyProvider = ({ children }) => {
     return { success: true, email: normalizedEmail };
   };
 
-  const completeSignUpWithVerificationCode = async (email, verificationCode) => {
+  const completeSignUpWithVerificationCode = async (email, verificationCode, password) => {
     if (!supabase) {
       const nextFeedback = {
         type: 'error',
@@ -1618,6 +1597,7 @@ export const HappyProvider = ({ children }) => {
 
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedVerificationCode = verificationCode.trim();
+    const normalizedPassword = password.trim();
 
     if (!normalizedEmail) {
       const nextFeedback = {
@@ -1639,6 +1619,26 @@ export const HappyProvider = ({ children }) => {
       return { success: false, error: nextFeedback.message, reason: 'validation' };
     }
 
+    if (!normalizedPassword) {
+      const nextFeedback = {
+        type: 'error',
+        message: '비밀번호를 입력해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
+    if (normalizedPassword.length < 6) {
+      const nextFeedback = {
+        type: 'error',
+        message: '비밀번호는 6자 이상으로 입력해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
@@ -1648,10 +1648,21 @@ export const HappyProvider = ({ children }) => {
       type: 'email'
     });
 
+    if (error) {
+      setIsAuthBusy(false);
+      const nextFeedback = getAuthFeedbackFromError(error, '이메일 인증을 완료하지 못했어요.');
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'auth' };
+    }
+
+    const { error: passwordUpdateError } = await supabase.auth.updateUser({
+      password: normalizedPassword
+    });
+
     setIsAuthBusy(false);
 
-    if (error) {
-      const nextFeedback = getAuthFeedbackFromError(error, '이메일 인증을 완료하지 못했어요.');
+    if (passwordUpdateError) {
+      const nextFeedback = getAuthFeedbackFromError(passwordUpdateError, '비밀번호를 저장하지 못했어요.');
       setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message, reason: 'auth' };
     }

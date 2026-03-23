@@ -110,7 +110,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const isResetPasswordMode = mode === 'reset-password';
   const isSignupMode = mode === 'signup';
   const isResetMode = isResetRequestMode || isResetPasswordMode;
-  const shouldLockSignupCredentials = isSignupMode && isSignupVerificationRequested;
+  const shouldLockSignupEmail = isSignupMode && isSignupVerificationRequested;
 
   const resetFields = () => {
     setEmail('');
@@ -149,12 +149,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       return;
     }
 
-    if (password !== confirmPassword) {
-      setLocalFeedback('비밀번호가 서로 달라요.');
-      return;
-    }
-
-    const result = await requestSignUpEmailVerification(email, password, {
+    const result = await requestSignUpEmailVerification(email, {
       resend: isSignupVerificationRequested
     });
 
@@ -190,7 +185,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         return;
       }
 
-      const result = await completeSignUpWithVerificationCode(email, emailVerificationCode);
+      const result = await completeSignUpWithVerificationCode(email, emailVerificationCode, password);
 
       if (result?.success) {
         resetFields();
@@ -352,7 +347,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                   autoCorrect="off"
                   spellCheck={false}
                   enterKeyHint={isResetRequestMode ? 'send' : 'next'}
-                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
+                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupEmail}
                 />
 
                 {isSignupMode && (
@@ -410,13 +405,13 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                   onChange={event => setPassword(event.target.value)}
                   placeholder={isResetPasswordMode ? '새 비밀번호를 입력해주세요' : '비밀번호를 입력해주세요'}
                   autoComplete={isSignupMode || isResetPasswordMode ? 'new-password' : 'current-password'}
-                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
+                  disabled={isAuthLoading || !isSupabaseConfigured}
                 />
                 <button
                   type="button"
                   className="auth-screen-password-toggle"
                   onClick={() => setIsPasswordVisible(prev => !prev)}
-                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
+                  disabled={isAuthLoading || !isSupabaseConfigured}
                   aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
                 >
                   <PasswordVisibilityIcon isVisible={isPasswordVisible} />
@@ -439,13 +434,13 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                   onChange={event => setConfirmPassword(event.target.value)}
                   placeholder="비밀번호를 한 번 더 입력해주세요"
                   autoComplete="new-password"
-                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
+                  disabled={isAuthLoading || !isSupabaseConfigured}
                 />
                 <button
                   type="button"
                   className="auth-screen-password-toggle"
                   onClick={() => setIsConfirmPasswordVisible(prev => !prev)}
-                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
+                  disabled={isAuthLoading || !isSupabaseConfigured}
                   aria-label={isConfirmPasswordVisible ? 'Hide password confirmation' : 'Show password confirmation'}
                 >
                   <PasswordVisibilityIcon isVisible={isConfirmPasswordVisible} />
