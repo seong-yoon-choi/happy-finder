@@ -4,7 +4,7 @@
 }
 
 .home-header {
-    padding: var(--screen-header-top-padding) var(--screen-side-padding) 18px;
+    padding: var(--screen-header-top-padding) var(--screen-side-padding) 20px;
 }
 
 .home-header h1 {
@@ -24,7 +24,7 @@
 }
 
 .feed-container {
-    padding: 0 var(--screen-side-padding) 20px;
+    padding: 0 var(--screen-side-padding) 14px;
     display: flex;
     flex-direction: column;
 }

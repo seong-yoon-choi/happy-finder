@@ -6,7 +6,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: calc(var(--screen-header-top-padding) + 8px) var(--screen-side-padding) 34px;
+    padding: calc(var(--screen-header-top-padding) + 2px) var(--screen-side-padding) 28px;
     text-align: center;
 }
 
@@ -141,7 +141,7 @@
     justify-content: center;
     gap: 14px;
     padding: 0 var(--screen-side-padding);
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
 
 .profile-tabs .tab-btn {
