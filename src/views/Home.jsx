@@ -51,10 +51,7 @@ const Home = () => {
   return (
     <div className="view-container home-view">
       <header className="home-header">
-        <div className="home-brand" aria-label="Happy Finder 로고">
-          <span className="home-brand-orb" aria-hidden="true" />
-          <h1>Happy Finder</h1>
-        </div>
+        <h1>Happy Finder</h1>
         <p>오늘 {viewerPossessiveLabel} 행복은 무엇인가요?</p>
       </header>
 
