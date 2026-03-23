@@ -208,9 +208,8 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         return;
       }
 
-      const isVerified = await handleConfirmSignupVerification();
-
-      if (!isVerified) {
+      if (!isSignupVerificationConfirmed) {
+        setLocalFeedback('인증번호 확인을 먼저 해주세요.');
         return;
       }
 
@@ -430,7 +429,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                 {verificationRequestedEmail || email.trim().toLowerCase()}
                 {' '}
                 {isSignupVerificationConfirmed
-                  ? '이메일 인증이 완료됐어요. 아래 비밀번호를 입력하고 회원가입을 완료해주세요.'
+                  ? '인증번호가 확인되었습니다. 아래 비밀번호를 입력하고 회원가입을 완료해주세요.'
                   : '이메일로 받은 6자리 인증번호를 입력해주세요.'}
               </p>
               <button

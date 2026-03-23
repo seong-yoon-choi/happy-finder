@@ -1637,7 +1637,7 @@ export const HappyProvider = ({ children }) => {
     setIsAuthBusy(false);
     setAuthFeedback({
       type: 'success',
-      message: '이메일 인증이 완료됐어요. 비밀번호를 입력하고 회원가입을 완료해주세요.'
+      message: '인증번호가 확인되었습니다. 비밀번호를 입력하고 회원가입을 완료해주세요.'
     });
 
     return { success: true };
