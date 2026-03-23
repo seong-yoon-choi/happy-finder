@@ -1,10 +1,14 @@
 ﻿/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import { App } from '@capacitor/app';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import { getTreeInfo } from '../utils/progress';
 import {
+  checkNativeExactAlarmPermission,
   checkNativeNotificationPermission,
+  isNativeAndroidNotificationPlatform,
   isNativeNotificationPlatform,
+  openNativeExactAlarmSettings,
   requestNativeNotificationPermission,
   syncNativeReminderNotifications
 } from '../lib/localNotifications';
@@ -651,6 +655,9 @@ export const HappyProvider = ({ children }) => {
 
     return window.Notification.permission;
   });
+  const [exactAlarmPermission, setExactAlarmPermission] = useState(() => (
+    isNativeAndroidNotificationPlatform() ? 'default' : 'unsupported'
+  ));
 
   const [celebrationQueue, setCelebrationQueue] = useState([]);
   const [authSession, setAuthSession] = useState(null);
@@ -682,10 +689,14 @@ export const HappyProvider = ({ children }) => {
     let isMounted = true;
 
     const syncPermission = async () => {
-      const permission = await checkNativeNotificationPermission();
+      const [permission, exactAlarm] = await Promise.all([
+        checkNativeNotificationPermission(),
+        checkNativeExactAlarmPermission()
+      ]);
 
       if (isMounted) {
         setNotificationPermission(permission);
+        setExactAlarmPermission(exactAlarm);
       }
     };
 
@@ -1089,10 +1100,22 @@ export const HappyProvider = ({ children }) => {
 
     const syncReminders = async () => {
       await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled);
-      const permission = await checkNativeNotificationPermission();
+      const [permission, exactAlarm] = await Promise.all([
+        checkNativeNotificationPermission(),
+        checkNativeExactAlarmPermission()
+      ]);
 
       if (isMounted) {
         setNotificationPermission(permission);
+        setExactAlarmPermission(exactAlarm);
+
+        if (permission !== 'granted' && reminderSettings.enabled) {
+          setReminderSettings(prev => (
+            prev.enabled
+              ? { ...prev, enabled: false }
+              : prev
+          ));
+        }
       }
     };
 
@@ -1100,6 +1123,54 @@ export const HappyProvider = ({ children }) => {
 
     return () => {
       isMounted = false;
+    };
+  }, [reminderSettings.enabled, reminderSettings.reminders]);
+
+  useEffect(() => {
+    if (!isNativeNotificationPlatform()) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    let appStateListener;
+
+    const refreshNativeReminderState = async () => {
+      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled);
+      const [permission, exactAlarm] = await Promise.all([
+        checkNativeNotificationPermission(),
+        checkNativeExactAlarmPermission()
+      ]);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setNotificationPermission(permission);
+      setExactAlarmPermission(exactAlarm);
+
+      if (permission !== 'granted' && reminderSettings.enabled) {
+        setReminderSettings(prev => (
+          prev.enabled
+            ? { ...prev, enabled: false }
+            : prev
+        ));
+      }
+    };
+
+    App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        void refreshNativeReminderState();
+      }
+    }).then(handle => {
+      appStateListener = handle;
+    });
+
+    return () => {
+      isMounted = false;
+
+      if (appStateListener) {
+        void appStateListener.remove();
+      }
     };
   }, [reminderSettings.enabled, reminderSettings.reminders]);
 
@@ -2209,10 +2280,29 @@ export const HappyProvider = ({ children }) => {
     return permission;
   };
 
+  const openExactAlarmSettings = async () => {
+    const permission = await openNativeExactAlarmSettings();
+    setExactAlarmPermission(permission);
+
+    if (permission === 'granted' && reminderSettings.enabled) {
+      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled);
+    }
+
+    return permission;
+  };
+
   const toggleReminder = async (enabled) => {
     let currentPermission = notificationPermission;
 
-    if (enabled && currentPermission === 'default') {
+    if (enabled && isNativeNotificationPlatform()) {
+      if (currentPermission !== 'granted') {
+        currentPermission = await requestNotificationPermission();
+      }
+
+      if (currentPermission !== 'granted') {
+        return currentPermission;
+      }
+    } else if (enabled && currentPermission === 'default') {
       currentPermission = await requestNotificationPermission();
     }
 
@@ -2292,12 +2382,14 @@ export const HappyProvider = ({ children }) => {
       globalStreak,
       reminderSettings,
       notificationPermission,
+      exactAlarmPermission,
       toggleReminder,
       addReminder,
       updateReminder,
       deleteReminder,
       updateReminderTime,
       requestNotificationPermission,
+      openExactAlarmSettings,
       activeCelebration,
       dismissCelebration
     }}>

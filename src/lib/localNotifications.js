@@ -3,6 +3,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 
 const REMINDER_TITLE = '행복 찾을 시간이에요!';
 const REMINDER_BODY = '오늘도 행복한 하루!! 작은 행복 하나를 찾아볼까요?';
+const NATIVE_REMINDER_NOTIFICATION_STORAGE_KEY = 'happy_native_reminder_notification_ids';
 
 const normalizePermissionState = (value) => {
   if (value === 'granted' || value === 'denied') {
@@ -35,6 +36,52 @@ const createNativeReminderId = (reminderId) => {
 };
 
 export const isNativeNotificationPlatform = () => Capacitor.isNativePlatform();
+export const isNativeAndroidNotificationPlatform = () => (
+  Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+);
+
+const readStoredNativeReminderNotificationIds = () => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(NATIVE_REMINDER_NOTIFICATION_STORAGE_KEY);
+    const parsedValue = rawValue ? JSON.parse(rawValue) : [];
+
+    if (!Array.isArray(parsedValue)) {
+      return [];
+    }
+
+    return parsedValue
+      .map(value => Number(value))
+      .filter(value => Number.isInteger(value) && value > 0);
+  } catch {
+    return [];
+  }
+};
+
+const writeStoredNativeReminderNotificationIds = (notificationIds) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const normalizedIds = [...new Set(
+    notificationIds
+      .map(value => Number(value))
+      .filter(value => Number.isInteger(value) && value > 0)
+  )];
+
+  if (normalizedIds.length === 0) {
+    window.localStorage.removeItem(NATIVE_REMINDER_NOTIFICATION_STORAGE_KEY);
+    return;
+  }
+
+  window.localStorage.setItem(
+    NATIVE_REMINDER_NOTIFICATION_STORAGE_KEY,
+    JSON.stringify(normalizedIds)
+  );
+};
 
 export const checkNativeNotificationPermission = async () => {
   if (!isNativeNotificationPlatform()) {
@@ -54,28 +101,51 @@ export const requestNativeNotificationPermission = async () => {
   return normalizePermissionState(permissionStatus.display);
 };
 
+export const checkNativeExactAlarmPermission = async () => {
+  if (!isNativeAndroidNotificationPlatform()) {
+    return 'unsupported';
+  }
+
+  const permissionStatus = await LocalNotifications.checkExactNotificationSetting();
+  return normalizePermissionState(permissionStatus.exact_alarm);
+};
+
+export const openNativeExactAlarmSettings = async () => {
+  if (!isNativeAndroidNotificationPlatform()) {
+    return 'unsupported';
+  }
+
+  const permissionStatus = await LocalNotifications.changeExactNotificationSetting();
+  return normalizePermissionState(permissionStatus.exact_alarm);
+};
+
 export const syncNativeReminderNotifications = async (reminders, enabled) => {
   if (!isNativeNotificationPlatform()) {
     return;
   }
 
-  const reminderNotificationIds = reminders.map(reminder => ({
-    id: createNativeReminderId(reminder.id)
-  }));
+  const currentReminderNotificationIds = reminders.map(reminder => createNativeReminderId(reminder.id));
+  const storedReminderNotificationIds = readStoredNativeReminderNotificationIds();
+  const reminderNotificationIdsToCancel = [...new Set([
+    ...storedReminderNotificationIds,
+    ...currentReminderNotificationIds
+  ])];
 
-  if (reminderNotificationIds.length > 0) {
+  if (reminderNotificationIdsToCancel.length > 0) {
     await LocalNotifications.cancel({
-      notifications: reminderNotificationIds
+      notifications: reminderNotificationIdsToCancel.map(id => ({ id }))
     });
   }
 
   if (!enabled || reminders.length === 0) {
+    writeStoredNativeReminderNotificationIds([]);
     return;
   }
 
   const permission = await checkNativeNotificationPermission();
 
   if (permission !== 'granted') {
+    writeStoredNativeReminderNotificationIds([]);
     return;
   }
 
@@ -100,4 +170,6 @@ export const syncNativeReminderNotifications = async (reminders, enabled) => {
       };
     })
   });
+
+  writeStoredNativeReminderNotificationIds(currentReminderNotificationIds);
 };

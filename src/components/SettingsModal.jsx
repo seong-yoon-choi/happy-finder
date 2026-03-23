@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isNativeNotificationPlatform } from '../lib/localNotifications';
 import { useHappy } from '../store/HappyContext';
 import { openExternalUrl } from '../lib/externalBrowser';
 import { SUPPORT_PATH, getPasswordResetWebUrl, getPublicWebUrl } from '../lib/routes';
@@ -166,10 +167,12 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     toggleTheme,
     reminderSettings,
     notificationPermission,
+    exactAlarmPermission,
     toggleReminder,
     addReminder,
     updateReminder,
     deleteReminder,
+    openExactAlarmSettings,
     authSession,
     authUser,
     authUserNickname,
@@ -190,14 +193,31 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
 
   const reminders = reminderSettings.reminders || [];
+  const isNativeReminderPlatform = isNativeNotificationPlatform();
 
   if (!isOpen) {
     return null;
   }
 
   const reminderMessage = (() => {
+    if (isNativeReminderPlatform) {
+      if (notificationPermission === 'granted' && exactAlarmPermission === 'denied') {
+        return '안드로이드의 정확한 알림이 꺼져 있어 알림 시간이 늦어지거나 예약이 사라질 수 있어요.';
+      }
+
+      if (notificationPermission === 'granted') {
+        return '설정한 시간마다 시스템 알림을 보내요.';
+      }
+
+      if (notificationPermission === 'denied') {
+        return '기기 설정에서 알림 권한을 허용해야 예약 알림이 울려요.';
+      }
+
+      return '알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';
+    }
+
     if (notificationPermission === 'granted') {
-      return '설정한 시간마다 브라우저 알림과 시스템 알림을 함께 보내요.';
+      return '설정한 시간마다 브라우저 알림을 보내고, 앱이 열려 있으면 앱 안 알림도 함께 보여줘요.';
     }
 
     if (notificationPermission === 'unsupported') {
@@ -210,6 +230,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
     return '브라우저 알림을 허용하면 시스템 알림까지 받을 수 있어요. 앱이 열려 있으면 앱 안 알림은 그대로 동작해요.';
   })();
+  const shouldShowExactAlarmButton = isNativeReminderPlatform
+    && notificationPermission === 'granted'
+    && exactAlarmPermission === 'denied';
 
   const pickerPreviewText = formatReminderTimeLabel(toReminderTimeValue(pickerTime));
   const timeEditorTitle = editingReminderId === 'new' ? '알림 추가' : '알림 수정';
@@ -659,6 +682,16 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                 </button>
               </div>
             </div>
+          )}
+
+          {shouldShowExactAlarmButton && (
+            <button
+              type="button"
+              className="settings-secondary-btn"
+              onClick={openExactAlarmSettings}
+            >
+              정확한 알림 허용하기
+            </button>
           )}
 
           <div className="settings-note">{reminderMessage}</div>
