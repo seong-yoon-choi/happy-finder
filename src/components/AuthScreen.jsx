@@ -43,6 +43,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     clearAuthFeedback,
     signInWithPassword,
     requestSignUpEmailVerification,
+    verifySignUpEmailVerificationCode,
     completeSignUpWithVerificationCode,
     requestPasswordReset,
     completePasswordReset,
@@ -57,6 +58,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const [confirmPassword, setConfirmPassword] = useState('');
   const [emailVerificationCode, setEmailVerificationCode] = useState('');
   const [isSignupVerificationRequested, setIsSignupVerificationRequested] = useState(false);
+  const [isSignupVerificationConfirmed, setIsSignupVerificationConfirmed] = useState(false);
   const [verificationRequestedEmail, setVerificationRequestedEmail] = useState('');
   const [localFeedback, setLocalFeedback] = useState('');
   const [shouldShowPasswordResetAction, setShouldShowPasswordResetAction] = useState(false);
@@ -75,6 +77,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         setConfirmPassword('');
         setEmailVerificationCode('');
         setIsSignupVerificationRequested(false);
+        setIsSignupVerificationConfirmed(false);
         setVerificationRequestedEmail('');
         setLocalFeedback('');
         setShouldShowPasswordResetAction(false);
@@ -92,6 +95,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       setConfirmPassword('');
       setEmailVerificationCode('');
       setIsSignupVerificationRequested(false);
+      setIsSignupVerificationConfirmed(false);
       setVerificationRequestedEmail('');
       setLocalFeedback('');
       setShouldShowPasswordResetAction(false);
@@ -118,6 +122,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     setConfirmPassword('');
     setEmailVerificationCode('');
     setIsSignupVerificationRequested(false);
+    setIsSignupVerificationConfirmed(false);
     setVerificationRequestedEmail('');
     setLocalFeedback('');
     setShouldShowPasswordResetAction(false);
@@ -155,9 +160,42 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
 
     if (result?.success) {
       setIsSignupVerificationRequested(true);
+      setIsSignupVerificationConfirmed(false);
       setVerificationRequestedEmail(result.email || email.trim().toLowerCase());
       setEmailVerificationCode('');
     }
+  };
+
+  const handleConfirmSignupVerification = async () => {
+    setLocalFeedback('');
+
+    if (isSignupVerificationConfirmed) {
+      return true;
+    }
+
+    if (!isSignupVerificationRequested) {
+      setLocalFeedback('이메일 인증을 먼저 진행해주세요.');
+      return false;
+    }
+
+    if (!/^\d{6}$/.test(emailVerificationCode.trim())) {
+      setLocalFeedback('6자리 인증번호를 입력해주세요.');
+      return false;
+    }
+
+    if (verificationRequestedEmail && verificationRequestedEmail !== email.trim().toLowerCase()) {
+      setLocalFeedback('이메일이 변경되어 인증을 다시 진행해야 해요.');
+      return false;
+    }
+
+    const result = await verifySignUpEmailVerificationCode(email, emailVerificationCode);
+
+    if (result?.success) {
+      setIsSignupVerificationConfirmed(true);
+      return true;
+    }
+
+    return false;
   };
 
   const handleSubmit = async event => {
@@ -165,27 +203,28 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     setLocalFeedback('');
 
     if (isSignupMode) {
-      if (password !== confirmPassword) {
-        setLocalFeedback('비밀번호가 서로 달라요.');
-        return;
-      }
-
       if (!isSignupVerificationRequested) {
         setLocalFeedback('이메일 인증을 먼저 진행해주세요.');
         return;
       }
 
-      if (!/^\d{6}$/.test(emailVerificationCode.trim())) {
-        setLocalFeedback('6자리 인증번호를 입력해주세요.');
+      const isVerified = await handleConfirmSignupVerification();
+
+      if (!isVerified) {
         return;
       }
 
-      if (verificationRequestedEmail && verificationRequestedEmail !== email.trim().toLowerCase()) {
-        setLocalFeedback('이메일이 변경되어 인증을 다시 진행해야 해요.');
+      if (!password.trim()) {
+        setLocalFeedback('비밀번호를 입력해주세요.');
         return;
       }
 
-      const result = await completeSignUpWithVerificationCode(email, emailVerificationCode, password);
+      if (password !== confirmPassword) {
+        setLocalFeedback('비밀번호가 서로 달라요.');
+        return;
+      }
+
+      const result = await completeSignUpWithVerificationCode(password);
 
       if (result?.success) {
         resetFields();
@@ -354,10 +393,14 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                   <button
                     type="button"
                     className="auth-screen-email-verify-link"
-                    onClick={handleRequestSignupVerification}
-                    disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured}
+                  onClick={handleRequestSignupVerification}
+                    disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured || isSignupVerificationConfirmed}
                   >
-                    {isSignupVerificationRequested ? '인증번호 다시 보내기' : '이메일 인증하기'}
+                    {isSignupVerificationConfirmed
+                      ? '이메일 인증 완료'
+                      : isSignupVerificationRequested
+                        ? '인증번호 다시 보내기'
+                        : '이메일 인증하기'}
                   </button>
                 )}
               </div>
@@ -381,13 +424,23 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                 inputMode="numeric"
                 maxLength={6}
                 enterKeyHint="done"
-                disabled={isAuthLoading || !isSupabaseConfigured}
+                disabled={isAuthLoading || !isSupabaseConfigured || isSignupVerificationConfirmed}
               />
               <p className="auth-screen-field-hint">
                 {verificationRequestedEmail || email.trim().toLowerCase()}
                 {' '}
-                이메일로 받은 6자리 인증번호를 입력해주세요.
+                {isSignupVerificationConfirmed
+                  ? '이메일 인증이 완료됐어요. 아래 비밀번호를 입력하고 회원가입을 완료해주세요.'
+                  : '이메일로 받은 6자리 인증번호를 입력해주세요.'}
               </p>
+              <button
+                type="button"
+                className="auth-screen-code-confirm-btn"
+                onClick={handleConfirmSignupVerification}
+                disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured || isSignupVerificationConfirmed}
+              >
+                {isSignupVerificationConfirmed ? '인증 완료' : isAuthBusy ? '확인 중...' : '인증번호 확인'}
+              </button>
             </>
           )}
 

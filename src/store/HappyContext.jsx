@@ -1584,7 +1584,7 @@ export const HappyProvider = ({ children }) => {
     return { success: true, email: normalizedEmail };
   };
 
-  const completeSignUpWithVerificationCode = async (email, verificationCode, password) => {
+  const verifySignUpEmailVerificationCode = async (email, verificationCode) => {
     if (!supabase) {
       const nextFeedback = {
         type: 'error',
@@ -1597,7 +1597,6 @@ export const HappyProvider = ({ children }) => {
 
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedVerificationCode = verificationCode.trim();
-    const normalizedPassword = password.trim();
 
     if (!normalizedEmail) {
       const nextFeedback = {
@@ -1618,6 +1617,44 @@ export const HappyProvider = ({ children }) => {
       setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message, reason: 'validation' };
     }
+
+    setIsAuthBusy(true);
+    setAuthFeedback(defaultAuthFeedback);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: normalizedVerificationCode,
+      type: 'email'
+    });
+
+    if (error) {
+      setIsAuthBusy(false);
+      const nextFeedback = getAuthFeedbackFromError(error, '이메일 인증을 완료하지 못했어요.');
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'auth' };
+    }
+
+    setIsAuthBusy(false);
+    setAuthFeedback({
+      type: 'success',
+      message: '이메일 인증이 완료됐어요. 비밀번호를 입력하고 회원가입을 완료해주세요.'
+    });
+
+    return { success: true };
+  };
+
+  const completeSignUpWithVerificationCode = async password => {
+    if (!supabase) {
+      const nextFeedback = {
+        type: 'error',
+        message: 'Supabase 환경변수를 먼저 연결해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message };
+    }
+
+    const normalizedPassword = password.trim();
 
     if (!normalizedPassword) {
       const nextFeedback = {
@@ -1642,15 +1679,18 @@ export const HappyProvider = ({ children }) => {
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
-    const { error } = await supabase.auth.verifyOtp({
-      email: normalizedEmail,
-      token: normalizedVerificationCode,
-      type: 'email'
-    });
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
 
-    if (error) {
+    if (userError || !user) {
       setIsAuthBusy(false);
-      const nextFeedback = getAuthFeedbackFromError(error, '이메일 인증을 완료하지 못했어요.');
+      const nextFeedback = {
+        type: 'error',
+        message: '이메일 인증 상태를 찾지 못했어요. 인증번호 확인을 다시 진행해주세요.'
+      };
+
       setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message, reason: 'auth' };
     }
@@ -2124,6 +2164,7 @@ export const HappyProvider = ({ children }) => {
       signInWithPassword,
       signUpWithPassword,
       requestSignUpEmailVerification,
+      verifySignUpEmailVerificationCode,
       completeSignUpWithVerificationCode,
       requestPasswordReset,
       completePasswordReset,

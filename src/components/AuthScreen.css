@@ -6,6 +6,9 @@
     align-items: center;
     justify-content: center;
     padding: 24px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     background:
         radial-gradient(circle at top, rgba(247, 183, 51, 0.24), transparent 35%),
         linear-gradient(160deg, rgba(255, 245, 232, 0.96), rgba(255, 229, 229, 0.98));
@@ -22,10 +25,13 @@
 .auth-screen-panel {
     position: relative;
     width: min(100%, 400px);
+    max-height: calc(100dvh - 48px);
     padding: 28px 24px 24px;
     display: flex;
     flex-direction: column;
     gap: 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(255, 246, 231, 0.88));
 }
 
@@ -216,6 +222,27 @@
     color: var(--text-light);
 }
 
+.auth-screen-code-confirm-btn {
+    width: 100%;
+    border: 1px solid rgba(255, 142, 139, 0.28);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--primary-color);
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-screen-code-confirm-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.dark-theme .auth-screen-code-confirm-btn {
+    background: rgba(255, 255, 255, 0.06);
+}
+
 .auth-screen-password-field {
     position: relative;
 }
@@ -360,4 +387,16 @@
 
 .dark-theme .auth-screen-guest-btn {
     background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 640px) {
+    .auth-screen-overlay {
+        align-items: flex-start;
+        padding: 16px;
+    }
+
+    .auth-screen-panel {
+        width: 100%;
+        max-height: calc(100dvh - 32px);
+    }
 }
