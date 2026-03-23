@@ -39,6 +39,9 @@ const Profile = () => {
 
   const treeInfo = getTreeInfo(totalStamps);
   const profileTitle = authUserNickname ? `${authUserNickname} 님의 행복 프로필` : '나의 행복 프로필';
+  const profileIntro = authUserNickname
+    ? `${authUserNickname} 님의 행복 기록과 스탬프 현황이에요.`
+    : '나의 행복 기록과 스탬프 현황이에요.';
 
   const toggleTreeTooltip = () => {
     setShowTreeTooltip(prev => {
@@ -59,43 +62,52 @@ const Profile = () => {
   return (
     <div className="view-container profile-view">
       <header className="profile-header">
-        <div className="profile-brand" aria-label="Happy Finder 로고">Happy Finder</div>
-
-        <div className="profile-tree-section" onClick={toggleTreeTooltip}>
-          <div className="profile-avatar tree-avatar clickable-avatar">{treeInfo.icon}</div>
-          <div className="tree-title">{treeInfo.title}</div>
-
-          {showTreeTooltip && treeInfo.nextAt && (
-            <div className="tree-tooltip">
-              다음 성장까지 {treeInfo.nextAt - totalStamps}개의 행복이 남았어요!
-            </div>
-          )}
-
-          {showTreeTooltip && !treeInfo.nextAt && (
-            <div className="tree-tooltip">
-              최고 단계에 도달했어요. 계속 행복을 찾아보세요!
-            </div>
-          )}
+        <div className="profile-header-copy">
+          <div className="profile-brand" aria-label="Happy Finder 로고">Happy Finder</div>
+          <p className="profile-intro">{profileIntro}</p>
         </div>
 
-        <h2>{profileTitle}</h2>
+        <section className="glass-card profile-overview">
+          <div className="profile-overview-top">
+            <div className="profile-tree-section" onClick={toggleTreeTooltip}>
+              <div className="profile-avatar tree-avatar clickable-avatar">{treeInfo.icon}</div>
+              <div className="tree-title">{treeInfo.title}</div>
 
-        <div className="stamp-summary">
-          총 <span className="highlight-number">{totalStamps}</span>번의 행복을 찾았어요!
-        </div>
+              {showTreeTooltip && treeInfo.nextAt && (
+                <div className="tree-tooltip">
+                  다음 성장까지 {treeInfo.nextAt - totalStamps}개의 행복이 남았어요!
+                </div>
+              )}
 
-        {globalStreak && globalStreak.current > 0 && (
-          <div className="streak-summary">
-            🔥 행복하기 <span className="highlight-number">{globalStreak.current}</span>일째
+              {showTreeTooltip && !treeInfo.nextAt && (
+                <div className="tree-tooltip">
+                  최고 단계에 도달했어요. 계속 행복을 찾아보세요!
+                </div>
+              )}
+            </div>
+
+            <div className="profile-overview-copy">
+              <h2>{profileTitle}</h2>
+
+              <div className="stamp-summary">
+                총 <span className="highlight-number">{totalStamps}</span>번의 행복을 찾았어요!
+              </div>
+
+              {globalStreak && globalStreak.current > 0 && (
+                <div className="streak-summary">
+                  🔥 행복하기 <span className="highlight-number">{globalStreak.current}</span>일째
+                </div>
+              )}
+            </div>
           </div>
-        )}
 
-        <button
-          className="btn-primary create-btn"
-          onClick={() => setIsModalOpen(true)}
-        >
-          + 나만의 행복 만들기
-        </button>
+          <button
+            className="btn-primary create-btn"
+            onClick={() => setIsModalOpen(true)}
+          >
+            + 나만의 행복 만들기
+          </button>
+        </section>
       </header>
 
       <div className="profile-tabs">
