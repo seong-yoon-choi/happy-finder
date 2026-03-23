@@ -391,12 +391,16 @@
 
 @media (max-width: 640px) {
     .auth-screen-overlay {
-        align-items: flex-start;
-        padding: 16px;
+        align-items: center;
+        padding:
+            max(40px, calc(env(safe-area-inset-top) + 28px))
+            16px
+            max(14px, calc(env(safe-area-inset-bottom) + 8px));
     }
 
     .auth-screen-panel {
         width: 100%;
-        max-height: calc(100dvh - 32px);
+        max-height: calc(100dvh - 54px);
+        padding: 34px 22px 20px;
     }
 }
