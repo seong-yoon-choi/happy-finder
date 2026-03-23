@@ -47,6 +47,9 @@ const defaultCloudSyncStatus = {
 };
 const CLOUD_SNAPSHOT_TABLE = 'happy_user_snapshots';
 const DELETE_ACCOUNT_FUNCTION_NAME = 'delete-account';
+const createTemporarySignupPassword = () => (
+  `temp_${Math.random().toString(36).slice(2, 10)}_${Date.now()}Aa1!`
+);
 
 const initialItems = [
   {
@@ -370,6 +373,17 @@ const getKoreanAuthErrorMessage = (error, fallbackMessage) => {
 
   if (message.includes('user already registered')) {
     return '이미 가입된 이메일이에요. 로그인해주세요.';
+  }
+
+  if (message.includes('otp') && message.includes('expired')) {
+    return '인증번호가 만료됐어요. 다시 받아주세요.';
+  }
+
+  if (
+    (message.includes('otp') && message.includes('invalid'))
+    || message.includes('token has expired or is invalid')
+  ) {
+    return '인증번호 6자리를 다시 확인해주세요.';
   }
 
   if (message.includes('password should be at least')) {
@@ -1465,6 +1479,191 @@ export const HappyProvider = ({ children }) => {
     return { success: true };
   };
 
+  const requestSignUpEmailVerification = async (email, password, options = {}) => {
+    if (!supabase) {
+      const nextFeedback = {
+        type: 'error',
+        message: 'Supabase 환경변수를 먼저 연결해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message };
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
+    const isResend = options?.resend === true;
+
+    if (!normalizedEmail) {
+      const nextFeedback = {
+        type: 'error',
+        message: '이메일을 입력해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
+    if (!normalizedPassword) {
+      const nextFeedback = {
+        type: 'error',
+        message: '비밀번호를 입력해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
+    if (normalizedPassword.length < 6) {
+      const nextFeedback = {
+        type: 'error',
+        message: '비밀번호는 6자 이상으로 입력해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
+    setIsAuthBusy(true);
+    setAuthFeedback(defaultAuthFeedback);
+
+    let error = null;
+    let data = null;
+
+    if (isResend) {
+      const response = await supabase.auth.resend({
+        type: 'signup',
+        email: normalizedEmail
+      });
+
+      error = response.error;
+      data = response.data;
+    } else {
+      const response = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password: normalizedPassword || createTemporarySignupPassword(),
+        options: {
+          data: {
+            nickname: '',
+            name: '',
+            full_name: ''
+          }
+        }
+      });
+
+      error = response.error;
+      data = response.data;
+    }
+
+    if (!isResend && data?.session) {
+      await supabase.auth.signOut();
+      setIsAuthBusy(false);
+
+      const nextFeedback = {
+        type: 'error',
+        message: '이메일 인증 설정이 꺼져 있어요. Supabase Auth에서 Confirm email을 먼저 켜주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'configuration' };
+    }
+
+    const looksLikeObfuscatedExistingUser = (
+      !isResend
+      && !error
+      && data?.user
+      && Array.isArray(data.user.identities)
+      && data.user.identities.length === 0
+    );
+
+    setIsAuthBusy(false);
+
+    if (looksLikeObfuscatedExistingUser) {
+      const nextFeedback = {
+        type: 'error',
+        message: '이미 가입된 이메일이에요. 로그인해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'duplicate' };
+    }
+
+    if (error) {
+      const nextFeedback = getAuthFeedbackFromError(error, '인증번호를 보내지 못했어요.');
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'auth' };
+    }
+
+    const nextFeedback = {
+      type: 'success',
+      message: isResend
+        ? '인증번호를 다시 보냈어요. 이메일의 6자리 인증번호를 입력해주세요.'
+        : '인증번호를 보냈어요. 이메일의 6자리 인증번호를 입력해주세요.'
+    };
+
+    setAuthFeedback(nextFeedback);
+    return { success: true, email: normalizedEmail };
+  };
+
+  const completeSignUpWithVerificationCode = async (email, verificationCode) => {
+    if (!supabase) {
+      const nextFeedback = {
+        type: 'error',
+        message: 'Supabase 환경변수를 먼저 연결해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message };
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedVerificationCode = verificationCode.trim();
+
+    if (!normalizedEmail) {
+      const nextFeedback = {
+        type: 'error',
+        message: '이메일을 입력해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
+    if (!/^\d{6}$/.test(normalizedVerificationCode)) {
+      const nextFeedback = {
+        type: 'error',
+        message: '6자리 인증번호를 입력해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
+    setIsAuthBusy(true);
+    setAuthFeedback(defaultAuthFeedback);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: normalizedVerificationCode,
+      type: 'email'
+    });
+
+    setIsAuthBusy(false);
+
+    if (error) {
+      const nextFeedback = getAuthFeedbackFromError(error, '이메일 인증을 완료하지 못했어요.');
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'auth' };
+    }
+
+    setAuthFeedback({
+      type: 'success',
+      message: '회원가입이 완료됐어요.'
+    });
+
+    return { success: true };
+  };
+
   const requestPasswordReset = async (email) => {
     if (!supabase) {
       const nextFeedback = {
@@ -1913,6 +2112,8 @@ export const HappyProvider = ({ children }) => {
       leaveGuestMode,
       signInWithPassword,
       signUpWithPassword,
+      requestSignUpEmailVerification,
+      completeSignUpWithVerificationCode,
       requestPasswordReset,
       completePasswordReset,
       signInWithSocialProvider,

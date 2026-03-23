@@ -42,7 +42,8 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     authFeedback,
     clearAuthFeedback,
     signInWithPassword,
-    signUpWithPassword,
+    requestSignUpEmailVerification,
+    completeSignUpWithVerificationCode,
     requestPasswordReset,
     completePasswordReset,
     signInWithSocialProvider,
@@ -54,6 +55,9 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [emailVerificationCode, setEmailVerificationCode] = useState('');
+  const [isSignupVerificationRequested, setIsSignupVerificationRequested] = useState(false);
+  const [verificationRequestedEmail, setVerificationRequestedEmail] = useState('');
   const [localFeedback, setLocalFeedback] = useState('');
   const [shouldShowPasswordResetAction, setShouldShowPasswordResetAction] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -69,6 +73,9 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         setMode('reset-password');
         setPassword('');
         setConfirmPassword('');
+        setEmailVerificationCode('');
+        setIsSignupVerificationRequested(false);
+        setVerificationRequestedEmail('');
         setLocalFeedback('');
         setShouldShowPasswordResetAction(false);
         setIsPasswordVisible(false);
@@ -83,6 +90,9 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       setMode(initialMode);
       setPassword('');
       setConfirmPassword('');
+      setEmailVerificationCode('');
+      setIsSignupVerificationRequested(false);
+      setVerificationRequestedEmail('');
       setLocalFeedback('');
       setShouldShowPasswordResetAction(false);
       setIsPasswordVisible(false);
@@ -100,11 +110,15 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const isResetPasswordMode = mode === 'reset-password';
   const isSignupMode = mode === 'signup';
   const isResetMode = isResetRequestMode || isResetPasswordMode;
+  const shouldLockSignupCredentials = isSignupMode && isSignupVerificationRequested;
 
   const resetFields = () => {
     setEmail('');
     setPassword('');
     setConfirmPassword('');
+    setEmailVerificationCode('');
+    setIsSignupVerificationRequested(false);
+    setVerificationRequestedEmail('');
     setLocalFeedback('');
     setShouldShowPasswordResetAction(false);
     setIsPasswordVisible(false);
@@ -128,6 +142,29 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     clearAuthFeedback();
   };
 
+  const handleRequestSignupVerification = async () => {
+    setLocalFeedback('');
+
+    if (!isSignupMode) {
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setLocalFeedback('비밀번호가 서로 달라요.');
+      return;
+    }
+
+    const result = await requestSignUpEmailVerification(email, password, {
+      resend: isSignupVerificationRequested
+    });
+
+    if (result?.success) {
+      setIsSignupVerificationRequested(true);
+      setVerificationRequestedEmail(result.email || email.trim().toLowerCase());
+      setEmailVerificationCode('');
+    }
+  };
+
   const handleSubmit = async event => {
     event.preventDefault();
     setLocalFeedback('');
@@ -138,12 +175,25 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         return;
       }
 
-      const result = await signUpWithPassword(email, password);
+      if (!isSignupVerificationRequested) {
+        setLocalFeedback('이메일 인증을 먼저 진행해주세요.');
+        return;
+      }
+
+      if (!/^\d{6}$/.test(emailVerificationCode.trim())) {
+        setLocalFeedback('6자리 인증번호를 입력해주세요.');
+        return;
+      }
+
+      if (verificationRequestedEmail && verificationRequestedEmail !== email.trim().toLowerCase()) {
+        setLocalFeedback('이메일이 변경되어 인증을 다시 진행해야 해요.');
+        return;
+      }
+
+      const result = await completeSignUpWithVerificationCode(email, emailVerificationCode);
 
       if (result?.success) {
-        setMode('login');
-        setPassword('');
-        setConfirmPassword('');
+        resetFields();
       }
 
       return;
@@ -209,7 +259,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
 
   const description = (() => {
     if (isSignupMode) {
-      return '가입 후 첫 진입 화면에서 닉네임과 약관 동의를 설정할 수 있어요.';
+      return '이메일 인증번호를 확인한 뒤 가입이 완료되며, 첫 진입 화면에서 닉네임과 약관 동의를 설정할 수 있어요.';
     }
 
     if (isResetRequestMode) {
@@ -287,22 +337,62 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               <label className="auth-screen-label" htmlFor="auth-email">
                 이메일
               </label>
+              <div className="auth-screen-email-field-group">
+                <input
+                  id="auth-email"
+                  type="email"
+                  name="email"
+                  className="auth-screen-input"
+                  value={email}
+                  onChange={event => setEmail(event.target.value)}
+                  placeholder="이메일 주소를 입력해주세요"
+                  autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint={isResetRequestMode ? 'send' : 'next'}
+                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
+                />
+
+                {isSignupMode && (
+                  <button
+                    type="button"
+                    className="auth-screen-email-verify-link"
+                    onClick={handleRequestSignupVerification}
+                    disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured}
+                  >
+                    {isSignupVerificationRequested ? '인증번호 다시 보내기' : '이메일 인증하기'}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {isSignupMode && isSignupVerificationRequested && (
+            <>
+              <label className="auth-screen-label" htmlFor="auth-email-verification-code">
+                인증번호
+              </label>
               <input
-                id="auth-email"
-                type="email"
-                name="email"
+                id="auth-email-verification-code"
+                type="text"
+                name="emailVerificationCode"
                 className="auth-screen-input"
-                value={email}
-                onChange={event => setEmail(event.target.value)}
-                placeholder="이메일 주소를 입력해주세요"
-                autoComplete="email"
-                inputMode="email"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                enterKeyHint={isResetRequestMode ? 'send' : 'next'}
+                value={emailVerificationCode}
+                onChange={event => setEmailVerificationCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="6자리 인증번호를 입력해주세요"
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                maxLength={6}
+                enterKeyHint="done"
                 disabled={isAuthLoading || !isSupabaseConfigured}
               />
+              <p className="auth-screen-field-hint">
+                {verificationRequestedEmail || email.trim().toLowerCase()}
+                {' '}
+                이메일로 받은 6자리 인증번호를 입력해주세요.
+              </p>
             </>
           )}
 
@@ -320,13 +410,13 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                   onChange={event => setPassword(event.target.value)}
                   placeholder={isResetPasswordMode ? '새 비밀번호를 입력해주세요' : '비밀번호를 입력해주세요'}
                   autoComplete={isSignupMode || isResetPasswordMode ? 'new-password' : 'current-password'}
-                  disabled={isAuthLoading || !isSupabaseConfigured}
+                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
                 />
                 <button
                   type="button"
                   className="auth-screen-password-toggle"
                   onClick={() => setIsPasswordVisible(prev => !prev)}
-                  disabled={isAuthLoading || !isSupabaseConfigured}
+                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
                   aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
                 >
                   <PasswordVisibilityIcon isVisible={isPasswordVisible} />
@@ -349,13 +439,13 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                   onChange={event => setConfirmPassword(event.target.value)}
                   placeholder="비밀번호를 한 번 더 입력해주세요"
                   autoComplete="new-password"
-                  disabled={isAuthLoading || !isSupabaseConfigured}
+                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
                 />
                 <button
                   type="button"
                   className="auth-screen-password-toggle"
                   onClick={() => setIsConfirmPasswordVisible(prev => !prev)}
-                  disabled={isAuthLoading || !isSupabaseConfigured}
+                  disabled={isAuthLoading || !isSupabaseConfigured || shouldLockSignupCredentials}
                   aria-label={isConfirmPasswordVisible ? 'Hide password confirmation' : 'Show password confirmation'}
                 >
                   <PasswordVisibilityIcon isVisible={isConfirmPasswordVisible} />

@@ -187,6 +187,35 @@
     font-family: inherit;
 }
 
+.auth-screen-email-field-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.auth-screen-email-verify-link {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--primary-color);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.auth-screen-email-verify-link:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.auth-screen-field-hint {
+    margin: -2px 2px 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-light);
+}
+
 .auth-screen-password-field {
     position: relative;
 }
