@@ -4,23 +4,76 @@
 }
 
 .home-header {
-    padding: var(--screen-header-top-padding) var(--screen-side-padding) 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: calc(var(--screen-header-top-padding) - 14px) var(--screen-side-padding) 18px;
 }
 
-.home-header h1 {
-    font-size: 2.2rem;
-    letter-spacing: -0.5px;
-    color: var(--primary-color);
-    margin-bottom: 8px;
-    display: flex;
+.home-header::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--screen-header-top-padding) - 4px);
+    left: var(--screen-side-padding);
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(247, 183, 51, 0.28), rgba(247, 183, 51, 0));
+    filter: blur(10px);
+    pointer-events: none;
+}
+
+.home-brand {
+    position: relative;
+    z-index: 1;
+    align-self: flex-start;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    padding: 12px 18px 12px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.56);
+    box-shadow: 0 14px 34px rgba(255, 142, 139, 0.16);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.home-brand-orb {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    box-shadow: 0 0 0 6px rgba(255, 142, 139, 0.12);
+}
+
+.home-brand h1 {
+    font-size: 1.95rem;
+    letter-spacing: -0.04em;
+    color: var(--primary-color);
+    line-height: 1;
 }
 
 .home-header p {
-    font-size: 1.05rem;
+    position: relative;
+    z-index: 1;
+    max-width: 24ch;
+    padding-left: 4px;
+    font-size: 1.02rem;
     font-weight: 500;
     line-height: 1.65;
+}
+
+.dark-theme .home-brand {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(20, 25, 39, 0.48);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26);
+}
+
+.dark-theme .home-brand-orb {
+    box-shadow: 0 0 0 6px rgba(247, 183, 51, 0.12);
 }
 
 .feed-container {
