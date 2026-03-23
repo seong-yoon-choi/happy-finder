@@ -1,5 +1,5 @@
 ﻿/* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import { getTreeInfo } from '../utils/progress';
 import {
@@ -430,6 +430,25 @@ const getAuthFeedbackFromError = (error, fallbackMessage) => ({
   message: getKoreanAuthErrorMessage(error, fallbackMessage)
 });
 
+const shouldResetAuthSession = (error) => {
+  const rawMessage = typeof error?.message === 'string' ? error.message.trim() : '';
+  const rawCode = typeof error?.code === 'string' ? error.code.trim() : '';
+  const normalizedMessage = rawMessage.toLowerCase();
+  const normalizedCode = rawCode.toLowerCase();
+
+  return (
+    error?.status === 401
+    || error?.status === 403
+    || normalizedMessage.includes('jwt')
+    || normalizedMessage.includes('session not found')
+    || normalizedMessage.includes('refresh token')
+    || normalizedMessage.includes('user from sub claim in jwt does not exist')
+    || normalizedMessage.includes('user not found')
+    || normalizedCode.includes('session')
+    || normalizedCode.includes('user_not_found')
+  );
+};
+
 const getAuthUserNickname = (user) => {
   if (typeof user?.user_metadata?.nickname === 'string' && user.user_metadata.nickname.trim()) {
     return user.user_metadata.nickname.trim();
@@ -651,6 +670,69 @@ export const HappyProvider = ({ children }) => {
   const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
   const postSignOutFeedbackRef = useRef(null);
 
+  const clearInvalidAuthSession = useCallback(async (feedback = null) => {
+    const nextFeedback = feedback || {
+      type: 'error',
+      message: '삭제되었거나 만료된 계정이에요. 다시 로그인해주세요.'
+    };
+
+    postSignOutFeedbackRef.current = nextFeedback;
+
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+
+    if (error) {
+      postSignOutFeedbackRef.current = null;
+    }
+
+    setAuthSession(null);
+    setAuthUser(null);
+    setIsGuestMode(false);
+    setIsPasswordRecovery(false);
+    setIsSignupCompletionPending(false);
+    localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+
+    if (error) {
+      setAuthFeedback(nextFeedback);
+    }
+
+    return !error;
+  }, []);
+
+  const getTrustedAuthSessionState = useCallback(async (session) => {
+    if (!session) {
+      return { session: null, user: null, invalid: false };
+    }
+
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error) {
+      if (shouldResetAuthSession(error)) {
+        return { session: null, user: null, invalid: true, error };
+      }
+
+      return {
+        session,
+        user: session.user ?? null,
+        invalid: false,
+        error
+      };
+    }
+
+    if (!data?.user || data.user.deleted_at) {
+      return { session: null, user: null, invalid: true, error: null };
+    }
+
+    return {
+      session: {
+        ...session,
+        user: data.user
+      },
+      user: data.user,
+      invalid: false,
+      error: null
+    };
+  }, []);
+
   useEffect(() => {
     isPasswordRecoveryRef.current = isPasswordRecovery;
   }, [isPasswordRecovery]);
@@ -695,9 +777,34 @@ export const HappyProvider = ({ children }) => {
         setAuthFeedback(getAuthFeedbackFromError(error, 'Supabase 세션을 불러오지 못했어요.'));
       }
 
-      setAuthSession(data.session ?? null);
-      setAuthUser(data.session?.user ?? null);
-      if (!data.session?.user) {
+      let nextSession = data.session ?? null;
+      let nextUser = nextSession?.user ?? null;
+
+      if (nextSession) {
+        const trustedSessionState = await getTrustedAuthSessionState(nextSession);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (trustedSessionState.invalid) {
+          await clearInvalidAuthSession();
+
+          if (!isMounted) {
+            return;
+          }
+
+          setIsAuthLoading(false);
+          return;
+        }
+
+        nextSession = trustedSessionState.session;
+        nextUser = trustedSessionState.user;
+      }
+
+      setAuthSession(nextSession);
+      setAuthUser(nextUser ?? null);
+      if (!nextUser) {
         setIsSignupCompletionPending(false);
       }
       setIsAuthLoading(false);
@@ -706,60 +813,99 @@ export const HappyProvider = ({ children }) => {
     loadSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMounted) {
-        return;
-      }
-
-      const isRecoverySession = event === 'PASSWORD_RECOVERY' || hasPasswordRecoveryInUrl();
-
-      setAuthSession(session ?? null);
-      setAuthUser(session?.user ?? null);
-      setIsAuthLoading(false);
-
-      if (event === 'SIGNED_IN') {
-        setIsGuestMode(false);
-        localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-        if (!isRecoverySession) {
-          setIsPasswordRecovery(false);
+      const applyAuthStateChange = async () => {
+        if (!isMounted) {
+          return;
         }
-      }
 
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsGuestMode(false);
-        localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-        setIsPasswordRecovery(true);
-        setIsSignupCompletionPending(false);
-        setAuthFeedback({
-          type: 'success',
-          message: '새 비밀번호를 설정해주세요.'
-        });
-      }
+        const isRecoverySession = event === 'PASSWORD_RECOVERY' || hasPasswordRecoveryInUrl();
+        let nextSession = session ?? null;
+        let nextUser = session?.user ?? null;
+        const shouldValidateSession = Boolean(
+          nextSession
+          && (
+            event === 'INITIAL_SESSION'
+            || event === 'SIGNED_IN'
+            || event === 'TOKEN_REFRESHED'
+          )
+        );
 
-      if (event === 'USER_UPDATED' && isPasswordRecoveryRef.current) {
-        clearAuthRedirectState();
-        setIsPasswordRecovery(false);
-        setAuthFeedback({
-          type: 'success',
-          message: '비밀번호가 새로 설정됐어요. 다시 사용할 수 있어요.'
-        });
-      }
+        if (shouldValidateSession) {
+          const trustedSessionState = await getTrustedAuthSessionState(nextSession);
 
-      if (event === 'SIGNED_OUT') {
-        setIsGuestMode(false);
-        localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-        setIsPasswordRecovery(false);
-        setIsSignupCompletionPending(false);
-        const postSignOutFeedback = postSignOutFeedbackRef.current;
-        postSignOutFeedbackRef.current = null;
-        setAuthFeedback(postSignOutFeedback || defaultAuthFeedback);
-      }
+          if (!isMounted) {
+            return;
+          }
+
+          if (trustedSessionState.invalid) {
+            await clearInvalidAuthSession();
+
+            if (!isMounted) {
+              return;
+            }
+
+            setIsAuthLoading(false);
+            return;
+          }
+
+          nextSession = trustedSessionState.session;
+          nextUser = trustedSessionState.user;
+        }
+
+        setAuthSession(nextSession);
+        setAuthUser(nextUser ?? null);
+        if (!nextUser) {
+          setIsSignupCompletionPending(false);
+        }
+        setIsAuthLoading(false);
+
+        if (event === 'SIGNED_IN') {
+          setIsGuestMode(false);
+          localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+          if (!isRecoverySession) {
+            setIsPasswordRecovery(false);
+          }
+        }
+
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsGuestMode(false);
+          localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+          setIsPasswordRecovery(true);
+          setIsSignupCompletionPending(false);
+          setAuthFeedback({
+            type: 'success',
+            message: '새 비밀번호를 설정해주세요.'
+          });
+        }
+
+        if (event === 'USER_UPDATED' && isPasswordRecoveryRef.current) {
+          clearAuthRedirectState();
+          setIsPasswordRecovery(false);
+          setAuthFeedback({
+            type: 'success',
+            message: '비밀번호가 새로 설정됐어요. 다시 사용할 수 있어요.'
+          });
+        }
+
+        if (event === 'SIGNED_OUT') {
+          setIsGuestMode(false);
+          localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+          setIsPasswordRecovery(false);
+          setIsSignupCompletionPending(false);
+          const postSignOutFeedback = postSignOutFeedbackRef.current;
+          postSignOutFeedbackRef.current = null;
+          setAuthFeedback(postSignOutFeedback || defaultAuthFeedback);
+        }
+      };
+
+      applyAuthStateChange();
     });
 
     return () => {
       isMounted = false;
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [clearInvalidAuthSession, getTrustedAuthSessionState]);
 
   useEffect(() => {
     latestSnapshotStateRef.current = {
