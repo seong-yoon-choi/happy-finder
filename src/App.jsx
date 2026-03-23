@@ -86,14 +86,21 @@ function AppContent() {
     authUserNickname,
     authUserOnboarding,
     isGuestMode,
+    isSignupCompletionPending,
     isPasswordRecovery
   } = useHappy();
 
   const isForcedAuthScreen = !authUser && !isGuestMode;
-  const isAuthScreenOpen = isForcedAuthScreen || isPasswordRecovery || (isAuthScreenRequested && !authUser);
+  const isAuthScreenOpen = (
+    isForcedAuthScreen
+    || isPasswordRecovery
+    || isSignupCompletionPending
+    || (isAuthScreenRequested && !authUser)
+  );
   const needsAgreementSetup = Boolean(
     authUser
       && !isGuestMode
+      && !isSignupCompletionPending
       && (
         !authUserOnboarding.isOver14
         || !authUserOnboarding.hasAcceptedTerms
@@ -103,6 +110,7 @@ function AppContent() {
   const needsNicknameSetup = Boolean(
     authUser
       && !isGuestMode
+      && !isSignupCompletionPending
       && !needsAgreementSetup
       && !authUserOnboarding.nickname
   );
@@ -197,7 +205,7 @@ function AppContent() {
 
       <AuthScreen
         isOpen={isAuthScreenOpen}
-        canClose={!isForcedAuthScreen && !isPasswordRecovery}
+        canClose={!isForcedAuthScreen && !isPasswordRecovery && !isSignupCompletionPending}
         initialMode={authScreenMode}
         onClose={closeAuthScreen}
       />
@@ -205,7 +213,7 @@ function AppContent() {
       <FirstLoginSetupModal
         key={`first-login-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}`}
         isOpen={isAgreementModalOpen}
-        canClose
+        canClose={!needsAgreementSetup}
         onClose={closeAgreementModal}
         onComplete={closeAgreementModal}
         initialValues={authUserOnboarding}

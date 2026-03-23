@@ -638,6 +638,7 @@ export const HappyProvider = ({ children }) => {
   const [authUser, setAuthUser] = useState(null);
   const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem(AUTH_MODE_STORAGE_KEY) === 'guest');
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => hasPasswordRecoveryInUrl());
+  const [isSignupCompletionPending, setIsSignupCompletionPending] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(isSupabaseConfigured);
   const [isAuthBusy, setIsAuthBusy] = useState(false);
   const [authFeedback, setAuthFeedback] = useState(defaultAuthFeedback);
@@ -696,6 +697,9 @@ export const HappyProvider = ({ children }) => {
 
       setAuthSession(data.session ?? null);
       setAuthUser(data.session?.user ?? null);
+      if (!data.session?.user) {
+        setIsSignupCompletionPending(false);
+      }
       setIsAuthLoading(false);
     };
 
@@ -724,6 +728,7 @@ export const HappyProvider = ({ children }) => {
         setIsGuestMode(false);
         localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
         setIsPasswordRecovery(true);
+        setIsSignupCompletionPending(false);
         setAuthFeedback({
           type: 'success',
           message: '새 비밀번호를 설정해주세요.'
@@ -743,6 +748,7 @@ export const HappyProvider = ({ children }) => {
         setIsGuestMode(false);
         localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
         setIsPasswordRecovery(false);
+        setIsSignupCompletionPending(false);
         const postSignOutFeedback = postSignOutFeedbackRef.current;
         postSignOutFeedbackRef.current = null;
         setAuthFeedback(postSignOutFeedback || defaultAuthFeedback);
@@ -1618,6 +1624,7 @@ export const HappyProvider = ({ children }) => {
       return { success: false, error: nextFeedback.message, reason: 'validation' };
     }
 
+    setIsSignupCompletionPending(true);
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
@@ -1629,6 +1636,7 @@ export const HappyProvider = ({ children }) => {
 
     if (error) {
       setIsAuthBusy(false);
+      setIsSignupCompletionPending(false);
       const nextFeedback = getAuthFeedbackFromError(error, '이메일 인증을 완료하지 못했어요.');
       setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message, reason: 'auth' };
@@ -1707,6 +1715,7 @@ export const HappyProvider = ({ children }) => {
       return { success: false, error: nextFeedback.message, reason: 'auth' };
     }
 
+    setIsSignupCompletionPending(false);
     setAuthFeedback({
       type: 'success',
       message: '회원가입이 완료됐어요.'
@@ -1866,6 +1875,7 @@ export const HappyProvider = ({ children }) => {
       return { success: false, error: 'Supabase가 연결되지 않았어요.' };
     }
 
+    setIsSignupCompletionPending(false);
     setIsAuthBusy(true);
     const { error } = await supabase.auth.signOut();
     setIsAuthBusy(false);
@@ -1909,6 +1919,7 @@ export const HappyProvider = ({ children }) => {
     resetLocalAppState();
     clearAuthRedirectState();
     setIsGuestMode(false);
+    setIsSignupCompletionPending(false);
     localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
     postSignOutFeedbackRef.current = successFeedback;
 
@@ -2152,6 +2163,7 @@ export const HappyProvider = ({ children }) => {
       authUserOnboarding: getAuthUserOnboardingState(authUser),
       authUserNickname: getAuthUserNickname(authUser),
       authUserDisplayName: getAuthUserDisplayName(authUser),
+      isSignupCompletionPending,
       isPasswordRecovery,
       isAuthLoading,
       isAuthBusy,

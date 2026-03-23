@@ -133,5 +133,9 @@
 
 .first-login-submit:disabled {
     opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.first-login-submit.is-busy:disabled {
     cursor: wait;
 }

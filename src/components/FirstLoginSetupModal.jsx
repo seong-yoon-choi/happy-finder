@@ -10,8 +10,12 @@ const FirstLoginSetupModal = ({
   initialValues
 }) => {
   const { isAuthBusy, completeAuthOnboarding } = useHappy();
+  const [isOver14, setIsOver14] = useState(Boolean(initialValues.isOver14));
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(Boolean(initialValues.hasAcceptedTerms));
+  const [hasAcceptedPrivacy, setHasAcceptedPrivacy] = useState(Boolean(initialValues.hasAcceptedPrivacy));
   const [hasAcceptedMarketing, setHasAcceptedMarketing] = useState(Boolean(initialValues.hasAcceptedMarketing));
   const [feedback, setFeedback] = useState('');
+  const isSubmitEnabled = isOver14 && hasAcceptedTerms && hasAcceptedPrivacy;
 
   useEffect(() => {
     const resetModalState = () => {
@@ -19,12 +23,21 @@ const FirstLoginSetupModal = ({
         return;
       }
 
+      setIsOver14(Boolean(initialValues.isOver14));
+      setHasAcceptedTerms(Boolean(initialValues.hasAcceptedTerms));
+      setHasAcceptedPrivacy(Boolean(initialValues.hasAcceptedPrivacy));
       setHasAcceptedMarketing(Boolean(initialValues.hasAcceptedMarketing));
       setFeedback('');
     };
 
     resetModalState();
-  }, [initialValues.hasAcceptedMarketing, isOpen]);
+  }, [
+    initialValues.hasAcceptedMarketing,
+    initialValues.hasAcceptedPrivacy,
+    initialValues.hasAcceptedTerms,
+    initialValues.isOver14,
+    isOpen
+  ]);
 
   if (!isOpen) {
     return null;
@@ -35,9 +48,9 @@ const FirstLoginSetupModal = ({
     setFeedback('');
 
     const result = await completeAuthOnboarding({
-      isOver14: true,
-      hasAcceptedTerms: true,
-      hasAcceptedPrivacy: true,
+      isOver14,
+      hasAcceptedTerms,
+      hasAcceptedPrivacy,
       hasAcceptedMarketing
     });
 
@@ -68,8 +81,9 @@ const FirstLoginSetupModal = ({
             <div className="first-login-check required">
               <input
                 type="checkbox"
-                checked
-                disabled
+                checked={isOver14}
+                onChange={event => setIsOver14(event.target.checked)}
+                disabled={isAuthBusy}
                 aria-label="만 14세 이상 동의"
               />
               <span>필수: 만 14세 이상</span>
@@ -78,8 +92,9 @@ const FirstLoginSetupModal = ({
             <div className="first-login-check required">
               <input
                 type="checkbox"
-                checked
-                disabled
+                checked={hasAcceptedTerms}
+                onChange={event => setHasAcceptedTerms(event.target.checked)}
+                disabled={isAuthBusy}
                 aria-label="이용약관 동의"
               />
               <span>
@@ -94,8 +109,9 @@ const FirstLoginSetupModal = ({
             <div className="first-login-check required">
               <input
                 type="checkbox"
-                checked
-                disabled
+                checked={hasAcceptedPrivacy}
+                onChange={event => setHasAcceptedPrivacy(event.target.checked)}
+                disabled={isAuthBusy}
                 aria-label="개인정보처리방침 동의"
               />
               <span>
@@ -127,7 +143,11 @@ const FirstLoginSetupModal = ({
 
           {feedback && <div className="first-login-feedback error">{feedback}</div>}
 
-          <button type="submit" className="btn-primary first-login-submit" disabled={isAuthBusy}>
+          <button
+            type="submit"
+            className={`btn-primary first-login-submit${isAuthBusy ? ' is-busy' : ''}`}
+            disabled={isAuthBusy || !isSubmitEnabled}
+          >
             {isAuthBusy ? '저장 중...' : '확인하기'}
           </button>
         </form>
