@@ -39,9 +39,6 @@ const Profile = () => {
 
   const treeInfo = getTreeInfo(totalStamps);
   const profileTitle = authUserNickname ? `${authUserNickname} 님의 행복 프로필` : '나의 행복 프로필';
-  const profileIntro = authUserNickname
-    ? `${authUserNickname} 님의 행복 기록과 스탬프 현황이에요.`
-    : '나의 행복 기록과 스탬프 현황이에요.';
 
   const toggleTreeTooltip = () => {
     setShowTreeTooltip(prev => {
@@ -62,10 +59,7 @@ const Profile = () => {
   return (
     <div className="view-container profile-view">
       <header className="profile-header">
-        <div className="profile-header-copy">
-          <div className="profile-brand" aria-label="Happy Finder 로고">Happy Finder</div>
-          <p className="profile-intro">{profileIntro}</p>
-        </div>
+        <div className="profile-brand" aria-label="Happy Finder 로고">Happy Finder</div>
 
         <section className="glass-card profile-overview">
           <div className="profile-overview-top">
