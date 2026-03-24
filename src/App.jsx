@@ -1,20 +1,12 @@
-import React, { startTransition, useEffect, useState } from 'react';
+import React, { lazy, startTransition, useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { HappyProvider, useHappy } from './store/HappyContext';
 import NavBar from './components/NavBar';
-import CelebrationModal from './components/CelebrationModal';
-import SettingsModal from './components/SettingsModal';
 import AuthScreen from './components/AuthScreen';
-import NicknameModal from './components/NicknameModal';
-import FirstLoginSetupModal from './components/FirstLoginSetupModal';
+import LazyLoadBoundary from './components/LazyLoadBoundary';
 import Home from './views/Home';
 import Profile from './views/Profile';
 import LandingPage from './views/LandingPage';
-import AdminInquiriesPage from './views/AdminInquiriesPage';
-import AccountDeletePage from './views/AccountDeletePage';
-import PasswordResetPage from './views/PasswordResetPage';
-import SupportPage from './views/SupportPage';
-import WebProfilePage from './views/WebProfilePage';
 import {
   APP_PATH,
   PROFILE_PATH,
@@ -31,6 +23,16 @@ import {
   normalizePath
 } from './lib/routes';
 import './App.css';
+
+const CelebrationModal = lazy(() => import('./components/CelebrationModal'));
+const SettingsModal = lazy(() => import('./components/SettingsModal'));
+const NicknameModal = lazy(() => import('./components/NicknameModal'));
+const FirstLoginSetupModal = lazy(() => import('./components/FirstLoginSetupModal'));
+const AdminInquiriesPage = lazy(() => import('./views/AdminInquiriesPage'));
+const AccountDeletePage = lazy(() => import('./views/AccountDeletePage'));
+const PasswordResetPage = lazy(() => import('./views/PasswordResetPage'));
+const SupportPage = lazy(() => import('./views/SupportPage'));
+const WebProfilePage = lazy(() => import('./views/WebProfilePage'));
 
 const isNativeRuntime = () => Capacitor.isNativePlatform();
 
@@ -193,15 +195,37 @@ function AppContent() {
       {currentView === 'profile' && <Profile />}
 
       <NavBar currentView={currentView} onViewChange={setCurrentView} />
-      <CelebrationModal celebration={activeCelebration} onClose={dismissCelebration} />
+      {activeCelebration && (
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="축하 화면을 준비하고 있어요."
+          errorTitle="축하 화면을 불러오지 못했어요."
+          errorMessage="앱을 새로고침하면 다시 확인할 수 있어요."
+          onDismiss={dismissCelebration}
+          resetKey={`${activeCelebration.title}-${activeCelebration.message}`}
+        >
+          <CelebrationModal celebration={activeCelebration} onClose={dismissCelebration} />
+        </LazyLoadBoundary>
+      )}
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onOpenAuth={openAuthScreen}
-        onOpenAgreement={openAgreementModal}
-        onOpenNicknameEditor={openNicknameModal}
-      />
+      {isSettingsOpen && (
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="설정을 불러오는 중이에요."
+          errorTitle="설정을 열지 못했어요."
+          errorMessage="네트워크나 앱 상태를 확인한 뒤 다시 시도해주세요."
+          onDismiss={() => setIsSettingsOpen(false)}
+          resetKey="settings-modal"
+        >
+          <SettingsModal
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            onOpenAuth={openAuthScreen}
+            onOpenAgreement={openAgreementModal}
+            onOpenNicknameEditor={openNicknameModal}
+          />
+        </LazyLoadBoundary>
+      )}
 
       <AuthScreen
         isOpen={isAuthScreenOpen}
@@ -210,25 +234,47 @@ function AppContent() {
         onClose={closeAuthScreen}
       />
 
-      <FirstLoginSetupModal
-        key={`first-login-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}`}
-        isOpen={isAgreementModalOpen}
-        canClose={!needsAgreementSetup}
-        onClose={closeAgreementModal}
-        onComplete={closeAgreementModal}
-        initialValues={authUserOnboarding}
-      />
+      {isAgreementModalOpen && (
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="동의 화면을 준비하고 있어요."
+          errorTitle="동의 화면을 불러오지 못했어요."
+          errorMessage="앱을 새로고침한 뒤 다시 시도해주세요."
+          onDismiss={!needsAgreementSetup ? closeAgreementModal : undefined}
+          resetKey={`first-login-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}`}
+        >
+          <FirstLoginSetupModal
+            key={`first-login-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}`}
+            isOpen={isAgreementModalOpen}
+            canClose={!needsAgreementSetup}
+            onClose={closeAgreementModal}
+            onComplete={closeAgreementModal}
+            initialValues={authUserOnboarding}
+          />
+        </LazyLoadBoundary>
+      )}
 
-      <NicknameModal
-        key={`edit-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}-${isNicknameModalOpen ? 'open' : 'closed'}-${needsNicknameSetup ? 'forced' : 'manual'}`}
-        isOpen={isNicknameModalOpen}
-        canClose={!needsNicknameSetup}
-        onClose={closeNicknameModal}
-        title={needsNicknameSetup ? '닉네임 설정' : '닉네임 바꾸기'}
-        description={needsNicknameSetup ? '프로필에 표시할 닉네임을 입력해주세요.' : '프로필에 표시할 닉네임을 새로 입력해주세요.'}
-        submitLabel={needsNicknameSetup ? '저장하고 시작하기' : '저장하기'}
-        initialValue={authUserNickname}
-      />
+      {isNicknameModalOpen && (
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="닉네임 화면을 준비하고 있어요."
+          errorTitle="닉네임 화면을 불러오지 못했어요."
+          errorMessage="잠시 후 다시 시도해주세요."
+          onDismiss={!needsNicknameSetup ? closeNicknameModal : undefined}
+          resetKey={`edit-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}-${needsNicknameSetup ? 'forced' : 'manual'}`}
+        >
+          <NicknameModal
+            key={`edit-${authUser?.id || 'guest'}-${authUserNickname || 'empty'}-${isNicknameModalOpen ? 'open' : 'closed'}-${needsNicknameSetup ? 'forced' : 'manual'}`}
+            isOpen={isNicknameModalOpen}
+            canClose={!needsNicknameSetup}
+            onClose={closeNicknameModal}
+            title={needsNicknameSetup ? '닉네임 설정' : '닉네임 바꾸기'}
+            description={needsNicknameSetup ? '프로필에 표시할 닉네임을 입력해주세요.' : '프로필에 표시할 닉네임을 새로 입력해주세요.'}
+            submitLabel={needsNicknameSetup ? '저장하고 시작하기' : '저장하기'}
+            initialValue={authUserNickname}
+          />
+        </LazyLoadBoundary>
+      )}
     </div>
   );
 }
@@ -277,18 +323,34 @@ function PublicSiteContent({ pathname, onNavigate }) {
   return (
     <>
       {isProfileRoute ? (
-        <WebProfilePage
-          onNavigate={onNavigate}
-          onOpenAuth={() => openAuthScreen('login')}
-        />
+        <LazyLoadBoundary
+          mode="page"
+          loadingLabel="프로필 페이지를 불러오는 중이에요."
+          errorTitle="프로필 페이지를 열지 못했어요."
+          errorMessage="잠시 후 다시 시도해주세요."
+          resetKey="web-profile-page"
+        >
+          <WebProfilePage
+            onNavigate={onNavigate}
+            onOpenAuth={() => openAuthScreen('login')}
+          />
+        </LazyLoadBoundary>
       ) : isSupportRoute ? (
-        <SupportPage
-          pathname={pathname}
-          onNavigate={onNavigate}
-          onOpenAuth={() => openAuthScreen('login')}
-          onOpenProfile={() => onNavigate(PROFILE_PATH)}
-          isAuthenticated={isAuthenticated}
-        />
+        <LazyLoadBoundary
+          mode="page"
+          loadingLabel="고객지원 페이지를 불러오는 중이에요."
+          errorTitle="고객지원 페이지를 열지 못했어요."
+          errorMessage="잠시 후 다시 시도해주세요."
+          resetKey={`support-${pathname}`}
+        >
+          <SupportPage
+            pathname={pathname}
+            onNavigate={onNavigate}
+            onOpenAuth={() => openAuthScreen('login')}
+            onOpenProfile={() => onNavigate(PROFILE_PATH)}
+            isAuthenticated={isAuthenticated}
+          />
+        </LazyLoadBoundary>
       ) : (
         <LandingPage
           onOpenAuth={() => openAuthScreen('login')}
@@ -310,19 +372,43 @@ function PublicSiteContent({ pathname, onNavigate }) {
 
 function PasswordResetRoute() {
   return (
-    <PasswordResetPage />
+    <LazyLoadBoundary
+      mode="page"
+      loadingLabel="비밀번호 재설정 화면을 불러오는 중이에요."
+      errorTitle="비밀번호 재설정 화면을 열지 못했어요."
+      errorMessage="잠시 후 다시 시도해주세요."
+      resetKey="password-reset-route"
+    >
+      <PasswordResetPage />
+    </LazyLoadBoundary>
   );
 }
 
 function AccountDeleteRoute() {
   return (
-    <AccountDeletePage />
+    <LazyLoadBoundary
+      mode="page"
+      loadingLabel="계정 삭제 페이지를 불러오는 중이에요."
+      errorTitle="계정 삭제 페이지를 열지 못했어요."
+      errorMessage="잠시 후 다시 시도해주세요."
+      resetKey="account-delete-route"
+    >
+      <AccountDeletePage />
+    </LazyLoadBoundary>
   );
 }
 
 function AdminInquiriesRoute() {
   return (
-    <AdminInquiriesPage />
+    <LazyLoadBoundary
+      mode="page"
+      loadingLabel="문의 관리 페이지를 불러오는 중이에요."
+      errorTitle="문의 관리 페이지를 열지 못했어요."
+      errorMessage="잠시 후 다시 시도해주세요."
+      resetKey="admin-inquiries-route"
+    >
+      <AdminInquiriesPage />
+    </LazyLoadBoundary>
   );
 }
 

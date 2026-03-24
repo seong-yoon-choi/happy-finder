@@ -1,13 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { lazy, useMemo, useState } from 'react';
 import { useHappy } from '../store/HappyContext';
 import HappinessCard from '../components/HappinessCard';
 import CategoryTabs from '../components/CategoryTabs';
-import CreateHappinessModal from '../components/CreateHappinessModal';
-import HappinessDetailModal from '../components/HappinessDetailModal';
+import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { getTreeInfo } from '../utils/progress';
 import './Profile.css';
 
 const stampedCategories = ['전체', '소확행', '일주일행복', '한달행복'];
+const CreateHappinessModal = lazy(() => import('../components/CreateHappinessModal'));
+const HappinessDetailModal = lazy(() => import('../components/HappinessDetailModal'));
 
 const Profile = () => {
   const {
@@ -189,18 +190,40 @@ const Profile = () => {
         )}
       </div>
 
-      <CreateHappinessModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {isModalOpen && (
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="행복 생성 화면을 불러오는 중이에요."
+          errorTitle="행복 생성 화면을 열지 못했어요."
+          errorMessage="잠시 후 다시 시도해주세요."
+          onDismiss={() => setIsModalOpen(false)}
+          resetKey="create-happiness-modal"
+        >
+          <CreateHappinessModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+          />
+        </LazyLoadBoundary>
+      )}
 
-      <HappinessDetailModal
-        item={selectedCard}
-        isOpen={!!selectedCard}
-        onClose={() => setSelectedCard(null)}
-        showOwnerInsights
-        canDelete={activeTab === 'myItems'}
-      />
+      {selectedCard && (
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="행복 상세 화면을 불러오는 중이에요."
+          errorTitle="행복 상세 화면을 열지 못했어요."
+          errorMessage="잠시 후 다시 시도해주세요."
+          onDismiss={() => setSelectedCard(null)}
+          resetKey={`${selectedCard.id}-${activeTab}`}
+        >
+          <HappinessDetailModal
+            item={selectedCard}
+            isOpen={!!selectedCard}
+            onClose={() => setSelectedCard(null)}
+            showOwnerInsights
+            canDelete={activeTab === 'myItems'}
+          />
+        </LazyLoadBoundary>
+      )}
     </div>
   );
 };
