@@ -40,8 +40,12 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   }
 
   return (
-    <div className="modal-overlay create-modal-overlay" onClick={handleClose}>
-      <div className="glass-panel modal-content create-modal-content" onClick={event => event.stopPropagation()}>
+    <div className="modal-overlay create-modal-overlay" data-block-pull-refresh="true" onClick={handleClose}>
+      <div
+        className="glass-panel modal-content create-modal-content"
+        data-block-pull-refresh="true"
+        onClick={event => event.stopPropagation()}
+      >
         <div className="create-modal-top-actions">
           <button
             type="button"

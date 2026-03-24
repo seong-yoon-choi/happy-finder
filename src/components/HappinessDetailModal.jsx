@@ -231,8 +231,12 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
   };
 
   return (
-    <div className="modal-overlay detail-modal-overlay" onClick={handleClose}>
-      <div className="glass-panel detail-modal-content" onClick={event => event.stopPropagation()}>
+    <div className="modal-overlay detail-modal-overlay" data-block-pull-refresh="true" onClick={handleClose}>
+      <div
+        className="glass-panel detail-modal-content"
+        data-block-pull-refresh="true"
+        onClick={event => event.stopPropagation()}
+      >
         <div className="detail-top-actions">
           <button
             type="button"

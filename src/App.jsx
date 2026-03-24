@@ -3,7 +3,9 @@ import { Capacitor } from '@capacitor/core';
 import { HappyProvider, useHappy } from './store/HappyContext';
 import NavBar from './components/NavBar';
 import AuthScreen from './components/AuthScreen';
+import CelebrationModal from './components/CelebrationModal';
 import LazyLoadBoundary from './components/LazyLoadBoundary';
+import PullToRefreshShell from './components/PullToRefreshShell';
 import Home from './views/Home';
 import Profile from './views/Profile';
 import LandingPage from './views/LandingPage';
@@ -24,7 +26,6 @@ import {
 } from './lib/routes';
 import './App.css';
 
-const CelebrationModal = lazy(() => import('./components/CelebrationModal'));
 const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const NicknameModal = lazy(() => import('./components/NicknameModal'));
 const FirstLoginSetupModal = lazy(() => import('./components/FirstLoginSetupModal'));
@@ -33,8 +34,28 @@ const AccountDeletePage = lazy(() => import('./views/AccountDeletePage'));
 const PasswordResetPage = lazy(() => import('./views/PasswordResetPage'));
 const SupportPage = lazy(() => import('./views/SupportPage'));
 const WebProfilePage = lazy(() => import('./views/WebProfilePage'));
+const PULL_TO_REFRESH_VIEW_STORAGE_KEY = 'happy_pull_refresh_view';
 
 const isNativeRuntime = () => Capacitor.isNativePlatform();
+
+const consumePreservedAppView = () => {
+  if (typeof window === 'undefined') {
+    return 'home';
+  }
+
+  const preservedView = window.sessionStorage.getItem(PULL_TO_REFRESH_VIEW_STORAGE_KEY);
+  window.sessionStorage.removeItem(PULL_TO_REFRESH_VIEW_STORAGE_KEY);
+
+  return preservedView === 'profile' ? 'profile' : 'home';
+};
+
+const preserveAppViewForRefresh = view => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(PULL_TO_REFRESH_VIEW_STORAGE_KEY, view === 'profile' ? 'profile' : 'home');
+};
 
 const resolveRuntimePath = rawPathname => {
   const normalizedPathname = normalizePath(rawPathname);
@@ -73,7 +94,7 @@ const navigateToPath = (nextPath, onNavigate) => {
 
 function AppContent() {
   const initialRequestedMode = getRequestedAuthModeFromUrl();
-  const [currentView, setCurrentView] = useState('home');
+  const [currentView, setCurrentView] = useState(() => consumePreservedAppView());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(() => Boolean(initialRequestedMode));
   const [authScreenMode, setAuthScreenMode] = useState(() => initialRequestedMode || 'login');
@@ -126,6 +147,13 @@ function AppContent() {
     needsNicknameSetup
     || (isNicknameModalRequested && !needsAgreementSetup)
   );
+  const isPullToRefreshEnabled = (
+    !isSettingsOpen
+    && !isAuthScreenOpen
+    && !isAgreementModalOpen
+    && !isNicknameModalOpen
+    && !activeCelebration
+  );
 
   useEffect(() => {
     if (initialRequestedMode) {
@@ -175,37 +203,35 @@ function AppContent() {
     setIsNicknameModalRequested(false);
   };
 
+  const handlePullRefresh = () => {
+    preserveAppViewForRefresh(currentView);
+    window.location.reload();
+  };
+
   return (
     <div className="app-container">
-      <button
-        type="button"
-        className="settings-trigger-btn"
-        onClick={() => setIsSettingsOpen(true)}
-        aria-label="설정 열기"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="settings-trigger-icon">
-          <path
-            fill="currentColor"
-            d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.16 7.16 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.49-.42h-3.84a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54c.04.24.24.42.49.42h3.84c.25 0 .45-.18.49-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"
-          />
-        </svg>
-      </button>
-
-      {currentView === 'home' && <Home />}
-      {currentView === 'profile' && <Profile />}
-
-      <NavBar currentView={currentView} onViewChange={setCurrentView} />
-      {activeCelebration && (
-        <LazyLoadBoundary
-          mode="overlay"
-          loadingLabel="축하 화면을 준비하고 있어요."
-          errorTitle="축하 화면을 불러오지 못했어요."
-          errorMessage="앱을 새로고침하면 다시 확인할 수 있어요."
-          onDismiss={dismissCelebration}
-          resetKey={`${activeCelebration.title}-${activeCelebration.message}`}
+      <PullToRefreshShell enabled={isPullToRefreshEnabled} onRefresh={handlePullRefresh}>
+        <button
+          type="button"
+          className="settings-trigger-btn"
+          onClick={() => setIsSettingsOpen(true)}
+          aria-label="설정 열기"
         >
-          <CelebrationModal celebration={activeCelebration} onClose={dismissCelebration} />
-        </LazyLoadBoundary>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="settings-trigger-icon">
+            <path
+              fill="currentColor"
+              d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.16 7.16 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.49-.42h-3.84a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54c.04.24.24.42.49.42h3.84c.25 0 .45-.18.49-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"
+            />
+          </svg>
+        </button>
+
+        {currentView === 'home' && <Home />}
+        {currentView === 'profile' && <Profile />}
+
+        <NavBar currentView={currentView} onViewChange={setCurrentView} />
+      </PullToRefreshShell>
+      {activeCelebration && (
+        <CelebrationModal celebration={activeCelebration} onClose={dismissCelebration} />
       )}
 
       {isSettingsOpen && (
