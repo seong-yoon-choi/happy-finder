@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { lazy, useCallback, useMemo, useState } from 'react';
 import CategoryTabs from '../components/CategoryTabs';
 import HappinessCard from '../components/HappinessCard';
-import HappinessDetailModal from '../components/HappinessDetailModal';
+import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { useHappy } from '../store/HappyContext';
 import './Home.css';
 
 const homeCategories = ['랜덤행복', '소확행', '일주일행복', '한달행복'];
+const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
+const HappinessDetailModal = lazy(loadHappinessDetailModal);
 
 const getSessionShuffleRank = (itemId, seed) => {
   const source = `${seed}:${itemId}`;
@@ -44,9 +46,13 @@ const Home = () => {
     });
   }, [items, selectedCategory, sessionShuffleSeed]);
 
-  const handleCardClick = item => {
+  const handleCardClick = useCallback(item => {
     setSelectedCard(item);
-  };
+  }, []);
+
+  const handleCloseDetailModal = useCallback(() => {
+    setSelectedCard(null);
+  }, []);
 
   return (
     <div className="view-container home-view">
@@ -75,13 +81,22 @@ const Home = () => {
       </div>
 
       {selectedCard && (
-        <HappinessDetailModal
-          item={selectedCard}
-          isOpen={!!selectedCard}
-          onClose={() => setSelectedCard(null)}
-          showOwnerInsights={false}
-          canDelete={false}
-        />
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="행복 상세 화면을 불러오는 중이에요."
+          errorTitle="행복 상세 화면을 열지 못했어요."
+          errorMessage="잠시 후 다시 시도해주세요."
+          onDismiss={handleCloseDetailModal}
+          resetKey={selectedCard.id}
+        >
+          <HappinessDetailModal
+            item={selectedCard}
+            isOpen={!!selectedCard}
+            onClose={handleCloseDetailModal}
+            showOwnerInsights={false}
+            canDelete={false}
+          />
+        </LazyLoadBoundary>
       )}
     </div>
   );

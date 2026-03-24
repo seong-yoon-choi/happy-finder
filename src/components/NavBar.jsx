@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import './NavBar.css';
 
 const NavBar = ({ currentView, onViewChange }) => {
@@ -23,4 +23,4 @@ const NavBar = ({ currentView, onViewChange }) => {
     );
 };
 
-export default NavBar;
+export default memo(NavBar);

@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { lazy, useCallback, useMemo, useState } from 'react';
 import { useHappy } from '../store/HappyContext';
 import HappinessCard from '../components/HappinessCard';
 import CategoryTabs from '../components/CategoryTabs';
 import CreateHappinessModal from '../components/CreateHappinessModal';
-import HappinessDetailModal from '../components/HappinessDetailModal';
+import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { getTreeInfo } from '../utils/progress';
 import './Profile.css';
 
 const stampedCategories = ['전체', '소확행', '일주일행복', '한달행복'];
+const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
+const HappinessDetailModal = lazy(loadHappinessDetailModal);
 
 const Profile = () => {
   const {
@@ -52,9 +54,13 @@ const Profile = () => {
     });
   };
 
-  const handleCardClick = item => {
+  const handleCardClick = useCallback(item => {
     setSelectedCard(item);
-  };
+  }, []);
+
+  const handleCloseDetailModal = useCallback(() => {
+    setSelectedCard(null);
+  }, []);
 
   return (
     <div className="view-container profile-view">
@@ -197,13 +203,22 @@ const Profile = () => {
       )}
 
       {selectedCard && (
-        <HappinessDetailModal
-          item={selectedCard}
-          isOpen={!!selectedCard}
-          onClose={() => setSelectedCard(null)}
-          showOwnerInsights
-          canDelete={activeTab === 'myItems'}
-        />
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="행복 상세 화면을 불러오는 중이에요."
+          errorTitle="행복 상세 화면을 열지 못했어요."
+          errorMessage="잠시 후 다시 시도해주세요."
+          onDismiss={handleCloseDetailModal}
+          resetKey={`${selectedCard.id}-${activeTab}`}
+        >
+          <HappinessDetailModal
+            item={selectedCard}
+            isOpen={!!selectedCard}
+            onClose={handleCloseDetailModal}
+            showOwnerInsights
+            canDelete={activeTab === 'myItems'}
+          />
+        </LazyLoadBoundary>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { memo, useRef } from 'react';
 import './CategoryTabs.css';
 
 const defaultCategories = ['랜덤행복', '소확행', '일주일행복', '한달행복'];
@@ -33,4 +33,4 @@ const CategoryTabs = ({ selected, onSelect, categories = defaultCategories }) =>
     );
 };
 
-export default CategoryTabs;
+export default memo(CategoryTabs);

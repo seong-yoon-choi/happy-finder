@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useHappy } from '../store/HappyContext';
 import './HappinessCard.css';
 
@@ -34,4 +34,4 @@ const HappinessCard = ({ item, onClick }) => {
     );
 };
 
-export default HappinessCard;
+export default memo(HappinessCard);
