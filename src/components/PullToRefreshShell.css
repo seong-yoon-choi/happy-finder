@@ -6,8 +6,12 @@
 
 .pull-refresh-content {
     min-height: 100vh;
-    transform: translateY(var(--pull-refresh-offset, 0px));
     transition: transform 0.18s ease;
+}
+
+.pull-refresh-shell.dragging .pull-refresh-content,
+.pull-refresh-shell.refreshing .pull-refresh-content {
+    transform: translateY(var(--pull-refresh-offset, 0px));
 }
 
 .pull-refresh-shell.dragging .pull-refresh-content {
