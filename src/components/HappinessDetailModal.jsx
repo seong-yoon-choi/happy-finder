@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { startTransition, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { useHappy } from '../store/HappyContext';
 import { getLocalDateKey } from '../utils/date';
@@ -12,33 +12,64 @@ const memoDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   minute: '2-digit'
 });
 
-const fireCelebration = () => {
-  const burstCount = 8;
-  let remainingBursts = burstCount;
-  const defaults = { startVelocity: 25, spread: 360, ticks: 60, zIndex: 10000 };
-  const origins = [
-    { x: 0.2, y: 0.1 },
-    { x: 0.8, y: 0.1 }
-  ];
+const CONFETTI_BURSTS = [
+  {
+    delay: 0,
+    particleCount: 18,
+    spread: 56,
+    startVelocity: 30,
+    ticks: 42,
+    scalar: 0.92,
+    origin: { x: 0.2, y: 0.18 }
+  },
+  {
+    delay: 0,
+    particleCount: 18,
+    spread: 56,
+    startVelocity: 30,
+    ticks: 42,
+    scalar: 0.92,
+    origin: { x: 0.8, y: 0.18 }
+  },
+  {
+    delay: 120,
+    particleCount: 24,
+    spread: 78,
+    startVelocity: 24,
+    ticks: 46,
+    scalar: 0.86,
+    origin: { x: 0.5, y: 0.14 }
+  }
+];
 
-  const interval = setInterval(() => {
-    if (remainingBursts <= 0) {
-      clearInterval(interval);
-      return;
-    }
+const clearCelebrationTimeouts = timeoutIdsRef => {
+  timeoutIdsRef.current.forEach(timeoutId => {
+    window.clearTimeout(timeoutId);
+  });
+  timeoutIdsRef.current = [];
+};
 
-    const particleCount = 16 + (remainingBursts * 3);
+const fireCelebration = timeoutIdsRef => {
+  if (typeof window === 'undefined') {
+    return;
+  }
 
-    origins.forEach(origin => {
+  clearCelebrationTimeouts(timeoutIdsRef);
+
+  CONFETTI_BURSTS.forEach(({ delay, ...burstOptions }) => {
+    const timeoutId = window.setTimeout(() => {
       confetti({
-        ...defaults,
-        particleCount,
-        origin
+        ...burstOptions,
+        gravity: 1.04,
+        decay: 0.93,
+        drift: 0,
+        zIndex: 3400,
+        disableForReducedMotion: true
       });
-    });
+    }, delay);
 
-    remainingBursts -= 1;
-  }, 250);
+    timeoutIdsRef.current.push(timeoutId);
+  });
 };
 
 const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false, canDelete = false }) => {
@@ -68,11 +99,22 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
 
   const requestRef = useRef();
   const startTimeRef = useRef();
+  const celebrationTimeoutsRef = useRef([]);
+  const completionFrameRef = useRef(null);
+  const memoRevealTimeoutRef = useRef(null);
   const duration = 1500;
 
   useEffect(() => {
     return () => {
       cancelAnimationFrame(requestRef.current);
+      if (completionFrameRef.current) {
+        cancelAnimationFrame(completionFrameRef.current);
+      }
+      if (memoRevealTimeoutRef.current) {
+        window.clearTimeout(memoRevealTimeoutRef.current);
+      }
+      clearCelebrationTimeouts(celebrationTimeoutsRef);
+      confetti.reset?.();
     };
   }, []);
 
@@ -105,11 +147,27 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
     }
 
     setIsPressing(false);
-    addStamp(item.id);
-    setShowSuccess(true);
-    setShowMemoComposer(true);
-    setMemoText('');
-    fireCelebration();
+    fireCelebration(celebrationTimeoutsRef);
+
+    if (completionFrameRef.current) {
+      cancelAnimationFrame(completionFrameRef.current);
+    }
+
+    completionFrameRef.current = requestAnimationFrame(() => {
+      startTransition(() => {
+        addStamp(item.id);
+        setShowSuccess(true);
+        setMemoText('');
+      });
+
+      memoRevealTimeoutRef.current = window.setTimeout(() => {
+        startTransition(() => {
+          setShowMemoComposer(true);
+        });
+      }, 140);
+
+      completionFrameRef.current = null;
+    });
   };
 
   const handlePressStart = event => {
@@ -152,6 +210,16 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
     setEditingMemoText('');
     startTimeRef.current = null;
     cancelAnimationFrame(requestRef.current);
+    if (completionFrameRef.current) {
+      cancelAnimationFrame(completionFrameRef.current);
+      completionFrameRef.current = null;
+    }
+    if (memoRevealTimeoutRef.current) {
+      window.clearTimeout(memoRevealTimeoutRef.current);
+      memoRevealTimeoutRef.current = null;
+    }
+    clearCelebrationTimeouts(celebrationTimeoutsRef);
+    confetti.reset?.();
   };
 
   const handleClose = () => {
