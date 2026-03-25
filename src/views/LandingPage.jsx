@@ -20,7 +20,7 @@ const quickFacts = [
   }
 ];
 
-const LandingPage = ({ onOpenAuth, onOpenProfile, onNavigate, isAuthenticated = false }) => {
+const LandingPage = ({ onOpenApp, onOpenAuth, onOpenProfile, onNavigate, isAuthenticated = false }) => {
   const navigateToPath = nextPath => () => onNavigate?.(nextPath);
   const handleAccountAction = isAuthenticated ? onOpenProfile : onOpenAuth;
   const accountActionLabel = isAuthenticated ? '프로필' : '로그인';
@@ -42,6 +42,9 @@ const LandingPage = ({ onOpenAuth, onOpenProfile, onNavigate, isAuthenticated = 
                 onClick={handleAccountAction}
               >
                 {accountActionLabel}
+              </button>
+              <button type="button" className="landing-app-button" onClick={onOpenApp}>
+                앱 열기
               </button>
             </div>
           </nav>
@@ -67,6 +70,9 @@ const LandingPage = ({ onOpenAuth, onOpenProfile, onNavigate, isAuthenticated = 
               </p>
 
               <div className="landing-hero-actions">
+                <button type="button" className="landing-primary-cta" onClick={onOpenApp}>
+                  지금 앱 열기
+                </button>
                 <button
                   type="button"
                   className={`landing-secondary-cta ${isAuthenticated ? 'is-authenticated' : ''}`}

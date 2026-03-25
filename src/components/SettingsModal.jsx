@@ -62,6 +62,61 @@ const formatReminderTimeLabel = (timeValue) => {
   return `${period === 'AM' ? '오전' : '오후'} ${Number(hour)}시 ${minute}분`;
 };
 
+const getDeviceTimeZoneLabel = () => {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return typeof timeZone === 'string' && timeZone.trim() ? timeZone.trim() : '기기 기본 시간대';
+  } catch {
+    return '기기 기본 시간대';
+  }
+};
+
+const getNextReminderTrigger = (timeValue, now = new Date()) => {
+  const [rawHour = '20', rawMinute = '00'] = String(timeValue || DEFAULT_REMINDER_TIME).split(':');
+  const hour = Number(rawHour);
+  const minute = Number(rawMinute);
+  const nextTrigger = new Date(now);
+
+  nextTrigger.setHours(
+    Number.isFinite(hour) ? hour : 20,
+    Number.isFinite(minute) ? minute : 0,
+    0,
+    0
+  );
+
+  if (nextTrigger.getTime() <= now.getTime()) {
+    nextTrigger.setDate(nextTrigger.getDate() + 1);
+  }
+
+  return nextTrigger;
+};
+
+const getNextReminderPreview = (reminders) => {
+  if (!Array.isArray(reminders) || reminders.length === 0) {
+    return '';
+  }
+
+  const nextTrigger = reminders.reduce((soonest, reminder) => {
+    const candidate = getNextReminderTrigger(reminder.time);
+    return !soonest || candidate.getTime() < soonest.getTime() ? candidate : soonest;
+  }, null);
+
+  if (!nextTrigger) {
+    return '';
+  }
+
+  const weekdayLabel = nextTrigger.toLocaleDateString('ko-KR', { weekday: 'short' });
+  const dateLabel = nextTrigger.toLocaleDateString('ko-KR', {
+    month: 'long',
+    day: 'numeric'
+  });
+  const timeLabel = formatReminderTimeLabel(
+    `${String(nextTrigger.getHours()).padStart(2, '0')}:${String(nextTrigger.getMinutes()).padStart(2, '0')}`
+  );
+
+  return `다음 알림: ${dateLabel} (${weekdayLabel}) ${timeLabel}`;
+};
+
 const ChevronIcon = ({ isOpen = false, className = '' }) => (
   <span className={`settings-time-chevron ${className} ${isOpen ? 'open' : ''}`.trim()} aria-hidden="true">
     <svg viewBox="0 0 20 20" fill="none" focusable="false">
@@ -194,6 +249,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const reminders = reminderSettings.reminders || [];
   const isNativeReminderPlatform = isNativeNotificationPlatform();
+  const deviceTimeZoneLabel = getDeviceTimeZoneLabel();
 
   if (!isOpen) {
     return null;
@@ -233,6 +289,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const shouldShowExactAlarmButton = isNativeReminderPlatform
     && notificationPermission === 'granted'
     && exactAlarmPermission === 'denied';
+  const nextReminderPreview = reminderSettings.enabled
+    ? getNextReminderPreview(reminders)
+    : '';
 
   const pickerPreviewText = formatReminderTimeLabel(toReminderTimeValue(pickerTime));
   const timeEditorTitle = editingReminderId === 'new' ? '알림 추가' : '알림 수정';
@@ -695,6 +754,12 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
           )}
 
           <div className="settings-note">{reminderMessage}</div>
+          {isNativeReminderPlatform && (
+            <div className="settings-note">
+              <div>기기 시간대: {deviceTimeZoneLabel}</div>
+              {nextReminderPreview && <div>{nextReminderPreview}</div>}
+            </div>
+          )}
         </div>
       </div>
     </div>
