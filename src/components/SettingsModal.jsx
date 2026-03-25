@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { isNativeNotificationPlatform } from '../lib/localNotifications';
+import { isNativeAndroidNotificationPlatform, isNativeNotificationPlatform } from '../lib/localNotifications';
 import { useHappy } from '../store/HappyContext';
 import { openExternalUrl } from '../lib/externalBrowser';
 import { SUPPORT_PATH, getPasswordResetWebUrl, getPublicWebUrl } from '../lib/routes';
@@ -246,9 +246,11 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
+  const [isExactAlarmDialogOpen, setIsExactAlarmDialogOpen] = useState(false);
 
   const reminders = reminderSettings.reminders || [];
   const isNativeReminderPlatform = isNativeNotificationPlatform();
+  const isNativeAndroidReminderPlatform = isNativeAndroidNotificationPlatform();
   const deviceTimeZoneLabel = getDeviceTimeZoneLabel();
 
   if (!isOpen) {
@@ -314,9 +316,14 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     setPickerTime(parseReminderTime(DEFAULT_REMINDER_TIME));
   };
 
+  const closeExactAlarmDialog = () => {
+    setIsExactAlarmDialogOpen(false);
+  };
+
   const resetModalState = () => {
     resetAccountDangerState();
     resetReminderEditor();
+    closeExactAlarmDialog();
     setIsAccountActionsOpen(false);
   };
 
@@ -431,6 +438,29 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     }
 
     deleteReminder(reminderId);
+  };
+
+  const handleOpenExactAlarmPrompt = () => {
+    setIsExactAlarmDialogOpen(true);
+  };
+
+  const handleConfirmExactAlarmPrompt = async () => {
+    closeExactAlarmDialog();
+    await openExactAlarmSettings();
+  };
+
+  const handleToggleReminder = async () => {
+    const nextEnabled = !reminderSettings.enabled;
+    const permission = await toggleReminder(nextEnabled);
+
+    if (
+      nextEnabled
+      && permission === 'granted'
+      && isNativeAndroidReminderPlatform
+      && exactAlarmPermission === 'denied'
+    ) {
+      handleOpenExactAlarmPrompt();
+    }
   };
 
   return (
@@ -620,7 +650,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
             <button
               type="button"
               className={`settings-action-btn settings-inline-btn ${reminderSettings.enabled ? 'active' : ''}`}
-              onClick={() => toggleReminder(!reminderSettings.enabled)}
+              onClick={handleToggleReminder}
             >
               {reminderSettings.enabled ? '알림 켜짐' : '알림 꺼짐'}
             </button>
@@ -747,7 +777,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
             <button
               type="button"
               className="settings-secondary-btn"
-              onClick={openExactAlarmSettings}
+              onClick={handleOpenExactAlarmPrompt}
             >
               정확한 알림 허용하기
             </button>
@@ -761,6 +791,40 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
             </div>
           )}
         </div>
+
+        {isExactAlarmDialogOpen && (
+          <div className="settings-dialog-backdrop" onClick={closeExactAlarmDialog}>
+            <div
+              className="settings-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="exact-alarm-dialog-title"
+              onClick={event => event.stopPropagation()}
+            >
+              <h3 id="exact-alarm-dialog-title">알람을 허용해 주세요</h3>
+              <p>
+                정각 알림을 받으려면 안드로이드의 정확한 알림 권한을 허용해야 해요.
+                확인을 누르면 알람 설정 화면으로 이동합니다.
+              </p>
+              <div className="settings-dialog-actions">
+                <button
+                  type="button"
+                  className="settings-secondary-btn"
+                  onClick={closeExactAlarmDialog}
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className="settings-action-btn active"
+                  onClick={handleConfirmExactAlarmPrompt}
+                >
+                  확인
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
