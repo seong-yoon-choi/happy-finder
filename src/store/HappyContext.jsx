@@ -9,6 +9,7 @@ import {
   isNativeAndroidNotificationPlatform,
   isNativeNotificationPlatform,
   openNativeExactAlarmSettings,
+  openNativeNotificationSettings,
   requestNativeNotificationPermission,
   syncNativeReminderNotifications
 } from '../lib/localNotifications';
@@ -25,6 +26,20 @@ const createReminderItem = (time = DEFAULT_REMINDER_TIME, overrides = {}) => ({
   time: typeof time === 'string' ? time : DEFAULT_REMINDER_TIME,
   lastTriggeredDate: typeof overrides.lastTriggeredDate === 'string' ? overrides.lastTriggeredDate : null
 });
+
+const applyReminderEnabledState = (settings, enabled) => {
+  const todayKey = getLocalDateKey();
+  const nowTimeKey = getCurrentTimeKey();
+
+  return {
+    ...settings,
+    enabled,
+    reminders: settings.reminders.map(reminder => ({
+      ...reminder,
+      lastTriggeredDate: enabled && nowTimeKey >= reminder.time ? todayKey : reminder.lastTriggeredDate
+    }))
+  };
+};
 
 const defaultReminderSettings = {
   enabled: false,
@@ -658,6 +673,7 @@ export const HappyProvider = ({ children }) => {
   const [exactAlarmPermission, setExactAlarmPermission] = useState(() => (
     isNativeAndroidNotificationPlatform() ? 'default' : 'unsupported'
   ));
+  const pendingReminderEnableRef = useRef(false);
 
   const [celebrationQueue, setCelebrationQueue] = useState([]);
   const [authSession, setAuthSession] = useState(null);
@@ -1147,6 +1163,16 @@ export const HappyProvider = ({ children }) => {
 
       setNotificationPermission(permission);
       setExactAlarmPermission(exactAlarm);
+
+      if (permission === 'granted' && pendingReminderEnableRef.current) {
+        pendingReminderEnableRef.current = false;
+        setReminderSettings(prev => (
+          prev.enabled
+            ? prev
+            : applyReminderEnabledState(prev, true)
+        ));
+        return;
+      }
 
       if (permission !== 'granted' && reminderSettings.enabled) {
         setReminderSettings(prev => (
@@ -2295,26 +2321,24 @@ export const HappyProvider = ({ children }) => {
     let currentPermission = notificationPermission;
 
     if (enabled && isNativeNotificationPlatform()) {
+      const wasDenied = currentPermission === 'denied';
       currentPermission = await requestNotificationPermission();
 
       if (currentPermission !== 'granted') {
+        if (wasDenied && isNativeAndroidNotificationPlatform()) {
+          pendingReminderEnableRef.current = true;
+          await openNativeNotificationSettings();
+        }
+
         return currentPermission;
       }
     } else if (enabled && currentPermission === 'default') {
       currentPermission = await requestNotificationPermission();
     }
 
-    const todayKey = getLocalDateKey();
-    const nowTimeKey = getCurrentTimeKey();
+    pendingReminderEnableRef.current = false;
 
-    setReminderSettings(prev => ({
-      ...prev,
-      enabled,
-      reminders: prev.reminders.map(reminder => ({
-        ...reminder,
-        lastTriggeredDate: enabled && nowTimeKey >= reminder.time ? todayKey : reminder.lastTriggeredDate
-      }))
-    }));
+    setReminderSettings(prev => applyReminderEnabledState(prev, enabled));
 
     return currentPermission;
   };

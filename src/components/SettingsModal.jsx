@@ -260,7 +260,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
       }
 
       if (notificationPermission === 'denied') {
-        return '알림을 켜면 기기에서 알림 권한을 다시 확인해요.';
+        return '이미 알림을 거절했다면, 다시 켤 때 앱 알림 설정 화면으로 이동해요.';
       }
 
       return '알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';

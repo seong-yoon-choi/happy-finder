@@ -1,9 +1,10 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 const REMINDER_TITLE = '행복 찾을 시간이에요!';
 const REMINDER_BODY = '오늘도 행복한 하루!! 작은 행복 하나를 찾아볼까요?';
 const NATIVE_REMINDER_NOTIFICATION_STORAGE_KEY = 'happy_native_reminder_notification_ids';
+const AppNotificationSettings = registerPlugin('AppNotificationSettings');
 
 const normalizePermissionState = (value) => {
   if (value === 'granted' || value === 'denied') {
@@ -117,6 +118,15 @@ export const openNativeExactAlarmSettings = async () => {
 
   const permissionStatus = await LocalNotifications.changeExactNotificationSetting();
   return normalizePermissionState(permissionStatus.exact_alarm);
+};
+
+export const openNativeNotificationSettings = async () => {
+  if (!isNativeAndroidNotificationPlatform()) {
+    return false;
+  }
+
+  await AppNotificationSettings.open();
+  return true;
 };
 
 export const syncNativeReminderNotifications = async (reminders, enabled) => {
