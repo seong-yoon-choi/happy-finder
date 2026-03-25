@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { isNativeAndroidNotificationPlatform, isNativeNotificationPlatform } from '../lib/localNotifications';
+import { isNativeNotificationPlatform } from '../lib/localNotifications';
 import { useHappy } from '../store/HappyContext';
 import { openExternalUrl } from '../lib/externalBrowser';
 import { SUPPORT_PATH, getPasswordResetWebUrl, getPublicWebUrl } from '../lib/routes';
@@ -222,12 +222,10 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     toggleTheme,
     reminderSettings,
     notificationPermission,
-    exactAlarmPermission,
     toggleReminder,
     addReminder,
     updateReminder,
     deleteReminder,
-    openExactAlarmSettings,
     authSession,
     authUser,
     authUserNickname,
@@ -246,11 +244,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
-  const [isExactAlarmDialogOpen, setIsExactAlarmDialogOpen] = useState(false);
 
   const reminders = reminderSettings.reminders || [];
   const isNativeReminderPlatform = isNativeNotificationPlatform();
-  const isNativeAndroidReminderPlatform = isNativeAndroidNotificationPlatform();
   const deviceTimeZoneLabel = getDeviceTimeZoneLabel();
 
   if (!isOpen) {
@@ -259,16 +255,12 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const reminderMessage = (() => {
     if (isNativeReminderPlatform) {
-      if (notificationPermission === 'granted' && exactAlarmPermission === 'denied') {
-        return '안드로이드의 정확한 알림이 꺼져 있어 알림 시간이 늦어지거나 예약이 사라질 수 있어요.';
-      }
-
       if (notificationPermission === 'granted') {
         return '설정한 시간마다 시스템 알림을 보내요.';
       }
 
       if (notificationPermission === 'denied') {
-        return '기기 설정에서 알림 권한을 허용해야 예약 알림이 울려요.';
+        return '알림을 켜면 기기에서 알림 권한을 다시 확인해요.';
       }
 
       return '알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';
@@ -288,9 +280,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
     return '브라우저 알림을 허용하면 시스템 알림까지 받을 수 있어요. 앱이 열려 있으면 앱 안 알림은 그대로 동작해요.';
   })();
-  const shouldShowExactAlarmButton = isNativeReminderPlatform
-    && notificationPermission === 'granted'
-    && exactAlarmPermission === 'denied';
   const nextReminderPreview = reminderSettings.enabled
     ? getNextReminderPreview(reminders)
     : '';
@@ -316,14 +305,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     setPickerTime(parseReminderTime(DEFAULT_REMINDER_TIME));
   };
 
-  const closeExactAlarmDialog = () => {
-    setIsExactAlarmDialogOpen(false);
-  };
-
   const resetModalState = () => {
     resetAccountDangerState();
     resetReminderEditor();
-    closeExactAlarmDialog();
     setIsAccountActionsOpen(false);
   };
 
@@ -440,27 +424,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     deleteReminder(reminderId);
   };
 
-  const handleOpenExactAlarmPrompt = () => {
-    setIsExactAlarmDialogOpen(true);
-  };
-
-  const handleConfirmExactAlarmPrompt = async () => {
-    closeExactAlarmDialog();
-    await openExactAlarmSettings();
-  };
-
   const handleToggleReminder = async () => {
     const nextEnabled = !reminderSettings.enabled;
-    const permission = await toggleReminder(nextEnabled);
-
-    if (
-      nextEnabled
-      && permission === 'granted'
-      && isNativeAndroidReminderPlatform
-      && exactAlarmPermission === 'denied'
-    ) {
-      handleOpenExactAlarmPrompt();
-    }
+    await toggleReminder(nextEnabled);
   };
 
   return (
@@ -773,16 +739,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
             </div>
           )}
 
-          {shouldShowExactAlarmButton && (
-            <button
-              type="button"
-              className="settings-secondary-btn"
-              onClick={handleOpenExactAlarmPrompt}
-            >
-              정확한 알림 허용하기
-            </button>
-          )}
-
           <div className="settings-note">{reminderMessage}</div>
           {isNativeReminderPlatform && (
             <div className="settings-note">
@@ -791,40 +747,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
             </div>
           )}
         </div>
-
-        {isExactAlarmDialogOpen && (
-          <div className="settings-dialog-backdrop" onClick={closeExactAlarmDialog}>
-            <div
-              className="settings-dialog"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="exact-alarm-dialog-title"
-              onClick={event => event.stopPropagation()}
-            >
-              <h3 id="exact-alarm-dialog-title">알람을 허용해 주세요</h3>
-              <p>
-                정각 알림을 받으려면 안드로이드의 정확한 알림 권한을 허용해야 해요.
-                확인을 누르면 알람 설정 화면으로 이동합니다.
-              </p>
-              <div className="settings-dialog-actions">
-                <button
-                  type="button"
-                  className="settings-secondary-btn"
-                  onClick={closeExactAlarmDialog}
-                >
-                  취소
-                </button>
-                <button
-                  type="button"
-                  className="settings-action-btn active"
-                  onClick={handleConfirmExactAlarmPrompt}
-                >
-                  확인
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -2295,9 +2295,7 @@ export const HappyProvider = ({ children }) => {
     let currentPermission = notificationPermission;
 
     if (enabled && isNativeNotificationPlatform()) {
-      if (currentPermission !== 'granted') {
-        currentPermission = await requestNotificationPermission();
-      }
+      currentPermission = await requestNotificationPermission();
 
       if (currentPermission !== 'granted') {
         return currentPermission;
