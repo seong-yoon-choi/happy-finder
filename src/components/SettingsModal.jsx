@@ -62,15 +62,6 @@ const formatReminderTimeLabel = (timeValue) => {
   return `${period === 'AM' ? '오전' : '오후'} ${Number(hour)}시 ${minute}분`;
 };
 
-const getDeviceTimeZoneLabel = () => {
-  try {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return typeof timeZone === 'string' && timeZone.trim() ? timeZone.trim() : '기기 기본 시간대';
-  } catch {
-    return '기기 기본 시간대';
-  }
-};
-
 const getNextReminderTrigger = (timeValue, now = new Date()) => {
   const [rawHour = '20', rawMinute = '00'] = String(timeValue || DEFAULT_REMINDER_TIME).split(':');
   const hour = Number(rawHour);
@@ -247,7 +238,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const reminders = reminderSettings.reminders || [];
   const isNativeReminderPlatform = isNativeNotificationPlatform();
-  const deviceTimeZoneLabel = getDeviceTimeZoneLabel();
 
   if (!isOpen) {
     return null;
@@ -740,10 +730,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
           )}
 
           <div className="settings-note">{reminderMessage}</div>
-          {isNativeReminderPlatform && (
+          {isNativeReminderPlatform && nextReminderPreview && (
             <div className="settings-note">
-              <div>기기 시간대: {deviceTimeZoneLabel}</div>
-              {nextReminderPreview && <div>{nextReminderPreview}</div>}
+              <div>{nextReminderPreview}</div>
             </div>
           )}
         </div>
