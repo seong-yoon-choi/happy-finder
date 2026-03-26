@@ -50,7 +50,9 @@ const defaultAuthFeedback = {
   message: ''
 };
 const AUTH_MODE_STORAGE_KEY = 'happy_auth_mode';
+const AUTH_SESSION_BACKUP_STORAGE_KEY = 'happy_auth_session_backup';
 const APP_STORAGE_KEYS = [
+  AUTH_SESSION_BACKUP_STORAGE_KEY,
   'happy_items',
   'happy_stamps',
   'happy_favorites',
@@ -260,6 +262,52 @@ const readStoredJson = (key, fallback) => {
   } catch {
     return fallback;
   }
+};
+
+const readStoredAuthSessionBackup = () => {
+  const storedValue = readStoredJson(AUTH_SESSION_BACKUP_STORAGE_KEY, null);
+
+  if (!isRecord(storedValue)) {
+    return null;
+  }
+
+  const accessToken = typeof storedValue.access_token === 'string'
+    ? storedValue.access_token.trim()
+    : '';
+  const refreshToken = typeof storedValue.refresh_token === 'string'
+    ? storedValue.refresh_token.trim()
+    : '';
+
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+
+  return {
+    access_token: accessToken,
+    refresh_token: refreshToken
+  };
+};
+
+const writeStoredAuthSessionBackup = (session) => {
+  if (
+    !session
+    || typeof session.access_token !== 'string'
+    || typeof session.refresh_token !== 'string'
+    || !session.access_token.trim()
+    || !session.refresh_token.trim()
+  ) {
+    localStorage.removeItem(AUTH_SESSION_BACKUP_STORAGE_KEY);
+    return;
+  }
+
+  localStorage.setItem(AUTH_SESSION_BACKUP_STORAGE_KEY, JSON.stringify({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token
+  }));
+};
+
+const clearStoredAuthSessionBackup = () => {
+  localStorage.removeItem(AUTH_SESSION_BACKUP_STORAGE_KEY);
 };
 
 const hasPasswordRecoveryInUrl = () => {
@@ -743,6 +791,7 @@ export const HappyProvider = ({ children }) => {
       setIsPasswordRecovery(false);
       setIsSignupCompletionPending(false);
       localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+      clearStoredAuthSessionBackup();
       setAuthFeedback(nextFeedback);
 
       const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -799,6 +848,25 @@ export const HappyProvider = ({ children }) => {
       let nextSession = data.session ?? null;
       let nextUser = nextSession?.user ?? null;
 
+      if (!nextSession) {
+        const storedSessionBackup = readStoredAuthSessionBackup();
+
+        if (storedSessionBackup) {
+          const { data: restoredData, error: restoreError } = await supabase.auth.setSession(storedSessionBackup);
+
+          if (!isMounted) {
+            return;
+          }
+
+          if (restoreError) {
+            clearStoredAuthSessionBackup();
+          } else {
+            nextSession = restoredData.session ?? null;
+            nextUser = nextSession?.user ?? null;
+          }
+        }
+      }
+
       if (nextSession) {
         const trustedSessionState = await getTrustedSessionState(nextSession);
 
@@ -823,6 +891,7 @@ export const HappyProvider = ({ children }) => {
 
       setAuthSession(nextSession);
       setAuthUser(nextUser ?? null);
+      writeStoredAuthSessionBackup(nextSession);
       if (!nextUser) {
         setIsSignupCompletionPending(false);
       }
@@ -842,6 +911,7 @@ export const HappyProvider = ({ children }) => {
 
       setAuthSession(nextSession);
       setAuthUser(nextUser);
+      writeStoredAuthSessionBackup(nextSession);
       if (!nextUser) {
         setIsSignupCompletionPending(false);
       }
