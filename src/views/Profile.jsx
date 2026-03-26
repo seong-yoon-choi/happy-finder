@@ -3,6 +3,7 @@ import { useHappy } from '../store/HappyContext';
 import HappinessCard from '../components/HappinessCard';
 import CategoryTabs from '../components/CategoryTabs';
 import CreateHappinessModal from '../components/CreateHappinessModal';
+import GrowthStageAvatar from '../components/GrowthStageAvatar';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { getTreeInfo } from '../utils/progress';
 import { getLocalDateKey } from '../utils/date';
@@ -98,7 +99,9 @@ const Profile = () => {
         <section className="glass-card profile-overview">
           <div className="profile-overview-top">
             <div className="profile-tree-section" onClick={toggleTreeTooltip}>
-              <div className="profile-avatar tree-avatar clickable-avatar">{treeInfo.icon}</div>
+              <div className="profile-avatar tree-avatar clickable-avatar">
+                <GrowthStageAvatar stageId={treeInfo.id} label={treeInfo.title} />
+              </div>
               <div className="tree-title">{treeInfo.title}</div>
 
               {showTreeTooltip && treeInfo.nextAt && (
