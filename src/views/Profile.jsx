@@ -12,14 +12,7 @@ const stampedCategories = ['전체', '소확행', '일주일행복', '한달행�
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
 
-const FlameIcon = () => (
-  <svg className="streak-flame" viewBox="0 0 24 24" aria-hidden="true">
-    <path
-      fill="currentColor"
-      d="M12.3 2.1c.5 2.1-.1 4.2-1.8 6.3-.5.7-.4 1.7.3 2.3.6.5 1.5.5 2.1-.1.6-.5 1.2-1.3 1.7-2.3 2.1 1.8 3.3 4.3 3.3 6.9 0 3.8-2.7 6.8-6.1 6.8-3.5 0-6.2-3-6.2-6.8 0-2.4 1.1-4.6 3-6.5.3 1.2.9 2.2 1.8 2.9.4.3 1 .4 1.5.3.9-.2 1.4-1.1 1.2-1.9-.4-1.9-.3-4.7 1.2-7.9Z"
-    />
-  </svg>
-);
+const FlameIcon = () => <span className="streak-flame" aria-hidden="true">🔥</span>;
 
 const getMillisecondsUntilNextMidnight = (now = new Date()) => {
   const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
