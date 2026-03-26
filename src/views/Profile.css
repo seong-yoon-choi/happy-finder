@@ -132,15 +132,37 @@
 .streak-summary {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--primary-color);
     margin-bottom: 0;
-    background: var(--glass-bg);
     padding: 8px 20px;
     border-radius: 24px;
-    border: 1px solid var(--glass-border);
     display: inline-flex;
     align-items: center;
+    gap: 8px;
+    transition: color 0.22s ease, background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.streak-summary.active {
+    color: var(--primary-color);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);
+}
+
+.streak-summary.inactive {
+    color: #97a0af;
+    background: rgba(151, 160, 175, 0.12);
+    border: 1px solid rgba(151, 160, 175, 0.24);
+    box-shadow: none;
+}
+
+.streak-flame {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+.streak-summary .highlight-number {
+    color: currentColor;
 }
 
 .highlight-number {

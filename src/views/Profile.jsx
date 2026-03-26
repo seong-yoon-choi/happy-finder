@@ -1,15 +1,30 @@
-import React, { lazy, useCallback, useMemo, useState } from 'react';
+import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { useHappy } from '../store/HappyContext';
 import HappinessCard from '../components/HappinessCard';
 import CategoryTabs from '../components/CategoryTabs';
 import CreateHappinessModal from '../components/CreateHappinessModal';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { getTreeInfo } from '../utils/progress';
+import { getLocalDateKey } from '../utils/date';
 import './Profile.css';
 
 const stampedCategories = ['전체', '소확행', '일주일행복', '한달행복'];
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
+
+const FlameIcon = () => (
+  <svg className="streak-flame" viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      fill="currentColor"
+      d="M12.3 2.1c.5 2.1-.1 4.2-1.8 6.3-.5.7-.4 1.7.3 2.3.6.5 1.5.5 2.1-.1.6-.5 1.2-1.3 1.7-2.3 2.1 1.8 3.3 4.3 3.3 6.9 0 3.8-2.7 6.8-6.1 6.8-3.5 0-6.2-3-6.2-6.8 0-2.4 1.1-4.6 3-6.5.3 1.2.9 2.2 1.8 2.9.4.3 1 .4 1.5.3.9-.2 1.4-1.1 1.2-1.9-.4-1.9-.3-4.7 1.2-7.9Z"
+    />
+  </svg>
+);
+
+const getMillisecondsUntilNextMidnight = (now = new Date()) => {
+  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return Math.max(nextMidnight.getTime() - now.getTime(), 1000);
+};
 
 const Profile = () => {
   const {
@@ -26,6 +41,7 @@ const Profile = () => {
   const [selectedStampedCategory, setSelectedStampedCategory] = useState('전체');
   const [selectedCard, setSelectedCard] = useState(null);
   const [showTreeTooltip, setShowTreeTooltip] = useState(false);
+  const [todayKey, setTodayKey] = useState(() => getLocalDateKey());
 
   const stampedItems = getStampedItems();
   const myItems = getMyItems();
@@ -41,6 +57,25 @@ const Profile = () => {
 
   const treeInfo = getTreeInfo(totalStamps);
   const profileTitle = authUserNickname ? `${authUserNickname} 님의 행복 프로필` : '나의 행복 프로필';
+  const streakLastDateKey = globalStreak?.lastDate ? getLocalDateKey(globalStreak.lastDate) : null;
+  const isStreakFilled = Boolean(globalStreak?.current > 0 && streakLastDateKey === todayKey);
+
+  useEffect(() => {
+    let timeoutId;
+
+    const scheduleMidnightRefresh = () => {
+      timeoutId = window.setTimeout(() => {
+        setTodayKey(getLocalDateKey());
+        scheduleMidnightRefresh();
+      }, getMillisecondsUntilNextMidnight() + 100);
+    };
+
+    scheduleMidnightRefresh();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
 
   const toggleTreeTooltip = () => {
     setShowTreeTooltip(prev => {
@@ -94,8 +129,9 @@ const Profile = () => {
               </div>
 
               {globalStreak && globalStreak.current > 0 && (
-                <div className="streak-summary">
-                  🔥 행복하기 <span className="highlight-number">{globalStreak.current}</span>일째
+                <div className={`streak-summary ${isStreakFilled ? 'active' : 'inactive'}`}>
+                  <FlameIcon />
+                  행복하기 <span className="highlight-number">{globalStreak.current}</span>일째
                 </div>
               )}
             </div>
