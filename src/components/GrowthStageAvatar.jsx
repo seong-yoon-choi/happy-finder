@@ -224,11 +224,12 @@ const GrowthStageAvatar = ({ stageId, label }) => {
         </radialGradient>
       </defs>
 
-      <circle cx="60" cy="60" r="54" fill={`url(#${gradientId})`} />
-      <circle cx="60" cy="60" r="54" fill={`url(#${glowId})`} opacity="0.82" />
-      <circle cx="60" cy="60" r="48" fill={theme.ring} opacity="0.18" />
-      <circle cx="60" cy="96" r="16" fill={theme.shadow} opacity="0.22" />
-      {renderStageArt(stageId, theme)}
+      <circle cx="60" cy="60" r="60" fill={`url(#${gradientId})`} />
+      <circle cx="60" cy="60" r="60" fill={`url(#${glowId})`} opacity="0.82" />
+      <circle cx="60" cy="97" r="18" fill={theme.shadow} opacity="0.18" />
+      <g transform="translate(60 61) scale(1.06) translate(-60 -60)">
+        {renderStageArt(stageId, theme)}
+      </g>
     </svg>
   );
 };
