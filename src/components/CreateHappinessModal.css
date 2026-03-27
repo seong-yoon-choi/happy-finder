@@ -176,6 +176,21 @@
     font-weight: 600;
 }
 
+.form-helper {
+    margin: 2px 2px 0;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-light);
+}
+
+.form-error {
+    margin: -2px 2px 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--danger);
+    font-weight: 600;
+}
+
 .submit-btn {
     width: 100%;
     margin-top: 10px;

@@ -27,6 +27,13 @@ do $$
 begin
   if to_regclass('public.happiness_items') is not null then
     execute $fn$
+      alter table public.happiness_items
+      add column if not exists is_public boolean not null default false;
+
+      update public.happiness_items
+      set is_public = true
+      where source = 'system';
+
       create or replace function public.can_access_item(target_item_id text)
       returns boolean
       language sql
@@ -40,6 +47,7 @@ begin
             and hi.is_active
             and (
               hi.source = 'system'
+              or hi.is_public
               or hi.owner_user_id = (select auth.uid())
             )
         );

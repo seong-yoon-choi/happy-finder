@@ -39,6 +39,15 @@
     font-weight: 600;
 }
 
+.public-badge {
+    background: #2f9e85;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 .card-title {
     font-size: 1.4rem;
     margin: 4px 0;

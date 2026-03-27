@@ -3,17 +3,27 @@ import { useHappy } from '../store/HappyContext';
 import './CreateHappinessModal.css';
 
 const CATEGORY_OPTIONS = ['소확행', '기분전환', '제대로'];
+const VISIBILITY_OPTIONS = [
+  { value: 'private', label: '나만보기' },
+  { value: 'public', label: '공개하기' }
+];
 
 const CreateHappinessModal = ({ isOpen, onClose }) => {
-  const { addCustomItem } = useHappy();
+  const { addCustomItem, authUser } = useHappy();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState(CATEGORY_OPTIONS[0]);
+  const [visibility, setVisibility] = useState(VISIBILITY_OPTIONS[0].value);
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
     setTitle('');
     setDescription('');
     setCategory(CATEGORY_OPTIONS[0]);
+    setVisibility(VISIBILITY_OPTIONS[0].value);
+    setSubmitError('');
+    setIsSubmitting(false);
   };
 
   const handleClose = () => {
@@ -21,7 +31,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const handleSubmit = event => {
+  const handleSubmit = async event => {
     event.preventDefault();
 
     const trimmedTitle = title.trim();
@@ -31,7 +41,21 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    addCustomItem(trimmedTitle, trimmedDescription, category);
+    setSubmitError('');
+    setIsSubmitting(true);
+    const result = await addCustomItem(trimmedTitle, trimmedDescription, category, visibility);
+    setIsSubmitting(false);
+
+    if (!result?.success) {
+      if (result?.code === 'AUTH_REQUIRED') {
+        setSubmitError('공개하기는 로그인 후 사용할 수 있어요.');
+        return;
+      }
+
+      setSubmitError('행복을 저장하지 못했어요. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
     handleClose();
   };
 
@@ -111,8 +135,33 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            <button type="submit" className="btn-primary submit-btn">
-              행복 추가하기
+            <div className="form-group">
+              <label>공개 범위</label>
+              <div className="category-pills">
+                {VISIBILITY_OPTIONS.map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`category-pill ${visibility === option.value ? 'active' : ''}`}
+                    onClick={() => setVisibility(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <p className="form-helper">
+                {visibility === 'public'
+                  ? authUser
+                    ? '공개한 행복은 다른 사람들 목록에도 보여요.'
+                    : '공개하기는 로그인한 상태에서만 사용할 수 있어요.'
+                  : '나만 보는 행복으로 저장돼요.'}
+              </p>
+            </div>
+
+            {submitError && <p className="form-error">{submitError}</p>}
+
+            <button type="submit" className="btn-primary submit-btn" disabled={isSubmitting}>
+              {isSubmitting ? '저장 중...' : '행복 추가하기'}
             </button>
           </form>
         </div>

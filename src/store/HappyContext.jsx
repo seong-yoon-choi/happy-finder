@@ -20,6 +20,7 @@ const LOCAL_CREATOR_ID = 'local-user';
 const DEFAULT_REMINDER_TIME = '20:00';
 
 const createReminderId = () => `reminder_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const createCustomItemId = () => `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 const createReminderItem = (time = DEFAULT_REMINDER_TIME, overrides = {}) => ({
   id: overrides.id || createReminderId(),
@@ -549,9 +550,12 @@ const normalizeItem = (item, savedStamps = {}) => {
   const baseCount = Number.isFinite(item.totalEnjoyCount)
     ? item.totalEnjoyCount
     : (initialItemCountMap[item.id] || 0);
+  const isCustom = item.isCustom === true;
 
   return {
     ...item,
+    isPublic: isCustom ? item.isPublic === true : true,
+    isCloudBacked: item.isCloudBacked === true,
     category: normalizeCategoryName(item.category),
     creatorId: item.creatorId || (item.isCustom && item.creator === 'user' ? LOCAL_CREATOR_ID : undefined),
     totalEnjoyCount: Math.max(baseCount, ownCount)
@@ -569,6 +573,8 @@ const normalizeRemoteCatalogItem = (item, localItemMap = new Map()) => {
     isCustom: item.source === 'custom',
     creator: item.source === 'custom' ? 'user' : 'system',
     creatorId: typeof item.owner_user_id === 'string' ? item.owner_user_id : undefined,
+    isPublic: item.source === 'system' || item.is_public === true,
+    isCloudBacked: true,
     totalEnjoyCount: Number.isFinite(matchedLocalItem?.totalEnjoyCount)
       ? matchedLocalItem.totalEnjoyCount
       : undefined
@@ -589,7 +595,12 @@ const mergeRemoteItemsWithLocalItems = ({
   ));
   const remoteIds = new Set(normalizedRemoteItems.map(item => item.id));
   const preservedLocalCustomItems = nextLocalItems
-    .filter(item => item?.isCustom && !remoteIds.has(item.id) && isOwnedByCurrentUser(item, authUser))
+    .filter(item => (
+      item?.isCustom
+      && item?.isCloudBacked !== true
+      && !remoteIds.has(item.id)
+      && isOwnedByCurrentUser(item, authUser)
+    ))
     .map(item => normalizeItem(item, savedStamps));
 
   return [...preservedLocalCustomItems, ...normalizedRemoteItems];
@@ -1008,7 +1019,7 @@ export const HappyProvider = ({ children }) => {
 
     const { data, error } = await supabase
       .from(HAPPINESS_ITEMS_TABLE)
-      .select('id, title, description, category, source, owner_user_id, created_at')
+      .select('id, title, description, category, source, owner_user_id, is_public, created_at')
       .eq('is_active', true)
       .order('created_at', { ascending: true });
 
@@ -1494,26 +1505,79 @@ export const HappyProvider = ({ children }) => {
     }
   };
 
-  const addCustomItem = (title, description, category) => {
+  const addCustomItem = async (title, description, category, visibility = 'private') => {
+    const isPublic = visibility === 'public';
+    const canSyncToCloud = Boolean(supabase && authUser?.id);
+
+    if (isPublic && !canSyncToCloud) {
+      return { success: false, code: 'AUTH_REQUIRED' };
+    }
+
     const newItem = {
-      id: `c_${Date.now()}`,
+      id: createCustomItemId(),
       title,
       description,
       category: normalizeCategoryName(category),
       isCustom: true,
       creator: 'user',
       creatorId: authUser?.id || LOCAL_CREATOR_ID,
+      isPublic,
+      isCloudBacked: false,
       totalEnjoyCount: 0
     };
 
-    setItems(prev => [newItem, ...prev]);
+    if (canSyncToCloud) {
+      const { error } = await supabase
+        .from(HAPPINESS_ITEMS_TABLE)
+        .insert({
+          id: newItem.id,
+          title: newItem.title,
+          description: newItem.description,
+          category: newItem.category,
+          source: 'custom',
+          owner_user_id: authUser.id,
+          is_active: true,
+          is_public: isPublic
+        });
+
+      if (error) {
+        if (isPublic) {
+          return { success: false, code: 'SAVE_FAILED', error };
+        }
+      } else {
+        newItem.isCloudBacked = true;
+      }
+    }
+
+    const nextUserStamps = isRecord(latestSnapshotStateRef.current?.userStamps)
+      ? latestSnapshotStateRef.current.userStamps
+      : {};
+
+    setItems(prev => [normalizeItem(newItem, nextUserStamps), ...prev]);
+    return { success: true, item: newItem };
   };
 
-  const deleteCustomItem = (itemId) => {
+  const deleteCustomItem = async (itemId) => {
     const targetItem = items.find(item => item.id === itemId);
 
     if (!targetItem || !targetItem.isCustom || !isOwnedByCurrentUser(targetItem, authUser)) {
       return false;
+    }
+
+    if (targetItem.isCloudBacked && supabase && authUser?.id && targetItem.creatorId === authUser.id) {
+      const { error } = await supabase
+        .from(HAPPINESS_ITEMS_TABLE)
+        .update({
+          is_active: false,
+          is_public: false
+        })
+        .eq('id', itemId)
+        .eq('source', 'custom')
+        .eq('owner_user_id', authUser.id);
+
+      if (error) {
+        return false;
+      }
     }
 
     setItems(prev => prev.filter(item => item.id !== itemId));

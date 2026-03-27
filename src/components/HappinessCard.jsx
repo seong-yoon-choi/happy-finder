@@ -3,17 +3,19 @@ import { useHappy } from '../store/HappyContext';
 import './HappinessCard.css';
 
 const HappinessCard = ({ item, onClick }) => {
-    const { getItemStats, getItemMemos } = useHappy();
+    const { getItemStats, getItemMemos, isItemOwnedByCurrentUser } = useHappy();
     const { myCount } = getItemStats(item.id);
     const memoCount = getItemMemos(item.id).length;
     const hasCardMeta = myCount > 0 || memoCount > 0;
+    const isOwner = isItemOwnedByCurrentUser(item.id);
 
     return (
         <div className="glass-card happiness-card compact" onClick={() => onClick(item)}>
             <div className="card-top-row">
                 <div className="card-header">
                     <span className="category-badge">{item.category}</span>
-                    {item.isCustom && <span className="custom-badge">MY</span>}
+                    {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
+                    {item.isCustom && item.isPublic && <span className="public-badge">공개</span>}
                 </div>
 
                 {hasCardMeta && (

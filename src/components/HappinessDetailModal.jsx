@@ -235,9 +235,9 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
     setConfirmDialog(null);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (confirmDialog?.type === 'item') {
-      const deleted = deleteCustomItem(item.id);
+      const deleted = await deleteCustomItem(item.id);
 
       if (deleted) {
         handleClose();
@@ -320,7 +320,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
         <div className="detail-header">
           <div className="badges-container">
             <span className="category-badge">{item.category}</span>
-            {item.isCustom && <span className="custom-badge">MY</span>}
+            {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
+            {item.isCustom && item.isPublic && <span className="public-badge">공개</span>}
             <button
               className={`favorite-btn ${userFavorites[item.id] ? 'active' : ''}`}
               onClick={() => toggleFavorite(item.id)}
