@@ -140,7 +140,7 @@ create table if not exists public.happiness_items (
   id text primary key,
   title text not null,
   description text not null,
-  category text not null check (category in ('소확행', '기분전환', '제대로')),
+  category text not null,
   source text not null check (source in ('system', 'custom')),
   owner_user_id uuid references auth.users(id) on delete cascade,
   is_active boolean not null default true,
@@ -153,6 +153,31 @@ create table if not exists public.happiness_items (
     or (source = 'custom' and owner_user_id is not null)
   )
 );
+
+update public.happiness_items
+set category = case
+  when category = '일주일행복' then '기분전환'
+  when category = '한달행복' then '제대로'
+  else category
+end
+where category in ('일주일행복', '한달행복');
+
+alter table public.happiness_items
+drop constraint if exists happiness_items_category_check;
+
+alter table public.happiness_items
+add constraint happiness_items_category_check
+check (category in ('소확행', '기분전환', '제대로'));
+
+update public.happiness_items
+set is_active = false
+where source = 'system'
+  and id in (
+    'h1', 'h2', 'h3', 'h4', 'h5',
+    'h6', 'h7', 'h8', 'h9', 'h10',
+    'h11', 'h12', 'h13', 'h14', 'h15',
+    'h16', 'h17', 'h18', 'h19', 'h20'
+  );
 
 alter table public.happiness_items enable row level security;
 
