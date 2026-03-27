@@ -875,7 +875,7 @@ export const HappyProvider = ({ children }) => {
         }
 
         if (trustedSessionState.invalid) {
-          await resetInvalidSession();
+          await resetInvalidSession(defaultAuthFeedback);
 
           if (!isMounted) {
             return;
