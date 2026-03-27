@@ -5,7 +5,7 @@ import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { useHappy } from '../store/HappyContext';
 import './Home.css';
 
-const homeCategories = ['랜덤행복', '소확행', '일주일행복', '한달행복'];
+const homeCategories = ['랜덤행복', '소확행', '기분전환', '제대로'];
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
 

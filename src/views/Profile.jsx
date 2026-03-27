@@ -9,7 +9,7 @@ import { getTreeInfo } from '../utils/progress';
 import { getLocalDateKey } from '../utils/date';
 import './Profile.css';
 
-const stampedCategories = ['전체', '소확행', '일주일행복', '한달행복'];
+const stampedCategories = ['전체', '소확행', '기분전환', '제대로'];
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useHappy } from '../store/HappyContext';
 import './CreateHappinessModal.css';
 
-const CATEGORY_OPTIONS = ['소확행', '일주일행복', '한달행복'];
+const CATEGORY_OPTIONS = ['소확행', '기분전환', '제대로'];
 
 const CreateHappinessModal = ({ isOpen, onClose }) => {
   const { addCustomItem } = useHappy();

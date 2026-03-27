@@ -69,190 +69,167 @@ const defaultCloudSyncStatus = {
 const CLOUD_SNAPSHOT_TABLE = 'happy_user_snapshots';
 const HAPPINESS_ITEMS_TABLE = 'happiness_items';
 const DELETE_ACCOUNT_FUNCTION_NAME = 'delete-account';
+const LEGACY_CATEGORY_MAP = {
+  일주일행복: '기분전환',
+  한달행복: '제대로'
+};
 const createTemporarySignupPassword = () => (
   `temp_${Math.random().toString(36).slice(2, 10)}_${Date.now()}Aa1!`
 );
 
 const initialItems = [
   {
-    id: 'h1',
-    title: '길고양이 찾기',
-    description: '귀여운 길고양이를 찾아서 행복해져 보세요!',
+    id: 'h21',
+    title: '일기 쓰기',
+    description: '오늘의 기분을 짧게라도 적으며 마음을 천천히 정리해보세요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
-    totalEnjoyCount: 24
+    totalEnjoyCount: 12
   },
   {
-    id: 'h2',
-    title: '풀냄새 맡기',
-    description: '평소에 맡기 힘들었던 산뜻한 풀냄새로 기분을 행복하게 해보세요.',
+    id: 'h22',
+    title: '좋아하는 양말 신고 하루 시작하기',
+    description: '좋아하는 양말을 신고 하루를 시작하면 기분이 조금 더 산뜻해질 수 있어요.',
     category: '소확행',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 19
-  },
-  {
-    id: 'h3',
-    title: '따뜻한 커피 한 잔',
-    description: '여유롭게 마시는 커피 한 잔의 향기를 즐겨보세요.',
-    category: '소확행',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 31
-  },
-  {
-    id: 'h4',
-    title: '좋아하는 음악 듣기',
-    description: '하루를 마무리하며 좋아하는 노래를 감상하세요.',
-    category: '소확행',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 22
-  },
-  {
-    id: 'h5',
-    title: '맛있는 주말 브런치',
-    description: '일주일에 한 번, 나를 위한 맛있는 식사를 대접하세요.',
-    category: '일주일행복',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 17
-  },
-  {
-    id: 'h6',
-    title: '새로운 곳 산책하기',
-    description: '이번 주는 가보지 않았던 새로운 길을 걸어보세요.',
-    category: '일주일행복',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 14
-  },
-  {
-    id: 'h7',
-    title: '책 한 권 다 읽기',
-    description: '한 달간 조금씩 읽어 책 한 권을 완독하는 성취감을 느껴보세요.',
-    category: '한달행복',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 11
-  },
-  {
-    id: 'h8',
-    title: '나만의 여행 떠나기',
-    description: '한 달에 하루, 오롯이 나를 위한 당일치기 여행을 다녀오세요.',
-    category: '한달행복',
     isCustom: false,
     creator: 'system',
     totalEnjoyCount: 9
   },
   {
-    id: 'h9',
-    title: '창문 열고 바람 쐬기',
-    description: '잠깐 창문을 열고 시원한 바람을 느끼며 머리를 환기해보세요.',
+    id: 'h23',
+    title: '셀프 칭찬 한마디 하기',
+    description: '거울을 보며 오늘의 나에게 짧은 칭찬 한마디를 건네보세요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
-    totalEnjoyCount: 16
+    totalEnjoyCount: 11
   },
   {
-    id: 'h10',
-    title: '좋아하는 간식 하나 사기',
-    description: '작지만 확실한 만족을 주는 간식 하나로 오늘을 더 달콤하게 만들어보세요.',
+    id: 'h24',
+    title: '휴대폰 배경화면 바꾸기',
+    description: '마음에 드는 사진이나 이미지를 골라 기분 좋은 화면으로 바꿔보세요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
-    totalEnjoyCount: 21
+    totalEnjoyCount: 10
   },
   {
-    id: 'h11',
-    title: '하늘 사진 찍기',
-    description: '오늘의 하늘을 찍어두고 잠깐 멈춰 서서 계절의 분위기를 느껴보세요.',
+    id: 'h25',
+    title: '비 오는 날 빗소리 듣기',
+    description: '비가 오는 날엔 잠깐 멈춰서 빗소리를 들으며 마음을 쉬게 해보세요.',
+    category: '소확행',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 8
+  },
+  {
+    id: 'h26',
+    title: '핸드크림 바르고 향 맡기',
+    description: '좋아하는 향을 가까이 두고 천천히 맡아보며 기분을 다독여보세요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
     totalEnjoyCount: 13
   },
   {
-    id: 'h12',
-    title: '햇살 아래 10분 걷기',
-    description: '잠깐이라도 햇살을 받으며 걷다 보면 몸과 마음이 조금 가벼워질 거예요.',
-    category: '소확행',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 18
-  },
-  {
-    id: 'h13',
-    title: '가보고 싶던 카페 가기',
-    description: '이번 주엔 저장만 해둔 카페에 직접 가서 새로운 기분을 만나보세요.',
-    category: '일주일행복',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 12
-  },
-  {
-    id: 'h14',
-    title: '영화 한 편 제대로 보기',
-    description: '한 주에 한 번은 좋아하는 영화나 보고 싶던 작품에 집중해보세요.',
-    category: '일주일행복',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 15
-  },
-  {
-    id: 'h15',
-    title: '꽃 한 송이 두기',
-    description: '책상이나 방에 꽃 한 송이를 두면 일주일의 분위기가 달라질 수 있어요.',
-    category: '일주일행복',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 8
-  },
-  {
-    id: 'h16',
-    title: '주말 아침 천천히 시작하기',
-    description: '알람에 쫓기지 않고 여유롭게 아침을 시작하는 시간도 큰 행복이에요.',
-    category: '일주일행복',
-    isCustom: false,
-    creator: 'system',
-    totalEnjoyCount: 11
-  },
-  {
-    id: 'h17',
-    title: '작은 목표 하나 완성하기',
-    description: '한 달 안에 끝낼 수 있는 목표 하나를 정하고 마무리하는 성취를 느껴보세요.',
-    category: '한달행복',
+    id: 'h27',
+    title: '옷 사기',
+    description: '입고 싶었던 옷 한 벌을 골라 기분 전환이 되는 소비를 해보세요.',
+    category: '기분전환',
     isCustom: false,
     creator: 'system',
     totalEnjoyCount: 10
   },
   {
-    id: 'h18',
-    title: '나만의 플레이리스트 만들기',
-    description: '한 달 동안 들을 곡을 골라 나만의 플레이리스트를 완성해보세요.',
-    category: '한달행복',
+    id: 'h28',
+    title: '보고 싶었던 영화 보기',
+    description: '미뤄뒀던 영화를 보며 잠깐 다른 세계에 푹 빠져보세요.',
+    category: '기분전환',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 14
+  },
+  {
+    id: 'h29',
+    title: '노래방 가기',
+    description: '마음껏 노래를 부르며 쌓여 있던 기분을 시원하게 풀어보세요.',
+    category: '기분전환',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 9
+  },
+  {
+    id: 'h30',
+    title: '쉬는 날 계획하기',
+    description: '다가오는 쉬는 날에 하고 싶은 일을 골라 기대감을 만들어보세요.',
+    category: '기분전환',
     isCustom: false,
     creator: 'system',
     totalEnjoyCount: 7
   },
   {
-    id: 'h19',
-    title: '감사 기록 남기기',
-    description: '한 달 동안 감사했던 순간을 모아보면 예상보다 많은 행복이 보일 거예요.',
-    category: '한달행복',
+    id: 'h31',
+    title: '서점에서 책 구경하기',
+    description: '서점에 들러 표지와 제목을 천천히 보며 마음 가는 책을 찾아보세요.',
+    category: '기분전환',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 8
+  },
+  {
+    id: 'h32',
+    title: '사고 싶었던 물건 사기',
+    description: '계속 눈에 밟히던 물건을 드디어 사며 만족감을 느껴보세요.',
+    category: '기분전환',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 11
+  },
+  {
+    id: 'h33',
+    title: '공연 보러 가기',
+    description: '라이브로만 느낄 수 있는 분위기와 에너지를 직접 경험해보세요.',
+    category: '제대로',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 10
+  },
+  {
+    id: 'h34',
+    title: '나만의 취미 만들기',
+    description: '꾸준히 즐길 수 있는 취미 하나를 정해 나만의 시간을 만들어보세요.',
+    category: '제대로',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 7
+  },
+  {
+    id: 'h35',
+    title: '하고 싶은 공부 시작하기',
+    description: '예전부터 배우고 싶었던 주제를 골라 첫 페이지를 열어보세요.',
+    category: '제대로',
     isCustom: false,
     creator: 'system',
     totalEnjoyCount: 6
   },
   {
-    id: 'h20',
-    title: '사진첩 정리하며 추억 보기',
-    description: '미뤄둔 사진을 정리하며 지나온 좋은 순간들을 천천히 돌아보세요.',
-    category: '한달행복',
+    id: 'h36',
+    title: '방 정리하기',
+    description: '미뤄둔 공간을 정리하면서 생활 분위기까지 가볍게 바꿔보세요.',
+    category: '제대로',
     isCustom: false,
     creator: 'system',
     totalEnjoyCount: 9
+  },
+  {
+    id: 'h37',
+    title: '혼자 놀기 계획하기',
+    description: '오롯이 혼자 즐길 하루를 상상하며 나만의 코스를 짜보세요.',
+    category: '제대로',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 5
   }
 ];
 
@@ -559,6 +536,14 @@ const getAuthProviderLabel = (provider) => {
   return '소셜 로그인';
 };
 
+const normalizeCategoryName = (category) => {
+  if (typeof category !== 'string') {
+    return category;
+  }
+
+  return LEGACY_CATEGORY_MAP[category] || category;
+};
+
 const normalizeItem = (item, savedStamps = {}) => {
   const ownCount = getStampCountFromData(savedStamps[item.id]);
   const baseCount = Number.isFinite(item.totalEnjoyCount)
@@ -567,6 +552,7 @@ const normalizeItem = (item, savedStamps = {}) => {
 
   return {
     ...item,
+    category: normalizeCategoryName(item.category),
     creatorId: item.creatorId || (item.isCustom && item.creator === 'user' ? LOCAL_CREATOR_ID : undefined),
     totalEnjoyCount: Math.max(baseCount, ownCount)
   };
@@ -579,7 +565,7 @@ const normalizeRemoteCatalogItem = (item, localItemMap = new Map()) => {
     id: item.id,
     title: item.title,
     description: item.description,
-    category: item.category,
+    category: normalizeCategoryName(item.category),
     isCustom: item.source === 'custom',
     creator: item.source === 'custom' ? 'user' : 'system',
     creatorId: typeof item.owner_user_id === 'string' ? item.owner_user_id : undefined,
@@ -614,7 +600,10 @@ const mergeItemsWithInitialItems = (savedItems, savedStamps = {}) => {
     return initialItems.map(item => normalizeItem(item, savedStamps));
   }
 
-  const normalizedSavedItems = savedItems.map(item => normalizeItem(item, savedStamps));
+  const activeSystemItemIds = new Set(initialItems.map(item => item.id));
+  const normalizedSavedItems = savedItems
+    .map(item => normalizeItem(item, savedStamps))
+    .filter(item => item?.isCustom || activeSystemItemIds.has(item.id));
   const seenIds = new Set(normalizedSavedItems.map(item => item.id));
   const missingInitialItems = initialItems
     .filter(item => !seenIds.has(item.id))
@@ -1020,6 +1009,7 @@ export const HappyProvider = ({ children }) => {
     const { data, error } = await supabase
       .from(HAPPINESS_ITEMS_TABLE)
       .select('id, title, description, category, source, owner_user_id, created_at')
+      .eq('is_active', true)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -1509,7 +1499,7 @@ export const HappyProvider = ({ children }) => {
       id: `c_${Date.now()}`,
       title,
       description,
-      category: category,
+      category: normalizeCategoryName(category),
       isCustom: true,
       creator: 'user',
       creatorId: authUser?.id || LOCAL_CREATOR_ID,

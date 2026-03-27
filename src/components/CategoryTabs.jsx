@@ -1,7 +1,7 @@
 import React, { memo, useRef } from 'react';
 import './CategoryTabs.css';
 
-const defaultCategories = ['랜덤행복', '소확행', '일주일행복', '한달행복'];
+const defaultCategories = ['랜덤행복', '소확행', '기분전환', '제대로'];
 
 const CategoryTabs = ({ selected, onSelect, categories = defaultCategories }) => {
     const containerRef = useRef(null);
