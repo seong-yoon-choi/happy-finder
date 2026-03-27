@@ -1,5 +1,5 @@
 ﻿/* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useState, useContext, useEffect, useEffectEvent, useRef } from 'react';
 import { App } from '@capacitor/app';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import { getTreeInfo } from '../utils/progress';
@@ -67,6 +67,7 @@ const defaultCloudSyncStatus = {
   lastSyncedAt: null
 };
 const CLOUD_SNAPSHOT_TABLE = 'happy_user_snapshots';
+const HAPPINESS_ITEMS_TABLE = 'happiness_items';
 const DELETE_ACCOUNT_FUNCTION_NAME = 'delete-account';
 const createTemporarySignupPassword = () => (
   `temp_${Math.random().toString(36).slice(2, 10)}_${Date.now()}Aa1!`
@@ -571,6 +572,43 @@ const normalizeItem = (item, savedStamps = {}) => {
   };
 };
 
+const normalizeRemoteCatalogItem = (item, localItemMap = new Map()) => {
+  const matchedLocalItem = localItemMap.get(item.id);
+
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    category: item.category,
+    isCustom: item.source === 'custom',
+    creator: item.source === 'custom' ? 'user' : 'system',
+    creatorId: typeof item.owner_user_id === 'string' ? item.owner_user_id : undefined,
+    totalEnjoyCount: Number.isFinite(matchedLocalItem?.totalEnjoyCount)
+      ? matchedLocalItem.totalEnjoyCount
+      : undefined
+  };
+};
+
+const mergeRemoteItemsWithLocalItems = ({
+  localItems,
+  remoteItems,
+  savedStamps = {},
+  authUser
+}) => {
+  const nextLocalItems = Array.isArray(localItems) ? localItems : [];
+  const localItemMap = new Map(nextLocalItems.map(item => [item.id, item]));
+  const normalizedRemoteItems = remoteItems.map(item => normalizeItem(
+    normalizeRemoteCatalogItem(item, localItemMap),
+    savedStamps
+  ));
+  const remoteIds = new Set(normalizedRemoteItems.map(item => item.id));
+  const preservedLocalCustomItems = nextLocalItems
+    .filter(item => item?.isCustom && !remoteIds.has(item.id) && isOwnedByCurrentUser(item, authUser))
+    .map(item => normalizeItem(item, savedStamps));
+
+  return [...preservedLocalCustomItems, ...normalizedRemoteItems];
+};
+
 const mergeItemsWithInitialItems = (savedItems, savedStamps = {}) => {
   if (!Array.isArray(savedItems) || savedItems.length === 0) {
     return initialItems.map(item => normalizeItem(item, savedStamps));
@@ -974,6 +1012,35 @@ export const HappyProvider = ({ children }) => {
     };
   }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
 
+  const syncRemoteCatalogItems = useEffectEvent(async () => {
+    if (!supabase) {
+      return { success: false, reason: 'supabase_unavailable' };
+    }
+
+    const { data, error } = await supabase
+      .from(HAPPINESS_ITEMS_TABLE)
+      .select('id, title, description, category, source, owner_user_id, created_at')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      return { success: false, error };
+    }
+
+    const remoteItems = Array.isArray(data) ? data : [];
+    const nextUserStamps = isRecord(latestSnapshotStateRef.current?.userStamps)
+      ? latestSnapshotStateRef.current.userStamps
+      : {};
+
+    setItems(prev => mergeRemoteItemsWithLocalItems({
+      localItems: prev,
+      remoteItems,
+      savedStamps: nextUserStamps,
+      authUser
+    }));
+
+    return { success: true };
+  });
+
   const applyCloudSnapshot = (payload) => {
     const snapshot = normalizeCloudSnapshot(payload);
     isApplyingCloudSnapshotRef.current = true;
@@ -1025,6 +1092,12 @@ export const HappyProvider = ({ children }) => {
       }
 
       if (error) {
+        await syncRemoteCatalogItems();
+
+        if (!isMounted) {
+          return;
+        }
+
         setCloudSyncStatus({
           type: 'error',
           message: '클라우드 기록 테이블을 아직 만들지 않았거나 접근할 수 없어요.',
@@ -1037,6 +1110,12 @@ export const HappyProvider = ({ children }) => {
       if (isRecord(data?.payload)) {
         applyCloudSnapshot(data.payload);
         hasBootstrappedCloudRef.current = true;
+        await syncRemoteCatalogItems();
+
+        if (!isMounted) {
+          return;
+        }
+
         setCloudSyncStatus({
           type: 'success',
           message: '클라우드에 저장된 기록을 불러왔어요.',
@@ -1072,6 +1151,12 @@ export const HappyProvider = ({ children }) => {
       }
 
       hasBootstrappedCloudRef.current = true;
+      await syncRemoteCatalogItems();
+
+      if (!isMounted) {
+        return;
+      }
+
       setCloudSyncStatus({
         type: 'success',
         message: '로컬 기록을 클라우드에 처음 백업했어요.',
@@ -1084,6 +1169,41 @@ export const HappyProvider = ({ children }) => {
 
     return () => {
       isMounted = false;
+    };
+  }, [authUser?.id]);
+
+  useEffect(() => {
+    if (!supabase) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    let appStateListener;
+
+    const refreshRemoteCatalog = async () => {
+      const result = await syncRemoteCatalogItems();
+
+      if (!isMounted || !result.success) {
+        return;
+      }
+    };
+
+    void refreshRemoteCatalog();
+
+    App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        void refreshRemoteCatalog();
+      }
+    }).then(handle => {
+      appStateListener = handle;
+    });
+
+    return () => {
+      isMounted = false;
+
+      if (appStateListener) {
+        void appStateListener.remove();
+      }
     };
   }, [authUser?.id]);
 
