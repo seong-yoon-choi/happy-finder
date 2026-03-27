@@ -1,5 +1,8 @@
 begin;
 
+alter table public.happiness_items
+drop constraint if exists happiness_items_category_check;
+
 update public.happiness_items
 set category = case
   when category = '일주일행복' then '기분전환'
@@ -7,9 +10,6 @@ set category = case
   else category
 end
 where category in ('일주일행복', '한달행복');
-
-alter table public.happiness_items
-drop constraint if exists happiness_items_category_check;
 
 alter table public.happiness_items
 add constraint happiness_items_category_check
