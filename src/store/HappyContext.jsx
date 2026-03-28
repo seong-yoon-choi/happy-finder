@@ -231,6 +231,105 @@ const initialItems = [
     isCustom: false,
     creator: 'system',
     totalEnjoyCount: 5
+  },
+  {
+    id: 'h38',
+    title: '마음에 드는 문장 메모하기',
+    description: '오늘 마음을 건드린 문장 하나를 적어두고 오래 간직해보세요.',
+    category: '소확행',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 4
+  },
+  {
+    id: 'h39',
+    title: '옛 사진 보며 추억 떠올리기',
+    description: '갤러리 속 오래된 사진을 보며 지나간 좋은 순간을 천천히 떠올려보세요.',
+    category: '소확행',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 5
+  },
+  {
+    id: 'h40',
+    title: '길가에 피어 있는 꽃의 꽃말 찾아보기',
+    description: '우연히 마주친 꽃의 이름과 꽃말을 찾아보며 작은 재미를 느껴보세요.',
+    category: '소확행',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 3
+  },
+  {
+    id: 'h41',
+    title: '자주 쓰는 소지품에 이름 지어주기',
+    description: '매일 쓰는 물건에 작은 이름을 붙이며 애정을 더해보세요.',
+    category: '소확행',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 3
+  },
+  {
+    id: 'h42',
+    title: '작은 소품 하나 사서 방 꾸미기',
+    description: '마음에 드는 작은 소품 하나로 방 분위기를 가볍게 바꿔보세요.',
+    category: '기분전환',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 4
+  },
+  {
+    id: 'h43',
+    title: '주변 사람에게 작은 선물 건네기',
+    description: '고마운 마음을 담아 작은 선물 하나를 전해보세요.',
+    category: '기분전환',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 2
+  },
+  {
+    id: 'h44',
+    title: '옛 물건 꺼내보기',
+    description: '예전에 아끼던 물건을 다시 꺼내 보며 그때의 마음을 떠올려보세요.',
+    category: '기분전환',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 3
+  },
+  {
+    id: 'h45',
+    title: '가사를 보며 노래를 천천히 음미하기',
+    description: '익숙한 노래도 가사를 따라가며 들으면 또 다른 감정이 보일 수 있어요.',
+    category: '기분전환',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 4
+  },
+  {
+    id: 'h46',
+    title: '평소보다 먼 거리를 걸어가 보기',
+    description: '조금 더 멀리 걸어가며 생각을 비우고 몸의 리듬을 느껴보세요.',
+    category: '제대로',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 3
+  },
+  {
+    id: 'h47',
+    title: '주변 사람이나 스스로에게 편지 쓰기',
+    description: '전하고 싶었던 마음을 글로 적으며 감정을 차분히 정리해보세요.',
+    category: '제대로',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 2
+  },
+  {
+    id: 'h48',
+    title: '생각만 하던 일 실행해보기',
+    description: '미루기만 했던 일을 오늘 바로 시작하며 작은 추진력을 만들어보세요.',
+    category: '제대로',
+    isCustom: false,
+    creator: 'system',
+    totalEnjoyCount: 2
   }
 ];
 
