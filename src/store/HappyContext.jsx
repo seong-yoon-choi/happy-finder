@@ -878,6 +878,101 @@ export const HappyProvider = ({ children }) => {
   const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
   const postSignOutFeedbackRef = useRef(null);
 
+  const syncResolvedAuthState = (session, user = session?.user ?? null) => {
+    const nextUser = user ?? null;
+    const nextSession = session
+      ? {
+        ...session,
+        ...(nextUser ? { user: nextUser } : {})
+      }
+      : null;
+
+    setAuthSession(nextSession);
+    setAuthUser(nextUser);
+    writeStoredAuthSessionBackup(nextSession);
+
+    if (!nextUser) {
+      setIsSignupCompletionPending(false);
+    }
+
+    return {
+      session: nextSession,
+      user: nextUser
+    };
+  };
+
+  const clearSignedInAuthState = () => {
+    syncResolvedAuthState(null, null);
+    setIsGuestMode(false);
+    setIsPasswordRecovery(false);
+    setIsSignupCompletionPending(false);
+    localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+  };
+
+  const ensureTrustedAuthSession = async () => {
+    if (!supabase) {
+      return { success: false, error: 'Supabase가 연결되지 않았어요.' };
+    }
+
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    let nextSession = sessionData.session ?? null;
+
+    if (!nextSession) {
+      const storedSessionBackup = readStoredAuthSessionBackup();
+
+      if (storedSessionBackup) {
+        const { data: restoredData, error: restoreError } = await supabase.auth.setSession(storedSessionBackup);
+
+        if (restoreError) {
+          clearStoredAuthSessionBackup();
+        } else {
+          nextSession = restoredData.session ?? null;
+        }
+      }
+    }
+
+    if (!nextSession) {
+      clearSignedInAuthState();
+      return {
+        success: false,
+        error: getKoreanAuthErrorMessage(sessionError, '인증 정보가 만료되었어요. 다시 로그인해주세요.'),
+        reason: 'missing_session'
+      };
+    }
+
+    let userResult = await supabase.auth.getUser();
+
+    if (userResult.error && shouldResetAuthSession(userResult.error)) {
+      const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession();
+
+      if (!refreshError && refreshedData.session) {
+        nextSession = refreshedData.session;
+        userResult = await supabase.auth.getUser();
+      }
+    }
+
+    if (userResult.error) {
+      if (shouldResetAuthSession(userResult.error)) {
+        clearSignedInAuthState();
+        return {
+          success: false,
+          error: '인증 정보가 만료되었어요. 다시 로그인해주세요.',
+          reason: 'invalid_session'
+        };
+      }
+
+      return {
+        success: true,
+        ...syncResolvedAuthState(nextSession, nextSession.user ?? authUser ?? null)
+      };
+    }
+
+    return {
+      success: true,
+      ...syncResolvedAuthState(nextSession, userResult.data?.user ?? nextSession.user ?? authUser ?? null)
+    };
+  };
+
   useEffect(() => {
     isPasswordRecoveryRef.current = isPasswordRecovery;
   }, [isPasswordRecovery]);
@@ -914,6 +1009,15 @@ export const HappyProvider = ({ children }) => {
     }
 
     let isMounted = true;
+    const clearSignedInAuthStateInEffect = () => {
+      setAuthSession(null);
+      setAuthUser(null);
+      setIsGuestMode(false);
+      setIsPasswordRecovery(false);
+      setIsSignupCompletionPending(false);
+      localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+      clearStoredAuthSessionBackup();
+    };
 
     const resetInvalidSession = async (feedback = null) => {
       const nextFeedback = feedback || {
@@ -922,13 +1026,7 @@ export const HappyProvider = ({ children }) => {
       };
 
       postSignOutFeedbackRef.current = nextFeedback;
-      setAuthSession(null);
-      setAuthUser(null);
-      setIsGuestMode(false);
-      setIsPasswordRecovery(false);
-      setIsSignupCompletionPending(false);
-      localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-      clearStoredAuthSessionBackup();
+      clearSignedInAuthStateInEffect();
       setAuthFeedback(nextFeedback);
 
       const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -1026,12 +1124,7 @@ export const HappyProvider = ({ children }) => {
         nextUser = trustedSessionState.user;
       }
 
-      setAuthSession(nextSession);
-      setAuthUser(nextUser ?? null);
-      writeStoredAuthSessionBackup(nextSession);
-      if (!nextUser) {
-        setIsSignupCompletionPending(false);
-      }
+      syncResolvedAuthState(nextSession, nextUser ?? null);
       setIsAuthLoading(false);
     };
 
@@ -1046,12 +1139,7 @@ export const HappyProvider = ({ children }) => {
       const nextSession = session ?? null;
       const nextUser = session?.user ?? null;
 
-      setAuthSession(nextSession);
-      setAuthUser(nextUser);
-      writeStoredAuthSessionBackup(nextSession);
-      if (!nextUser) {
-        setIsSignupCompletionPending(false);
-      }
+      syncResolvedAuthState(nextSession, nextUser);
       setIsAuthLoading(false);
 
       if (event === 'SIGNED_IN') {
@@ -1083,10 +1171,7 @@ export const HappyProvider = ({ children }) => {
       }
 
       if (event === 'SIGNED_OUT') {
-        setIsGuestMode(false);
-        localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-        setIsPasswordRecovery(false);
-        setIsSignupCompletionPending(false);
+        clearSignedInAuthStateInEffect();
         const postSignOutFeedback = postSignOutFeedbackRef.current;
         postSignOutFeedbackRef.current = null;
         setAuthFeedback(postSignOutFeedback || defaultAuthFeedback);
@@ -2421,7 +2506,23 @@ export const HappyProvider = ({ children }) => {
 
     setIsSignupCompletionPending(false);
     setIsAuthBusy(true);
-    const { error } = await supabase.auth.signOut();
+    setAuthFeedback(defaultAuthFeedback);
+
+    const sessionState = await ensureTrustedAuthSession();
+
+    if (!sessionState.success) {
+      clearSignedInAuthState();
+      setIsAuthBusy(false);
+      return { success: true };
+    }
+
+    let { error } = await supabase.auth.signOut();
+
+    if (error && shouldResetAuthSession(error)) {
+      const { error: localSignOutError } = await supabase.auth.signOut({ scope: 'local' });
+      error = localSignOutError ?? null;
+    }
+
     setIsAuthBusy(false);
 
     if (error) {
@@ -2440,6 +2541,18 @@ export const HappyProvider = ({ children }) => {
 
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
+
+    const sessionState = await ensureTrustedAuthSession();
+
+    if (!sessionState.success || !sessionState.user) {
+      setIsAuthBusy(false);
+      const nextFeedback = {
+        type: 'error',
+        message: sessionState.error || '인증 정보가 만료되었어요. 다시 로그인해주세요.'
+      };
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message };
+    }
 
     const successFeedback = {
       type: 'success',
@@ -2498,10 +2611,20 @@ export const HappyProvider = ({ children }) => {
     }
 
     setIsAuthBusy(true);
+    setAuthFeedback(defaultAuthFeedback);
+
+    const sessionState = await ensureTrustedAuthSession();
+
+    if (!sessionState.success || !sessionState.user) {
+      setIsAuthBusy(false);
+      return {
+        success: false,
+        error: sessionState.error || '인증 정보가 만료되었어요. 다시 로그인해주세요.'
+      };
+    }
 
     const { data, error } = await supabase.auth.updateUser({
       data: {
-        ...(isRecord(authUser.user_metadata) ? authUser.user_metadata : {}),
         nickname: normalizedNickname
       }
     });
@@ -2544,10 +2667,20 @@ export const HappyProvider = ({ children }) => {
     }
 
     setIsAuthBusy(true);
+    setAuthFeedback(defaultAuthFeedback);
+
+    const sessionState = await ensureTrustedAuthSession();
+
+    if (!sessionState.success || !sessionState.user) {
+      setIsAuthBusy(false);
+      return {
+        success: false,
+        error: sessionState.error || '인증 정보가 만료되었어요. 다시 로그인해주세요.'
+      };
+    }
 
     const { data, error } = await supabase.auth.updateUser({
       data: {
-        ...(isRecord(authUser.user_metadata) ? authUser.user_metadata : {}),
         ageConfirmed: true,
         termsAccepted: true,
         privacyAccepted: true,

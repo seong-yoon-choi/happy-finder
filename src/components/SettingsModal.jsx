@@ -315,6 +315,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   };
 
   const handleOpenNicknameEditor = () => {
+    clearAuthFeedback();
     resetAccountDangerState();
     resetModalState();
     onClose();
@@ -331,8 +332,11 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const handleSignOut = async () => {
     resetAccountDangerState();
     resetModalState();
-    await signOutFromSupabase();
-    onClose();
+    const result = await signOutFromSupabase();
+
+    if (result?.success) {
+      onClose();
+    }
   };
 
   const handleOpenSupport = async () => {
