@@ -379,7 +379,6 @@ function PublicSiteContent({ pathname, onNavigate }) {
         </LazyLoadBoundary>
       ) : (
         <LandingPage
-          onOpenApp={() => onNavigate(APP_PATH)}
           onOpenAuth={() => openAuthScreen('login')}
           onOpenProfile={() => onNavigate(PROFILE_PATH)}
           onNavigate={onNavigate}

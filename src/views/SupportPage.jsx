@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { submitWebsiteIntake } from '../lib/websiteIntake';
-import { ACCOUNT_DELETE_PATH, APP_PATH, FEEDBACK_PATH, QNA_PATH, SUPPORT_PATH, isFeedbackPath } from '../lib/routes';
+import { ACCOUNT_DELETE_PATH, FEEDBACK_PATH, QNA_PATH, SUPPORT_PATH, isFeedbackPath } from '../lib/routes';
 import './SupportPage.css';
 
 const emptyStatus = {
@@ -157,9 +157,6 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
               onClick={handleAccountAction}
             >
               {accountActionLabel}
-            </button>
-            <button type="button" className="support-app-button" onClick={handleNavigate(APP_PATH)}>
-              앱 열기
             </button>
           </div>
         </nav>
