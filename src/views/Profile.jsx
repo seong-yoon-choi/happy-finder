@@ -127,7 +127,11 @@ const Profile = () => {
               {globalStreak && globalStreak.current > 0 && (
                 <div className={`streak-summary ${isStreakFilled ? 'active' : 'inactive'}`}>
                   <FlameIcon />
-                  행복하기 <span className="highlight-number">{globalStreak.current}</span>일째
+                  {isStreakFilled ? (
+                    <>행복하기 <span className="highlight-number">{globalStreak.current}</span>일째</>
+                  ) : (
+                    <>행복해져 보세요</>
+                  )}
                 </div>
               )}
             </div>

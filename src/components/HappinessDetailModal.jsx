@@ -72,14 +72,15 @@ const fireCelebration = timeoutIdsRef => {
   });
 };
 
-const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false, canDelete = false }) => {
+const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const {
+    items,
     userStamps,
     userFavorites,
     addStamp,
     toggleFavorite,
     deleteCustomItem,
-    getItemStats,
+    updateCustomItemVisibility,
     isItemOwnedByCurrentUser,
     getItemMemos,
     addMemo,
@@ -96,6 +97,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
   const [memoText, setMemoText] = useState('');
   const [editingMemoId, setEditingMemoId] = useState(null);
   const [editingMemoText, setEditingMemoText] = useState('');
+  const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
+  const [visibilityError, setVisibilityError] = useState('');
 
   const requestRef = useRef();
   const startTimeRef = useRef();
@@ -122,11 +125,11 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
     return null;
   }
 
-  const stampData = userStamps[item.id];
+  const currentItem = items.find(existingItem => existingItem.id === item.id) || item;
+  const stampData = userStamps[currentItem.id];
   const alreadyStampedCount = stampData ? (typeof stampData === 'number' ? stampData : stampData.count) : 0;
-  const { othersCount } = getItemStats(item.id);
-  const isOwner = isItemOwnedByCurrentUser(item.id);
-  const itemMemos = getItemMemos(item.id);
+  const isOwner = isItemOwnedByCurrentUser(currentItem.id);
+  const itemMemos = getItemMemos(currentItem.id);
 
   const todayKey = getLocalDateKey();
   const alreadyStampedToday = stampData && getLocalDateKey(stampData.lastStampedDate) === todayKey;
@@ -204,6 +207,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
     setIsPressing(false);
     setShowSuccess(false);
     setConfirmDialog(null);
+    setIsUpdatingVisibility(false);
+    setVisibilityError('');
     setShowMemoComposer(false);
     setMemoText('');
     setEditingMemoId(null);
@@ -298,6 +303,36 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
     setShowMemoComposer(true);
   };
 
+  const handleVisibilityChange = async nextVisibility => {
+    if (isUpdatingVisibility) {
+      return;
+    }
+
+    const currentVisibility = currentItem.isPublic ? 'public' : 'private';
+
+    if (currentVisibility === nextVisibility) {
+      return;
+    }
+
+    setVisibilityError('');
+    setIsUpdatingVisibility(true);
+
+    const result = await updateCustomItemVisibility(currentItem.id, nextVisibility);
+
+    setIsUpdatingVisibility(false);
+
+    if (result?.success) {
+      return;
+    }
+
+    if (result?.code === 'AUTH_REQUIRED') {
+      setVisibilityError('공개하기는 로그인 후 사용할 수 있어요.');
+      return;
+    }
+
+    setVisibilityError('공개 범위를 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
+  };
+
   return (
     <div className="modal-overlay detail-modal-overlay" data-block-pull-refresh="true" onClick={handleClose}>
       <div
@@ -319,21 +354,51 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
 
         <div className="detail-header">
           <div className="badges-container">
-            <span className="category-badge">{item.category}</span>
-            {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
-            {item.isCustom && item.isPublic && <span className="public-badge">공개</span>}
+            <span className="category-badge">{currentItem.category}</span>
+            {currentItem.isCustom && isOwner && <span className="custom-badge">MY</span>}
+            {currentItem.isCustom && currentItem.isPublic && <span className="public-badge">공개</span>}
             <button
-              className={`favorite-btn ${userFavorites[item.id] ? 'active' : ''}`}
-              onClick={() => toggleFavorite(item.id)}
+              className={`favorite-btn ${userFavorites[currentItem.id] ? 'active' : ''}`}
+              onClick={() => toggleFavorite(currentItem.id)}
               aria-label="즐겨찾기 토글"
             >
-              {userFavorites[item.id] ? '★' : '☆'}
+              {userFavorites[currentItem.id] ? '★' : '☆'}
             </button>
           </div>
         </div>
 
-        <h2 className="detail-title">{item.title}</h2>
-        <p className="detail-desc">{item.description}</p>
+        <h2 className="detail-title">{currentItem.title}</h2>
+        <p className="detail-desc">{currentItem.description}</p>
+
+        {canDelete && currentItem.isCustom && isOwner && (
+          <div className="detail-visibility-section">
+            <div className="detail-visibility-copy">
+              <strong>공개 범위</strong>
+              <span>{currentItem.isPublic ? '다른 사람들에게 공개되고 있어요.' : '지금은 나만 볼 수 있어요.'}</span>
+            </div>
+
+            <div className="detail-visibility-toggle">
+              <button
+                type="button"
+                className={`detail-visibility-option ${!currentItem.isPublic ? 'active' : ''}`}
+                onClick={() => handleVisibilityChange('private')}
+                disabled={isUpdatingVisibility}
+              >
+                나만보기
+              </button>
+              <button
+                type="button"
+                className={`detail-visibility-option ${currentItem.isPublic ? 'active' : ''}`}
+                onClick={() => handleVisibilityChange('public')}
+                disabled={isUpdatingVisibility}
+              >
+                공개하기
+              </button>
+            </div>
+
+            {visibilityError && <p className="detail-visibility-error">{visibilityError}</p>}
+          </div>
+        )}
 
         <div className="detail-stamp-section">
           <div className="stamp-count large">
@@ -345,17 +410,6 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
               null
             )}
           </div>
-
-          {showOwnerInsights && item.isCustom && isOwner && (
-            <div className="stamp-count large">
-              <span className="active-stamps">
-                {authUserNickname
-                  ? `${authUserNickname} 님이 행복을 준 횟수`
-                  : '내가 행복을 준 횟수'}
-                : <strong>{othersCount}</strong>번
-              </span>
-            </div>
-          )}
 
           {showSuccess && (
             <div className="success-message slide-down">
@@ -394,7 +448,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
             </span>
           </button>
 
-          {canDelete && item.isCustom && isOwner && (
+          {canDelete && currentItem.isCustom && isOwner && (
             <button
               type="button"
               className="detail-delete-btn"
@@ -522,7 +576,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, showOwnerInsights = false
             </h3>
             <p className="delete-confirm-text">
               {confirmDialog.type === 'item'
-                ? `"${item.title}"을 삭제하면 다시 되돌릴 수 없어요.`
+                ? `"${currentItem.title}"을 삭제하면 다시 되돌릴 수 없어요.`
                 : '이 메모를 삭제하면 다시 되돌릴 수 없어요.'}
             </p>
             <div className="delete-confirm-actions">

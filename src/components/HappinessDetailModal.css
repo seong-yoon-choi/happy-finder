@@ -132,6 +132,75 @@
     margin-bottom: 24px;
 }
 
+.detail-visibility-section {
+    margin: 0 20px 20px;
+    padding: 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.66);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dark-theme .detail-visibility-section {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.detail-visibility-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-visibility-copy strong {
+    font-size: 0.95rem;
+}
+
+.detail-visibility-copy span {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.detail-visibility-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.detail-visibility-option {
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--text-dark);
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.dark-theme .detail-visibility-option {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.detail-visibility-option.active {
+    background: rgba(255, 142, 139, 0.16);
+    border-color: rgba(255, 142, 139, 0.42);
+    color: var(--primary-color);
+}
+
+.detail-visibility-option:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.detail-visibility-error {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--danger);
+}
+
 .detail-stamp-section {
     padding: 20px;
     background: var(--glass-bg);

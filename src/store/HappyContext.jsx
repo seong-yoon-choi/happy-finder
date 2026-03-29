@@ -2029,6 +2029,86 @@ export const HappyProvider = ({ children }) => {
     return { success: true, item: newItem };
   };
 
+  const updateCustomItemVisibility = async (itemId, visibility = 'private') => {
+    const targetItem = items.find(item => item.id === itemId);
+
+    if (!targetItem || !targetItem.isCustom || !isOwnedByCurrentUser(targetItem, authUser)) {
+      return { success: false, code: 'NOT_FOUND' };
+    }
+
+    const isPublic = visibility === 'public';
+    const canSyncToCloud = Boolean(supabase && authUser?.id);
+
+    if (isPublic && !canSyncToCloud) {
+      return { success: false, code: 'AUTH_REQUIRED' };
+    }
+
+    let nextCloudBacked = targetItem.isCloudBacked === true;
+    let nextCreatorId = targetItem.creatorId;
+
+    if (canSyncToCloud) {
+      if (targetItem.isCloudBacked && targetItem.creatorId === authUser.id) {
+        const { error } = await supabase
+          .from(HAPPINESS_ITEMS_TABLE)
+          .update({
+            is_public: isPublic
+          })
+          .eq('id', targetItem.id)
+          .eq('source', 'custom')
+          .eq('owner_user_id', authUser.id);
+
+        if (error) {
+          return { success: false, code: 'SAVE_FAILED', error };
+        }
+      } else {
+        const { error } = await supabase
+          .from(HAPPINESS_ITEMS_TABLE)
+          .upsert({
+            id: targetItem.id,
+            title: targetItem.title,
+            description: targetItem.description,
+            category: normalizeCategoryName(targetItem.category),
+            source: 'custom',
+            owner_user_id: authUser.id,
+            is_active: true,
+            is_public: isPublic
+          }, {
+            onConflict: 'id'
+          });
+
+        if (error) {
+          return { success: false, code: 'SAVE_FAILED', error };
+        }
+      }
+
+      nextCloudBacked = true;
+      nextCreatorId = authUser.id;
+    }
+
+    setItems(prev => prev.map(item => (
+      item.id === itemId
+        ? {
+          ...item,
+          isPublic,
+          isCloudBacked: nextCloudBacked,
+          creatorId: nextCreatorId,
+          creator: 'user'
+        }
+        : item
+    )));
+
+    return {
+      success: true,
+      item: {
+        ...targetItem,
+        isPublic,
+        isCloudBacked: nextCloudBacked,
+        creatorId: nextCreatorId,
+        creator: 'user'
+      }
+    };
+  };
+
   const deleteCustomItem = async (itemId) => {
     const targetItem = items.find(item => item.id === itemId);
 
@@ -3228,6 +3308,7 @@ export const HappyProvider = ({ children }) => {
       userFavorites,
       addStamp,
       addCustomItem,
+      updateCustomItemVisibility,
       deleteCustomItem,
       getItemsByCategory,
       getItemStats,
