@@ -7,6 +7,20 @@ export const SUPPORT_PATH = '/support';
 export const QNA_PATH = '/qna';
 export const FEEDBACK_PATH = '/feedback';
 
+const getNativeAuthCallbackBaseUrl = () => {
+  const overrideRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL;
+
+  if (typeof overrideRedirectUrl !== 'string' || !overrideRedirectUrl.trim()) {
+    return null;
+  }
+
+  try {
+    return new URL(overrideRedirectUrl.trim());
+  } catch {
+    return null;
+  }
+};
+
 export const normalizePath = (value) => {
   if (typeof value !== 'string' || !value.trim()) {
     return '/';
@@ -78,24 +92,53 @@ export const clearRequestedAuthModeInUrl = () => {
   window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
 };
 
-export const getAppRedirectUrl = () => {
+export const getNativeAuthCallbackPathFromUrl = (urlString) => {
+  if (typeof urlString !== 'string' || !urlString.trim()) {
+    return null;
+  }
+
+  const callbackBaseUrl = getNativeAuthCallbackBaseUrl();
+
+  if (!callbackBaseUrl) {
+    return null;
+  }
+
+  try {
+    const url = new URL(urlString);
+
+    if (url.protocol !== callbackBaseUrl.protocol || url.host !== callbackBaseUrl.host) {
+      return null;
+    }
+
+    return normalizePath(url.pathname);
+  } catch {
+    return null;
+  }
+};
+
+export const getAppRedirectUrl = (pathname = APP_PATH) => {
   if (typeof window === 'undefined') {
     return undefined;
   }
 
-  const normalizedCurrentPath = normalizePath(window.location.pathname);
+  const normalizedTargetPath = normalizePath(pathname);
   const isHttpOrigin = window.location.origin.startsWith('http');
-  const overrideRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL;
 
   if (isHttpOrigin) {
-    return `${window.location.origin}${normalizedCurrentPath}`;
+    return `${window.location.origin}${normalizedTargetPath}`;
   }
 
-  if (typeof overrideRedirectUrl === 'string' && overrideRedirectUrl.trim()) {
-    return overrideRedirectUrl.trim();
+  const callbackBaseUrl = getNativeAuthCallbackBaseUrl();
+
+  if (callbackBaseUrl) {
+    const url = new URL(callbackBaseUrl.toString());
+    url.pathname = normalizedTargetPath;
+    url.search = '';
+    url.hash = '';
+    return url.toString();
   }
 
-  return `${window.location.origin}${APP_PATH}`;
+  return `${window.location.origin}${normalizedTargetPath}`;
 };
 
 export const getPublicWebUrl = (pathname = '/') => {

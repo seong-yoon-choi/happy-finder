@@ -1,6 +1,8 @@
 ﻿/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useContext, useEffect, useEffectEvent, useRef } from 'react';
 import { App } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import { getTreeInfo } from '../utils/progress';
 import {
@@ -13,8 +15,9 @@ import {
   requestNativeNotificationPermission,
   syncNativeReminderNotifications
 } from '../lib/localNotifications';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { getAppRedirectUrl } from '../lib/routes';
+import { supabase, isSupabaseConfigured, supabaseAuthStorageKey } from '../lib/supabase';
+import { openExternalUrl } from '../lib/externalBrowser';
+import { APP_PATH, PASSWORD_RESET_PATH, getAppRedirectUrl, getNativeAuthCallbackPathFromUrl } from '../lib/routes';
 
 const LOCAL_CREATOR_ID = 'local-user';
 const DEFAULT_REMINDER_TIME = '20:00';
@@ -52,6 +55,7 @@ const defaultAuthFeedback = {
 };
 const AUTH_MODE_STORAGE_KEY = 'happy_auth_mode';
 const AUTH_SESSION_BACKUP_STORAGE_KEY = 'happy_auth_session_backup';
+const LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY = 'happy_last_native_auth_callback_url';
 const APP_STORAGE_KEYS = [
   AUTH_SESSION_BACKUP_STORAGE_KEY,
   'happy_items',
@@ -387,6 +391,53 @@ const writeStoredAuthSessionBackup = (session) => {
 
 const clearStoredAuthSessionBackup = () => {
   localStorage.removeItem(AUTH_SESSION_BACKUP_STORAGE_KEY);
+};
+
+const readLastHandledNativeAuthCallback = () => {
+  try {
+    return localStorage.getItem(LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+};
+
+const writeLastHandledNativeAuthCallback = (urlString) => {
+  try {
+    if (typeof urlString !== 'string' || !urlString.trim()) {
+      localStorage.removeItem(LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY);
+      return;
+    }
+
+    localStorage.setItem(LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY, urlString.trim());
+  } catch {
+    // Ignore storage write failures.
+  }
+};
+
+const clearSupabaseAuthStorage = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const storageKeys = [
+    supabaseAuthStorageKey,
+    `${supabaseAuthStorageKey}-code-verifier`,
+    `${supabaseAuthStorageKey}-user`
+  ];
+
+  storageKeys.forEach(key => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Ignore localStorage failures.
+    }
+
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // Ignore sessionStorage failures.
+    }
+  });
 };
 
 const hasPasswordRecoveryInUrl = () => {
@@ -908,6 +959,7 @@ export const HappyProvider = ({ children }) => {
   const latestSnapshotStateRef = useRef(null);
   const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
   const postSignOutFeedbackRef = useRef(null);
+  const lastHandledNativeAuthCallbackRef = useRef(readLastHandledNativeAuthCallback());
 
   const syncResolvedAuthState = (session, user = session?.user ?? null) => {
     const nextUser = user ?? null;
@@ -957,8 +1009,124 @@ export const HappyProvider = ({ children }) => {
     return nextNickname;
   });
 
+  const applyNativeAuthCallbackUrl = useEffectEvent(async (urlString) => {
+    if (!supabase || !Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    const normalizedUrl = typeof urlString === 'string' ? urlString.trim() : '';
+
+    if (!normalizedUrl || lastHandledNativeAuthCallbackRef.current === normalizedUrl) {
+      return;
+    }
+
+    const callbackPath = getNativeAuthCallbackPathFromUrl(urlString);
+
+    if (!callbackPath) {
+      return;
+    }
+
+    lastHandledNativeAuthCallbackRef.current = normalizedUrl;
+    writeLastHandledNativeAuthCallback(normalizedUrl);
+
+    let parsedUrl = null;
+
+    try {
+      parsedUrl = new URL(urlString);
+    } catch {
+      return;
+    }
+
+    const searchParams = new URLSearchParams(parsedUrl.search);
+    const hashParams = new URLSearchParams(
+      parsedUrl.hash.startsWith('#') ? parsedUrl.hash.slice(1) : parsedUrl.hash
+    );
+    const authParams = new URLSearchParams(searchParams);
+
+    hashParams.forEach((value, key) => {
+      authParams.set(key, value);
+    });
+
+    const errorDescription = authParams.get('error_description') || authParams.get('error');
+
+    if (errorDescription) {
+      setAuthFeedback({
+        type: 'error',
+        message: getKoreanAuthErrorMessage(
+          { message: errorDescription },
+          '로그인을 완료하지 못했어요.'
+        )
+      });
+      return;
+    }
+
+    const authCode = authParams.get('code');
+    const accessToken = authParams.get('access_token');
+    const refreshToken = authParams.get('refresh_token');
+    const redirectType = authParams.get('type');
+    const isPasswordResetCallback = callbackPath === PASSWORD_RESET_PATH || redirectType === 'recovery';
+
+    if (!authCode && (!accessToken || !refreshToken)) {
+      if (isPasswordResetCallback) {
+        setIsPasswordRecovery(true);
+      }
+      return;
+    }
+
+    setIsAuthLoading(true);
+
+    let nextSession = null;
+    let authError = null;
+
+    if (authCode) {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(authCode);
+      nextSession = data.session ?? null;
+      authError = error;
+    } else if (accessToken && refreshToken) {
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+      nextSession = data.session ?? null;
+      authError = error;
+    }
+
+    if (authError) {
+      setIsAuthLoading(false);
+      setAuthFeedback(getAuthFeedbackFromError(authError, '로그인을 완료하지 못했어요.'));
+      return;
+    }
+
+    if (nextSession?.user) {
+      syncResolvedAuthState(nextSession, nextSession.user);
+      setIsGuestMode(false);
+      localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+      await syncAuthProfileNickname(nextSession.user);
+    }
+
+    setIsPasswordRecovery(isPasswordResetCallback);
+
+    if (isPasswordResetCallback) {
+      setAuthFeedback({
+        type: 'success',
+        message: '새 비밀번호를 설정해주세요.'
+      });
+    } else {
+      setAuthFeedback(defaultAuthFeedback);
+    }
+
+    setIsAuthLoading(false);
+
+    try {
+      await Browser.close();
+    } catch {
+      // Browser.close is a no-op on Android.
+    }
+  });
+
   const clearSignedInAuthState = () => {
     syncResolvedAuthState(null, null);
+    clearSupabaseAuthStorage();
     setIsGuestMode(false);
     setIsPasswordRecovery(false);
     setIsSignupCompletionPending(false);
@@ -1043,6 +1211,38 @@ export const HappyProvider = ({ children }) => {
   }, [authUser]);
 
   useEffect(() => {
+    if (!supabase || !Capacitor.isNativePlatform()) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    let listenerHandle = null;
+
+    const processCallbackUrl = async (urlString) => {
+      if (!isMounted || typeof urlString !== 'string' || !urlString.trim()) {
+        return;
+      }
+
+      await applyNativeAuthCallbackUrl(urlString);
+    };
+
+    App.getLaunchUrl().then(result => {
+      void processCallbackUrl(result?.url);
+    });
+
+    App.addListener('appUrlOpen', data => {
+      void processCallbackUrl(data?.url);
+    }).then(handle => {
+      listenerHandle = handle;
+    });
+
+    return () => {
+      isMounted = false;
+      listenerHandle?.remove();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isNativeNotificationPlatform()) {
       return undefined;
     }
@@ -1082,6 +1282,7 @@ export const HappyProvider = ({ children }) => {
       setIsPasswordRecovery(false);
       setIsSignupCompletionPending(false);
       localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+      clearSupabaseAuthStorage();
       clearStoredAuthSessionBackup();
     };
 
@@ -2455,7 +2656,7 @@ export const HappyProvider = ({ children }) => {
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
-    const redirectTo = getAppRedirectUrl();
+    const redirectTo = getAppRedirectUrl(PASSWORD_RESET_PATH);
     const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       ...(redirectTo ? { redirectTo } : {})
     });
@@ -2555,10 +2756,14 @@ export const HappyProvider = ({ children }) => {
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
-    const redirectTo = getAppRedirectUrl();
-    const { error } = await supabase.auth.signInWithOAuth({
+    const redirectTo = getAppRedirectUrl(APP_PATH);
+    const isNativePlatform = Capacitor.isNativePlatform();
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: redirectTo ? { redirectTo } : undefined
+      options: {
+        ...(redirectTo ? { redirectTo } : {}),
+        ...(isNativePlatform ? { skipBrowserRedirect: true } : {})
+      }
     });
 
     setIsAuthBusy(false);
@@ -2570,6 +2775,19 @@ export const HappyProvider = ({ children }) => {
       );
       setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message };
+    }
+
+    if (isNativePlatform) {
+      if (!data?.url) {
+        const nextFeedback = {
+          type: 'error',
+          message: `${getAuthProviderLabel(provider)} 로그인 주소를 준비하지 못했어요.`
+        };
+        setAuthFeedback(nextFeedback);
+        return { success: false, error: nextFeedback.message };
+      }
+
+      await openExternalUrl(data.url);
     }
 
     return { success: true };

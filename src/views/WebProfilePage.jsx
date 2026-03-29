@@ -73,6 +73,15 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
     }
   };
 
+  const handleOpenPasswordReset = () => {
+    if (typeof window !== 'undefined') {
+      window.location.assign(PASSWORD_RESET_PATH);
+      return;
+    }
+
+    onNavigate?.(PASSWORD_RESET_PATH);
+  };
+
   const handleToggleDeleteSection = () => {
     setIsDeleteSectionOpen(prev => {
       const next = !prev;
@@ -167,7 +176,7 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
                 <button
                   type="button"
                   className="web-profile-secondary-btn"
-                  onClick={() => onNavigate?.(PASSWORD_RESET_PATH)}
+                  onClick={handleOpenPasswordReset}
                   disabled={isAuthBusy}
                 >
                   비밀번호 재설정

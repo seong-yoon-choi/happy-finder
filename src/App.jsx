@@ -1,4 +1,5 @@
-import React, { lazy, startTransition, useEffect, useState } from 'react';
+import React, { lazy, useEffect, useState } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { HappyProvider, useHappy } from './store/HappyContext';
 import NavBar from './components/NavBar';
@@ -14,6 +15,7 @@ import {
   PROFILE_PATH,
   isAdminInquiriesPath,
   clearRequestedAuthModeInUrl,
+  getNativeAuthCallbackPathFromUrl,
   getRequestedPostAuthPathFromUrl,
   getRequestedAuthModeFromUrl,
   isAccountDeletePath,
@@ -90,7 +92,7 @@ const navigateToPath = (nextPath, onNavigate) => {
 
   window.history.pushState({}, '', normalizedNextPath);
   window.scrollTo({ top: 0, left: 0 });
-  startTransition(() => onNavigate(normalizedNextPath));
+  onNavigate(normalizedNextPath);
 };
 
 function AppContent() {
@@ -464,13 +466,49 @@ function App() {
       }
 
       window.scrollTo({ top: 0, left: 0 });
-      startTransition(() => setPathname(nextPathname));
+      setPathname(nextPathname);
     };
 
     window.addEventListener('popstate', handlePopState);
 
     return () => {
       window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isNativeRuntime()) {
+      return undefined;
+    }
+
+    let listenerHandle = null;
+
+    const applyNativeCallbackPath = (urlString) => {
+      const callbackPath = getNativeAuthCallbackPathFromUrl(urlString);
+
+      if (!callbackPath) {
+        return;
+      }
+
+      const nextPathname = resolveRuntimePath(callbackPath);
+
+      window.history.replaceState({}, '', nextPathname);
+      window.scrollTo({ top: 0, left: 0 });
+      setPathname(nextPathname);
+    };
+
+    CapacitorApp.getLaunchUrl().then(result => {
+      applyNativeCallbackPath(result?.url);
+    });
+
+    CapacitorApp.addListener('appUrlOpen', data => {
+      applyNativeCallbackPath(data?.url);
+    }).then(handle => {
+      listenerHandle = handle;
+    });
+
+    return () => {
+      listenerHandle?.remove();
     };
   }, []);
 
