@@ -14,6 +14,7 @@ import {
   PROFILE_PATH,
   isAdminInquiriesPath,
   clearRequestedAuthModeInUrl,
+  getRequestedPostAuthPathFromUrl,
   getRequestedAuthModeFromUrl,
   isAccountDeletePath,
   isAppPath,
@@ -155,13 +156,8 @@ function AppContent() {
     && !activeCelebration
   );
 
-  useEffect(() => {
-    if (initialRequestedMode) {
-      clearRequestedAuthModeInUrl();
-    }
-  }, [initialRequestedMode]);
-
   const resetAuthScreenRequest = () => {
+    clearRequestedAuthModeInUrl();
     setIsAuthScreenRequested(false);
     setAuthScreenMode('login');
   };
@@ -307,6 +303,7 @@ function AppContent() {
 
 function PublicSiteContent({ pathname, onNavigate }) {
   const initialRequestedMode = getRequestedAuthModeFromUrl();
+  const requestedPostAuthPath = getRequestedPostAuthPathFromUrl();
   const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(() => Boolean(initialRequestedMode));
   const [authScreenMode, setAuthScreenMode] = useState(() => initialRequestedMode || 'login');
   const { authUser, isPasswordRecovery } = useHappy();
@@ -316,26 +313,31 @@ function PublicSiteContent({ pathname, onNavigate }) {
   const isSupportRoute = isSupportPath(pathname) || isQnaPath(pathname) || isFeedbackPath(pathname);
   const isAuthScreenOpen = isPasswordRecovery || (isAuthScreenRequested && !isAuthenticated);
 
-  useEffect(() => {
-    if (initialRequestedMode) {
-      clearRequestedAuthModeInUrl();
-    }
-  }, [initialRequestedMode]);
-
   const resetAuthScreenRequest = () => {
+    clearRequestedAuthModeInUrl();
     setIsAuthScreenRequested(false);
     setAuthScreenMode('login');
   };
 
   useEffect(() => {
-    if (!authUser || !isAuthScreenRequested) {
+    if (!authUser) {
       return;
     }
 
     queueMicrotask(() => {
+      if (requestedPostAuthPath && normalizePath(pathname) !== requestedPostAuthPath) {
+        navigateToPath(requestedPostAuthPath, onNavigate);
+        resetAuthScreenRequest();
+        return;
+      }
+
+      if (!isAuthScreenRequested) {
+        return;
+      }
+
       resetAuthScreenRequest();
     });
-  }, [authUser, isAuthScreenRequested]);
+  }, [authUser, isAuthScreenRequested, onNavigate, pathname, requestedPostAuthPath]);
 
   const openAuthScreen = (mode = 'login') => {
     setAuthScreenMode(mode);

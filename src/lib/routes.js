@@ -31,7 +31,40 @@ export const getRequestedAuthModeFromUrl = () => {
   }
 
   const authMode = new URLSearchParams(window.location.search).get('auth');
-  return authMode === 'reset' ? 'reset-request' : null;
+
+  if (authMode === 'login' || authMode === 'signup') {
+    return authMode;
+  }
+
+  if (authMode === 'reset') {
+    return 'reset-request';
+  }
+
+  return null;
+};
+
+export const getRequestedPostAuthPathFromUrl = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const rawNextPath = new URLSearchParams(window.location.search).get('next');
+
+  if (typeof rawNextPath !== 'string' || !rawNextPath.trim()) {
+    return null;
+  }
+
+  try {
+    const nextUrl = new URL(rawNextPath, window.location.origin);
+
+    if (nextUrl.origin !== window.location.origin) {
+      return null;
+    }
+
+    return normalizePath(nextUrl.pathname);
+  } catch {
+    return null;
+  }
 };
 
 export const clearRequestedAuthModeInUrl = () => {
@@ -41,6 +74,7 @@ export const clearRequestedAuthModeInUrl = () => {
 
   const url = new URL(window.location.href);
   url.searchParams.delete('auth');
+  url.searchParams.delete('next');
   window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
 };
 
@@ -87,27 +121,17 @@ export const getPublicWebUrl = (pathname = '/') => {
   return url.toString();
 };
 
-export const getPasswordResetWebUrl = (session) => {
-  const urlString = getPublicWebUrl(PASSWORD_RESET_PATH);
+export const getPasswordResetWebUrl = () => {
+  const urlString = getPublicWebUrl('/');
 
   if (!urlString) {
     return undefined;
   }
 
   const url = new URL(urlString);
-  url.searchParams.delete('auth');
-
-  const accessToken = typeof session?.access_token === 'string' ? session.access_token : '';
-  const refreshToken = typeof session?.refresh_token === 'string' ? session.refresh_token : '';
-
-  if (accessToken && refreshToken) {
-    const hashParams = new URLSearchParams();
-    hashParams.set('access_token', accessToken);
-    hashParams.set('refresh_token', refreshToken);
-    url.hash = hashParams.toString();
-  } else {
-    url.hash = '';
-  }
+  url.searchParams.set('auth', 'login');
+  url.searchParams.set('next', PASSWORD_RESET_PATH);
+  url.hash = '';
 
   return url.toString();
 };

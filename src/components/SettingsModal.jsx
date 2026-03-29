@@ -217,7 +217,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     addReminder,
     updateReminder,
     deleteReminder,
-    authSession,
     authUser,
     authUserNickname,
     isGuestMode,
@@ -354,7 +353,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const handleTogglePasswordReset = async () => {
     clearAuthFeedback();
     resetAccountDangerState();
-    const resetWebUrl = getPasswordResetWebUrl(authSession);
+    const resetWebUrl = getPasswordResetWebUrl();
 
     if (!resetWebUrl) {
       return;
