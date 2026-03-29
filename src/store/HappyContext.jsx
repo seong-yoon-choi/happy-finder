@@ -67,6 +67,7 @@ const defaultCloudSyncStatus = {
   message: '',
   lastSyncedAt: null
 };
+const PROFILES_TABLE = 'profiles';
 const CLOUD_SNAPSHOT_TABLE = 'happy_user_snapshots';
 const HAPPINESS_ITEMS_TABLE = 'happiness_items';
 const DELETE_ACCOUNT_FUNCTION_NAME = 'delete-account';
@@ -594,19 +595,48 @@ const shouldResetAuthSession = (error) => {
   );
 };
 
-const getAuthUserNickname = (user) => {
-  if (typeof user?.user_metadata?.nickname === 'string' && user.user_metadata.nickname.trim()) {
-    return user.user_metadata.nickname.trim();
+const isRecoverableAuthFetchError = (error) => {
+  const rawMessage = typeof error?.message === 'string' ? error.message.trim() : '';
+  const rawCode = typeof error?.code === 'string' ? error.code.trim() : '';
+  const normalizedMessage = rawMessage.toLowerCase();
+  const normalizedCode = rawCode.toLowerCase();
+
+  return (
+    normalizedMessage.includes('failed to fetch')
+    || normalizedMessage.includes('network')
+    || normalizedCode.includes('fetch')
+  );
+};
+
+const getNormalizedNickname = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.trim();
+};
+
+const getAuthUserNickname = (user, profileNickname = '') => {
+  const normalizedProfileNickname = getNormalizedNickname(profileNickname);
+
+  if (normalizedProfileNickname) {
+    return normalizedProfileNickname;
+  }
+
+  const normalizedMetadataNickname = getNormalizedNickname(user?.user_metadata?.nickname);
+
+  if (normalizedMetadataNickname) {
+    return normalizedMetadataNickname;
   }
 
   return '';
 };
 
-const getAuthUserOnboardingState = (user) => {
+const getAuthUserOnboardingState = (user, profileNickname = '') => {
   const metadata = isRecord(user?.user_metadata) ? user.user_metadata : {};
 
   return {
-    nickname: getAuthUserNickname(user),
+    nickname: getAuthUserNickname(user, profileNickname),
     isOver14: metadata.ageConfirmed === true,
     hasAcceptedTerms: metadata.termsAccepted === true,
     hasAcceptedPrivacy: metadata.privacyAccepted === true,
@@ -614,9 +644,9 @@ const getAuthUserOnboardingState = (user) => {
   };
 };
 
-const getAuthUserDisplayName = (user) => {
+const getAuthUserDisplayName = (user, profileNickname = '') => {
   const candidates = [
-    getAuthUserNickname(user)
+    getAuthUserNickname(user, profileNickname)
   ];
 
   const matchedName = candidates.find(value => typeof value === 'string' && value.trim());
@@ -863,6 +893,7 @@ export const HappyProvider = ({ children }) => {
   const [celebrationQueue, setCelebrationQueue] = useState([]);
   const [authSession, setAuthSession] = useState(null);
   const [authUser, setAuthUser] = useState(null);
+  const [authProfileNickname, setAuthProfileNickname] = useState('');
   const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem(AUTH_MODE_STORAGE_KEY) === 'guest');
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => hasPasswordRecoveryInUrl());
   const [isSignupCompletionPending, setIsSignupCompletionPending] = useState(false);
@@ -889,6 +920,7 @@ export const HappyProvider = ({ children }) => {
 
     setAuthSession(nextSession);
     setAuthUser(nextUser);
+    setAuthProfileNickname(getAuthUserNickname(nextUser));
     writeStoredAuthSessionBackup(nextSession);
 
     if (!nextUser) {
@@ -900,6 +932,30 @@ export const HappyProvider = ({ children }) => {
       user: nextUser
     };
   };
+
+  const syncAuthProfileNickname = useEffectEvent(async (user) => {
+    const fallbackNickname = getAuthUserNickname(user);
+
+    if (!supabase || !user?.id) {
+      setAuthProfileNickname(fallbackNickname);
+      return fallbackNickname;
+    }
+
+    const { data, error } = await supabase
+      .from(PROFILES_TABLE)
+      .select('nickname')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      setAuthProfileNickname(fallbackNickname);
+      return fallbackNickname;
+    }
+
+    const nextNickname = getAuthUserNickname(user, data?.nickname);
+    setAuthProfileNickname(nextNickname);
+    return nextNickname;
+  });
 
   const clearSignedInAuthState = () => {
     syncResolvedAuthState(null, null);
@@ -978,6 +1034,15 @@ export const HappyProvider = ({ children }) => {
   }, [isPasswordRecovery]);
 
   useEffect(() => {
+    if (!authUser?.id) {
+      setAuthProfileNickname('');
+      return;
+    }
+
+    syncAuthProfileNickname(authUser);
+  }, [authUser]);
+
+  useEffect(() => {
     if (!isNativeNotificationPlatform()) {
       return undefined;
     }
@@ -1012,6 +1077,7 @@ export const HappyProvider = ({ children }) => {
     const clearSignedInAuthStateInEffect = () => {
       setAuthSession(null);
       setAuthUser(null);
+      setAuthProfileNickname('');
       setIsGuestMode(false);
       setIsPasswordRecovery(false);
       setIsSignupCompletionPending(false);
@@ -1125,6 +1191,11 @@ export const HappyProvider = ({ children }) => {
       }
 
       syncResolvedAuthState(nextSession, nextUser ?? null);
+
+      if (nextUser?.id) {
+        await syncAuthProfileNickname(nextUser);
+      }
+
       setIsAuthLoading(false);
     };
 
@@ -1140,6 +1211,11 @@ export const HappyProvider = ({ children }) => {
       const nextUser = session?.user ?? null;
 
       syncResolvedAuthState(nextSession, nextUser);
+
+      if (nextUser?.id) {
+        void syncAuthProfileNickname(nextUser);
+      }
+
       setIsAuthLoading(false);
 
       if (event === 'SIGNED_IN') {
@@ -1166,7 +1242,7 @@ export const HappyProvider = ({ children }) => {
         setIsPasswordRecovery(false);
         setAuthFeedback({
           type: 'success',
-          message: '비밀번호가 새로 설정됐어요. 다시 사용할 수 있어요.'
+          message: '재설정 되었습니다.'
         });
       }
 
@@ -2459,7 +2535,7 @@ export const HappyProvider = ({ children }) => {
 
     setAuthFeedback({
       type: 'success',
-      message: '비밀번호가 새로 설정됐어요. 다시 사용할 수 있어요.'
+      message: '재설정 되었습니다.'
     });
 
     return { success: true };
@@ -2507,20 +2583,19 @@ export const HappyProvider = ({ children }) => {
     setIsSignupCompletionPending(false);
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
+    let { error } = await supabase.auth.signOut();
 
-    const sessionState = await ensureTrustedAuthSession();
+    if (error && (shouldResetAuthSession(error) || isRecoverableAuthFetchError(error))) {
+      const { error: localSignOutError } = await supabase.auth.signOut({ scope: 'local' });
 
-    if (!sessionState.success) {
+      if (!localSignOutError) {
+        setIsAuthBusy(false);
+        return { success: true };
+      }
+
       clearSignedInAuthState();
       setIsAuthBusy(false);
       return { success: true };
-    }
-
-    let { error } = await supabase.auth.signOut();
-
-    if (error && shouldResetAuthSession(error)) {
-      const { error: localSignOutError } = await supabase.auth.signOut({ scope: 'local' });
-      error = localSignOutError ?? null;
     }
 
     setIsAuthBusy(false);
@@ -2623,16 +2698,37 @@ export const HappyProvider = ({ children }) => {
       };
     }
 
+    const currentUser = sessionState.user;
+    const { error: profileError } = await supabase
+      .from(PROFILES_TABLE)
+      .upsert({
+        user_id: currentUser.id,
+        nickname: normalizedNickname
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (profileError) {
+      setIsAuthBusy(false);
+      const nextFeedback = getAuthFeedbackFromError(profileError, '닉네임을 저장하지 못했어요.');
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message };
+    }
+
+    setAuthProfileNickname(normalizedNickname);
+
     const { data, error } = await supabase.auth.updateUser({
       data: {
+        ...(isRecord(currentUser.user_metadata) ? currentUser.user_metadata : {}),
         nickname: normalizedNickname
       }
     });
 
     setIsAuthBusy(false);
 
-    if (error) {
+    if (error && !isRecoverableAuthFetchError(error)) {
       const nextFeedback = getAuthFeedbackFromError(error, '닉네임을 저장하지 못했어요.');
+      setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message };
     }
 
@@ -2640,6 +2736,8 @@ export const HappyProvider = ({ children }) => {
       setAuthUser(data.user);
       setAuthSession(prev => (prev ? { ...prev, user: data.user } : prev));
     }
+
+    setAuthFeedback(defaultAuthFeedback);
 
     return { success: true };
   };
@@ -2852,9 +2950,9 @@ export const HappyProvider = ({ children }) => {
       authSession,
       authUser,
       isGuestMode,
-      authUserOnboarding: getAuthUserOnboardingState(authUser),
-      authUserNickname: getAuthUserNickname(authUser),
-      authUserDisplayName: getAuthUserDisplayName(authUser),
+      authUserOnboarding: getAuthUserOnboardingState(authUser, authProfileNickname),
+      authUserNickname: getAuthUserNickname(authUser, authProfileNickname),
+      authUserDisplayName: getAuthUserDisplayName(authUser, authProfileNickname),
       isSignupCompletionPending,
       isPasswordRecovery,
       isAuthLoading,

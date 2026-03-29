@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { isAdminEmail } from '../lib/adminAccess';
-import { ADMIN_INQUIRIES_PATH } from '../lib/routes';
+import { ADMIN_INQUIRIES_PATH, PASSWORD_RESET_PATH } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './WebProfilePage.css';
 
@@ -164,6 +164,14 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
               </div>
 
               <div className="web-profile-actions">
+                <button
+                  type="button"
+                  className="web-profile-secondary-btn"
+                  onClick={() => onNavigate?.(PASSWORD_RESET_PATH)}
+                  disabled={isAuthBusy}
+                >
+                  비밀번호 재설정
+                </button>
                 <button
                   type="button"
                   className="web-profile-secondary-btn"

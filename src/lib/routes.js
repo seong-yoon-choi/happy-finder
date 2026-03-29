@@ -122,7 +122,7 @@ export const getPublicWebUrl = (pathname = '/') => {
 };
 
 export const getPasswordResetWebUrl = () => {
-  const urlString = getPublicWebUrl('/');
+  const urlString = getPublicWebUrl(PROFILE_PATH);
 
   if (!urlString) {
     return undefined;
