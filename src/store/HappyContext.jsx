@@ -17,6 +17,11 @@ import {
 } from '../lib/localNotifications';
 import { supabase, isSupabaseConfigured, supabaseAuthStorageKey } from '../lib/supabase';
 import { openExternalUrl } from '../lib/externalBrowser';
+import {
+  isNativeGoogleSignInConfigured,
+  signInWithNativeGoogle,
+  signOutFromNativeGoogle
+} from '../lib/nativeGoogleSignIn';
 import { APP_PATH, PASSWORD_RESET_PATH, getAppRedirectUrl, getNativeAuthCallbackPathFromUrl } from '../lib/routes';
 
 const LOCAL_CREATOR_ID = 'local-user';
@@ -626,6 +631,12 @@ const getAuthFeedbackFromError = (error, fallbackMessage) => ({
   type: 'error',
   message: getKoreanAuthErrorMessage(error, fallbackMessage)
 });
+
+const isGoogleIdentityUser = (user) => (
+  user?.app_metadata?.provider === 'google'
+  || user?.app_metadata?.providers?.includes?.('google')
+  || user?.identities?.some?.(identity => identity?.provider === 'google')
+);
 
 const shouldResetAuthSession = (error) => {
   const rawMessage = typeof error?.message === 'string' ? error.message.trim() : '';
@@ -2756,6 +2767,49 @@ export const HappyProvider = ({ children }) => {
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
+    if (provider === 'google' && Capacitor.isNativePlatform() && isNativeGoogleSignInConfigured()) {
+      try {
+        const loginResult = await signInWithNativeGoogle();
+        const idToken = typeof loginResult?.result?.idToken === 'string'
+          ? loginResult.result.idToken.trim()
+          : '';
+        const accessToken = typeof loginResult?.result?.accessToken?.token === 'string'
+          ? loginResult.result.accessToken.token.trim()
+          : '';
+
+        if (!idToken) {
+          throw new Error('Google ID 토큰을 가져오지 못했어요.');
+        }
+
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+          ...(accessToken ? { access_token: accessToken } : {})
+        });
+
+        setIsAuthBusy(false);
+
+        if (error) {
+          const nextFeedback = getAuthFeedbackFromError(error, 'Google 로그인으로 연결하지 못했어요.');
+          setAuthFeedback(nextFeedback);
+          return { success: false, error: nextFeedback.message };
+        }
+
+        if (data.session?.user) {
+          syncResolvedAuthState(data.session, data.user ?? data.session.user);
+          setIsGuestMode(false);
+          localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+        }
+
+        return { success: true };
+      } catch (error) {
+        setIsAuthBusy(false);
+        const nextFeedback = getAuthFeedbackFromError(error, 'Google 로그인으로 연결하지 못했어요.');
+        setAuthFeedback(nextFeedback);
+        return { success: false, error: nextFeedback.message };
+      }
+    }
+
     const redirectTo = getAppRedirectUrl(APP_PATH);
     const isNativePlatform = Capacitor.isNativePlatform();
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -2798,6 +2852,7 @@ export const HappyProvider = ({ children }) => {
       return { success: false, error: 'Supabase가 연결되지 않았어요.' };
     }
 
+    const shouldLogoutNativeGoogle = isGoogleIdentityUser(authUser);
     setIsSignupCompletionPending(false);
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
@@ -2807,11 +2862,27 @@ export const HappyProvider = ({ children }) => {
       const { error: localSignOutError } = await supabase.auth.signOut({ scope: 'local' });
 
       if (!localSignOutError) {
+        if (shouldLogoutNativeGoogle) {
+          try {
+            await signOutFromNativeGoogle();
+          } catch {
+            // Ignore native provider logout failures.
+          }
+        }
         setIsAuthBusy(false);
         return { success: true };
       }
 
       clearSignedInAuthState();
+
+      if (shouldLogoutNativeGoogle) {
+        try {
+          await signOutFromNativeGoogle();
+        } catch {
+          // Ignore native provider logout failures.
+        }
+      }
+
       setIsAuthBusy(false);
       return { success: true };
     }
@@ -2822,6 +2893,14 @@ export const HappyProvider = ({ children }) => {
       const nextFeedback = getAuthFeedbackFromError(error, '로그아웃하지 못했어요.');
       setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message };
+    }
+
+    if (shouldLogoutNativeGoogle) {
+      try {
+        await signOutFromNativeGoogle();
+      } catch {
+        // Ignore native provider logout failures.
+      }
     }
 
     return { success: true };

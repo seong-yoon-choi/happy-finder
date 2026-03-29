@@ -1,0 +1,19 @@
+{
+  "NSPrivacyCollectedDataTypes": [
+    {
+      "NSPrivacyCollectedDataType": "EmailAddress",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "Name",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypeTracking": false
+    },
+    {
+      "NSPrivacyCollectedDataType": "UserID",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypeTracking": false
+    }
+  ]
+}
