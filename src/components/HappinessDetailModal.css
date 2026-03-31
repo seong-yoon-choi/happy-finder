@@ -166,6 +166,12 @@
     border: 1px solid rgba(255, 71, 87, 0.18);
 }
 
+.detail-inline-feedback.report-notice {
+    background: rgba(255, 214, 102, 0.16);
+    color: #8a5a00;
+    border: 1px solid rgba(255, 190, 46, 0.26);
+}
+
 .detail-visibility-section {
     margin: 0 20px 20px;
     padding: 16px;

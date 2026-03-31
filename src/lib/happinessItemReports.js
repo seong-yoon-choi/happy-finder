@@ -23,6 +23,38 @@ const normalizeUuid = value => {
   return UUID_PATTERN.test(trimmedValue) ? trimmedValue : null;
 };
 
+export const hasExistingHappinessItemReport = async ({
+  itemId,
+  reporterUserId
+}) => {
+  if (!isSupabaseConfigured || !supabase) {
+    return { success: false, code: 'SUPABASE_NOT_CONFIGURED', hasReported: false };
+  }
+
+  const normalizedItemId = typeof itemId === 'string' ? itemId.trim() : '';
+  const normalizedReporterUserId = normalizeUuid(reporterUserId);
+
+  if (!normalizedItemId || !normalizedReporterUserId) {
+    return { success: false, code: 'INVALID_LOOKUP', hasReported: false };
+  }
+
+  const { data, error } = await supabase
+    .from(HAPPINESS_ITEM_REPORTS_TABLE)
+    .select('id')
+    .eq('item_id', normalizedItemId)
+    .eq('reporter_user_id', normalizedReporterUserId)
+    .limit(1);
+
+  if (error) {
+    return { success: false, code: 'LOOKUP_FAILED', error, hasReported: false };
+  }
+
+  return {
+    success: true,
+    hasReported: Array.isArray(data) && data.length > 0
+  };
+};
+
 export const createHappinessItemReport = async ({
   item,
   reporterUserId = null,

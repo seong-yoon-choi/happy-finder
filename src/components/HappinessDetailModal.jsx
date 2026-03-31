@@ -2,6 +2,7 @@ import React, { startTransition, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
   createHappinessItemReport,
+  hasExistingHappinessItemReport,
   OTHER_REPORT_REASON_CODE,
   REPORT_REASON_OPTIONS
 } from '../lib/happinessItemReports';
@@ -128,6 +129,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     type: 'idle',
     message: ''
   });
+  const [reportedItemIdForViewer, setReportedItemIdForViewer] = useState('');
 
   const requestRef = useRef();
   const startTimeRef = useRef();
@@ -150,16 +152,19 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     };
   }, []);
 
-  if (!isOpen || !item) {
-    return null;
-  }
-
-  const currentItem = items.find(existingItem => existingItem.id === item.id) || item;
-  const stampData = userStamps[currentItem.id];
+  const currentItem = item ? items.find(existingItem => existingItem.id === item.id) || item : null;
+  const stampData = currentItem ? userStamps[currentItem.id] : null;
   const alreadyStampedCount = stampData ? (typeof stampData === 'number' ? stampData : stampData.count) : 0;
-  const isOwner = isItemOwnedByCurrentUser(currentItem.id);
-  const itemMemos = getItemMemos(currentItem.id);
-  const canReportItem = currentItem.isCustom && currentItem.isPublic && !isOwner;
+  const isOwner = currentItem ? isItemOwnedByCurrentUser(currentItem.id) : false;
+  const itemMemos = currentItem ? getItemMemos(currentItem.id) : [];
+  const canReportItem = Boolean(currentItem?.isCustom && currentItem.isPublic && !isOwner);
+  const reportNoticeMessage = '신고한 계정에서는 그 계정에서만 신고한 리스트 입니다.';
+  const shouldShowReportedNotice = Boolean(
+    currentItem?.id
+    && authUser?.id
+    && canReportItem
+    && reportedItemIdForViewer === currentItem.id
+  );
 
   const todayKey = getLocalDateKey();
   const alreadyStampedToday = stampData && getLocalDateKey(stampData.lastStampedDate) === todayKey;
@@ -251,6 +256,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
       type: 'idle',
       message: ''
     });
+    setReportedItemIdForViewer('');
     startTimeRef.current = null;
     cancelAnimationFrame(requestRef.current);
     if (completionFrameRef.current) {
@@ -459,11 +465,43 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setIsReportDialogOpen(false);
     setSelectedReportReasons([]);
     setReportOtherReason('');
+    setReportedItemIdForViewer(currentItem.id);
     setReportFeedback({
       type: 'success',
       message: '신고가 접수되었어요. 검토 후 조치할게요.'
     });
   };
+
+  useEffect(() => {
+    if (!isOpen || !currentItem?.id || !canReportItem || !authUser?.id) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadExistingReport = async () => {
+      const result = await hasExistingHappinessItemReport({
+        itemId: currentItem?.id,
+        reporterUserId: authUser.id
+      });
+
+      if (!isMounted) {
+        return;
+      }
+
+      setReportedItemIdForViewer(result?.success && result.hasReported ? currentItem.id : '');
+    };
+
+    void loadExistingReport();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authUser?.id, canReportItem, currentItem?.id, isOpen]);
+
+  if (!isOpen || !currentItem) {
+    return null;
+  }
 
   return (
     <div className="modal-overlay detail-modal-overlay" data-block-pull-refresh="true" onClick={handleClose}>
@@ -515,6 +553,12 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
         {reportFeedback.message && (
           <div className={`detail-inline-feedback ${reportFeedback.type === 'error' ? 'error' : 'success'}`}>
             {reportFeedback.message}
+          </div>
+        )}
+
+        {shouldShowReportedNotice && (
+          <div className="detail-inline-feedback report-notice">
+            {reportNoticeMessage}
           </div>
         )}
 

@@ -502,6 +502,14 @@ with check (
   )
 );
 
+drop policy if exists "Reporters can read their own reports" on public.happiness_item_reports;
+create policy "Reporters can read their own reports"
+on public.happiness_item_reports
+for select
+using (
+  reporter_user_id = (select auth.uid())
+);
+
 create index if not exists idx_happiness_item_reports_item_created
 on public.happiness_item_reports (item_id, created_at desc);
 
