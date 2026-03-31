@@ -80,13 +80,37 @@ const fireCelebration = timeoutIdsRef => {
 const ReportIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
     <path
-      d="M6.75 4.75H17.25C17.6642 4.75 18 5.08579 18 5.5V16.0905C18 16.7249 17.2715 17.0787 16.7757 16.6878L12.4642 13.2872C12.1907 13.0714 11.8093 13.0714 11.5358 13.2872L7.2243 16.6878C6.72853 17.0787 6 16.7249 6 16.0905V5.5C6 5.08579 6.33579 4.75 6.75 4.75Z"
+      d="M9.25 10.5C9.25 8.98122 10.4812 7.75 12 7.75C13.5188 7.75 14.75 8.98122 14.75 10.5V13.75H9.25V10.5Z"
       stroke="currentColor"
       strokeWidth="1.8"
       strokeLinejoin="round"
     />
     <path
-      d="M9 8.5H15"
+      d="M8 13.75H16C16.4142 13.75 16.75 14.0858 16.75 14.5V15.25H7.25V14.5C7.25 14.0858 7.58579 13.75 8 13.75Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M10 17.25H14"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M12 5.25V3.75"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M6.75 7.25L7.81066 8.31066"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M17.25 7.25L16.1893 8.31066"
       stroke="currentColor"
       strokeWidth="1.8"
       strokeLinecap="round"
