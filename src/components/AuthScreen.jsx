@@ -373,7 +373,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               <div className="auth-screen-email-field-group">
                 <input
                   id="auth-email"
-                  type="email"
+                  type={isSignupMode || isResetRequestMode ? 'email' : 'text'}
                   name="email"
                   className="auth-screen-input"
                   value={email}

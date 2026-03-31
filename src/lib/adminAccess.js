@@ -1,3 +1,5 @@
+import { getReviewAdminEmail } from './reviewAdminAccess';
+
 const DEFAULT_ADMIN_EMAILS = ['sychoi04180605@gmail.com'];
 
 export const getAdminEmails = () => {
@@ -10,7 +12,8 @@ export const getAdminEmails = () => {
     .map(value => value.trim().toLowerCase())
     .filter(Boolean);
 
-  return emails.length > 0 ? emails : DEFAULT_ADMIN_EMAILS;
+  const configuredEmails = emails.length > 0 ? emails : DEFAULT_ADMIN_EMAILS;
+  return Array.from(new Set([...configuredEmails, getReviewAdminEmail()]));
 };
 
 export const isAdminEmail = (email) => {

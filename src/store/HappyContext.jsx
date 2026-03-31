@@ -22,6 +22,10 @@ import {
   signInWithNativeGoogle,
   signOutFromNativeGoogle
 } from '../lib/nativeGoogleSignIn';
+import {
+  createReviewAdminUser,
+  isReviewAdminCredentials
+} from '../lib/reviewAdminAccess';
 import { APP_PATH, PASSWORD_RESET_PATH, getAppRedirectUrl, getNativeAuthCallbackPathFromUrl } from '../lib/routes';
 
 const LOCAL_CREATOR_ID = 'local-user';
@@ -59,6 +63,7 @@ const defaultAuthFeedback = {
   message: ''
 };
 const AUTH_MODE_STORAGE_KEY = 'happy_auth_mode';
+const REVIEW_ADMIN_AUTH_STORAGE_KEY = 'happy_review_admin_auth_user';
 const AUTH_SESSION_BACKUP_STORAGE_KEY = 'happy_auth_session_backup';
 const LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY = 'happy_last_native_auth_callback_url';
 const APP_STORAGE_KEYS = [
@@ -87,6 +92,41 @@ const LEGACY_CATEGORY_MAP = {
 const createTemporarySignupPassword = () => (
   `temp_${Math.random().toString(36).slice(2, 10)}_${Date.now()}Aa1!`
 );
+
+const readStoredReviewAdminAuthUser = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(REVIEW_ADMIN_AUTH_STORAGE_KEY);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    return parsedValue && typeof parsedValue === 'object' ? parsedValue : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeStoredReviewAdminAuthUser = user => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(REVIEW_ADMIN_AUTH_STORAGE_KEY, JSON.stringify(user));
+};
+
+const clearStoredReviewAdminAuthUser = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.removeItem(REVIEW_ADMIN_AUTH_STORAGE_KEY);
+};
 
 const initialItems = [
   {
@@ -955,6 +995,7 @@ export const HappyProvider = ({ children }) => {
   const [celebrationQueue, setCelebrationQueue] = useState([]);
   const [authSession, setAuthSession] = useState(null);
   const [authUser, setAuthUser] = useState(null);
+  const [reviewAuthUser, setReviewAuthUser] = useState(() => readStoredReviewAdminAuthUser());
   const [authProfileNickname, setAuthProfileNickname] = useState('');
   const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem(AUTH_MODE_STORAGE_KEY) === 'guest');
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => hasPasswordRecoveryInUrl());
@@ -971,6 +1012,24 @@ export const HappyProvider = ({ children }) => {
   const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
   const postSignOutFeedbackRef = useRef(null);
   const lastHandledNativeAuthCallbackRef = useRef(readLastHandledNativeAuthCallback());
+  const effectiveAuthUser = reviewAuthUser || authUser;
+  const isReviewAuthUser = Boolean(reviewAuthUser);
+
+  const startReviewAdminSession = (user = createReviewAdminUser()) => {
+    setReviewAuthUser(user);
+    writeStoredReviewAdminAuthUser(user);
+  };
+
+  const clearReviewAdminSession = () => {
+    setReviewAuthUser(null);
+    clearStoredReviewAdminAuthUser();
+  };
+
+  useEffect(() => {
+    if (authUser && reviewAuthUser) {
+      clearReviewAdminSession();
+    }
+  }, [authUser, reviewAuthUser]);
 
   const syncResolvedAuthState = (session, user = session?.user ?? null) => {
     const nextUser = user ?? null;
@@ -2307,6 +2366,7 @@ export const HappyProvider = ({ children }) => {
   };
 
   const continueAsGuest = () => {
+    clearReviewAdminSession();
     setIsGuestMode(true);
     localStorage.setItem(AUTH_MODE_STORAGE_KEY, 'guest');
     setAuthFeedback(defaultAuthFeedback);
@@ -2339,6 +2399,18 @@ export const HappyProvider = ({ children }) => {
   };
 
   const signInWithPassword = async (email, password) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
+
+    if (isReviewAdminCredentials({ usernameOrEmail: normalizedEmail, password: normalizedPassword })) {
+      clearAuthRedirectState();
+      setIsGuestMode(false);
+      localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+      setAuthFeedback(defaultAuthFeedback);
+      startReviewAdminSession();
+      return { success: true, reason: null };
+    }
+
     if (!supabase) {
       const nextFeedback = {
         type: 'error',
@@ -2348,9 +2420,6 @@ export const HappyProvider = ({ children }) => {
       setAuthFeedback(nextFeedback);
       return { success: false, error: nextFeedback.message };
     }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const normalizedPassword = password.trim();
 
     if (!normalizedEmail) {
       const nextFeedback = {
@@ -2681,6 +2750,7 @@ export const HappyProvider = ({ children }) => {
       return { success: false, error: nextFeedback.message, reason: 'validation' };
     }
 
+    clearReviewAdminSession();
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
 
@@ -2928,6 +2998,14 @@ export const HappyProvider = ({ children }) => {
   };
 
   const signOutFromSupabase = async () => {
+    if (reviewAuthUser) {
+      clearReviewAdminSession();
+      setIsGuestMode(false);
+      localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+      setAuthFeedback(defaultAuthFeedback);
+      return { success: true };
+    }
+
     if (!supabase) {
       return { success: false, error: 'Supabase가 연결되지 않았어요.' };
     }
@@ -3326,11 +3404,12 @@ export const HappyProvider = ({ children }) => {
       toggleTheme,
       isSupabaseConfigured,
       authSession,
-      authUser,
+      authUser: effectiveAuthUser,
+      isReviewAuthUser,
       isGuestMode,
-      authUserOnboarding: getAuthUserOnboardingState(authUser, authProfileNickname),
-      authUserNickname: getAuthUserNickname(authUser, authProfileNickname),
-      authUserDisplayName: getAuthUserDisplayName(authUser, authProfileNickname),
+      authUserOnboarding: getAuthUserOnboardingState(effectiveAuthUser, isReviewAuthUser ? '' : authProfileNickname),
+      authUserNickname: getAuthUserNickname(effectiveAuthUser, isReviewAuthUser ? '' : authProfileNickname),
+      authUserDisplayName: getAuthUserDisplayName(effectiveAuthUser, isReviewAuthUser ? '' : authProfileNickname),
       isSignupCompletionPending,
       isPasswordRecovery,
       isAuthLoading,
