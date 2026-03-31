@@ -33,7 +33,8 @@
 }
 
 .detail-close,
-.detail-memo-trigger {
+.detail-memo-trigger,
+.detail-report-trigger {
     background: rgba(255, 255, 255, 0.7);
     width: 36px;
     height: 36px;
@@ -53,6 +54,15 @@
     cursor: pointer;
     font-size: 1.1rem;
     line-height: 1;
+}
+
+.detail-report-trigger {
+    color: var(--danger);
+}
+
+.detail-report-trigger svg {
+    width: 18px;
+    height: 18px;
 }
 
 .detail-header {
@@ -130,6 +140,26 @@
     color: var(--text-dark);
     line-height: 1.6;
     margin-bottom: 24px;
+}
+
+.detail-inline-feedback {
+    margin: 0 20px 18px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.detail-inline-feedback.success {
+    background: rgba(43, 192, 106, 0.12);
+    color: #248f53;
+    border: 1px solid rgba(43, 192, 106, 0.18);
+}
+
+.detail-inline-feedback.error {
+    background: rgba(255, 71, 87, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(255, 71, 87, 0.18);
 }
 
 .detail-visibility-section {
@@ -556,6 +586,158 @@
     background: rgba(255, 71, 87, 0.12);
     color: var(--danger);
     border-color: rgba(255, 71, 87, 0.28);
+}
+
+.report-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 24, 28, 0.42);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 2250;
+}
+
+.report-dialog-modal {
+    width: min(100%, 360px);
+    padding: 22px;
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+}
+
+.report-dialog-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.report-dialog-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--danger);
+}
+
+.report-dialog-copy h3 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.report-dialog-copy p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+
+.report-reason-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.report-reason-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.72);
+    cursor: pointer;
+}
+
+.dark-theme .report-reason-option {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.report-reason-option.checked {
+    border-color: rgba(255, 71, 87, 0.34);
+    background: rgba(255, 71, 87, 0.08);
+}
+
+.report-reason-option input {
+    margin: 0;
+}
+
+.report-reason-option span {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.report-other-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.report-other-field span {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.report-other-field textarea {
+    width: 100%;
+    resize: none;
+    border: 1px solid rgba(255, 71, 87, 0.2);
+    border-radius: 16px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--text-dark);
+    font-size: 0.92rem;
+    font-family: inherit;
+}
+
+.dark-theme .report-other-field textarea {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.report-dialog-feedback {
+    margin: 0;
+    font-size: 0.88rem;
+}
+
+.report-dialog-feedback.error {
+    color: var(--danger);
+}
+
+.report-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.report-dialog-cancel,
+.report-dialog-submit {
+    border-radius: 18px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.report-dialog-cancel {
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+    border-color: var(--glass-border);
+}
+
+.report-dialog-submit {
+    background: rgba(255, 71, 87, 0.12);
+    color: var(--danger);
+    border-color: rgba(255, 71, 87, 0.28);
+}
+
+.report-dialog-cancel:disabled,
+.report-dialog-submit:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 .slide-down {

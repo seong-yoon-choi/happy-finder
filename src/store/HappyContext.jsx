@@ -28,7 +28,7 @@ import {
 } from '../lib/reviewAdminAccess';
 import { APP_PATH, PASSWORD_RESET_PATH, getAppRedirectUrl, getNativeAuthCallbackPathFromUrl } from '../lib/routes';
 
-const LOCAL_CREATOR_ID = 'local-user';
+const LEGACY_LOCAL_CREATOR_ID = 'local-user';
 const DEFAULT_REMINDER_TIME = '20:00';
 
 const createReminderId = () => `reminder_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -63,6 +63,7 @@ const defaultAuthFeedback = {
   message: ''
 };
 const AUTH_MODE_STORAGE_KEY = 'happy_auth_mode';
+const GUEST_LOCAL_CREATOR_ID_STORAGE_KEY = 'happy_guest_local_creator_id';
 const REVIEW_ADMIN_AUTH_STORAGE_KEY = 'happy_review_admin_auth_user';
 const AUTH_SESSION_BACKUP_STORAGE_KEY = 'happy_auth_session_backup';
 const LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY = 'happy_last_native_auth_callback_url';
@@ -92,6 +93,24 @@ const LEGACY_CATEGORY_MAP = {
 const createTemporarySignupPassword = () => (
   `temp_${Math.random().toString(36).slice(2, 10)}_${Date.now()}Aa1!`
 );
+
+const createGuestLocalCreatorId = () => `guest_${Math.random().toString(36).slice(2, 10)}`;
+
+const getGuestLocalCreatorId = () => {
+  if (typeof window === 'undefined') {
+    return LEGACY_LOCAL_CREATOR_ID;
+  }
+
+  const storedId = window.localStorage.getItem(GUEST_LOCAL_CREATOR_ID_STORAGE_KEY);
+
+  if (typeof storedId === 'string' && storedId.trim()) {
+    return storedId.trim();
+  }
+
+  const nextId = createGuestLocalCreatorId();
+  window.localStorage.setItem(GUEST_LOCAL_CREATOR_ID_STORAGE_KEY, nextId);
+  return nextId;
+};
 
 const readStoredReviewAdminAuthUser = () => {
   if (typeof window === 'undefined') {
@@ -583,18 +602,16 @@ const initialItemCountMap = initialItems.reduce((acc, item) => {
 }, {});
 
 const getCreatorIdsForCurrentUser = (authUser) => {
-  const creatorIds = new Set([LOCAL_CREATOR_ID]);
-
   if (typeof authUser?.id === 'string' && authUser.id) {
-    creatorIds.add(authUser.id);
+    return new Set([authUser.id]);
   }
 
-  return creatorIds;
+  return new Set([getGuestLocalCreatorId(), LEGACY_LOCAL_CREATOR_ID]);
 };
 
 const isOwnedByCurrentUser = (item, authUser) => (
   getCreatorIdsForCurrentUser(authUser).has(item?.creatorId)
-  || (item?.isCustom && item?.creator === 'user' && !item?.creatorId)
+  || (!authUser?.id && item?.isCustom && item?.creator === 'user' && !item?.creatorId)
 );
 
 const getKoreanAuthErrorMessage = (error, fallbackMessage) => {
@@ -788,7 +805,7 @@ const normalizeItem = (item, savedStamps = {}) => {
     isPublic: isCustom ? item.isPublic === true : true,
     isCloudBacked: item.isCloudBacked === true,
     category: normalizeCategoryName(item.category),
-    creatorId: item.creatorId || (item.isCustom && item.creator === 'user' ? LOCAL_CREATOR_ID : undefined),
+    creatorId: item.creatorId || (item.isCustom && item.creator === 'user' ? getGuestLocalCreatorId() : undefined),
     totalEnjoyCount: Math.max(baseCount, ownCount)
   };
 };
@@ -2051,7 +2068,7 @@ export const HappyProvider = ({ children }) => {
       category: normalizeCategoryName(category),
       isCustom: true,
       creator: 'user',
-      creatorId: authUser?.id || LOCAL_CREATOR_ID,
+      creatorId: authUser?.id || getGuestLocalCreatorId(),
       isPublic,
       isCloudBacked: false,
       totalEnjoyCount: 0

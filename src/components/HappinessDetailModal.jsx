@@ -1,5 +1,10 @@
 import React, { startTransition, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
+import {
+  createHappinessItemReport,
+  OTHER_REPORT_REASON_CODE,
+  REPORT_REASON_OPTIONS
+} from '../lib/happinessItemReports';
 import { useHappy } from '../store/HappyContext';
 import { getLocalDateKey } from '../utils/date';
 import './HappinessDetailModal.css';
@@ -72,6 +77,23 @@ const fireCelebration = timeoutIdsRef => {
   });
 };
 
+const ReportIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path
+      d="M6.75 4.75H17.25C17.6642 4.75 18 5.08579 18 5.5V16.0905C18 16.7249 17.2715 17.0787 16.7757 16.6878L12.4642 13.2872C12.1907 13.0714 11.8093 13.0714 11.5358 13.2872L7.2243 16.6878C6.72853 17.0787 6 16.7249 6 16.0905V5.5C6 5.08579 6.33579 4.75 6.75 4.75Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9 8.5H15"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const {
     items,
@@ -86,6 +108,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     addMemo,
     updateMemo,
     deleteMemo,
+    authUser,
     authUserNickname
   } = useHappy();
 
@@ -99,6 +122,14 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const [editingMemoText, setEditingMemoText] = useState('');
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [visibilityError, setVisibilityError] = useState('');
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [selectedReportReasons, setSelectedReportReasons] = useState([]);
+  const [reportOtherReason, setReportOtherReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [reportFeedback, setReportFeedback] = useState({
+    type: 'idle',
+    message: ''
+  });
 
   const requestRef = useRef();
   const startTimeRef = useRef();
@@ -130,6 +161,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const alreadyStampedCount = stampData ? (typeof stampData === 'number' ? stampData : stampData.count) : 0;
   const isOwner = isItemOwnedByCurrentUser(currentItem.id);
   const itemMemos = getItemMemos(currentItem.id);
+  const canReportItem = currentItem.isCustom && currentItem.isPublic && !isOwner;
 
   const todayKey = getLocalDateKey();
   const alreadyStampedToday = stampData && getLocalDateKey(stampData.lastStampedDate) === todayKey;
@@ -213,6 +245,14 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setMemoText('');
     setEditingMemoId(null);
     setEditingMemoText('');
+    setIsReportDialogOpen(false);
+    setSelectedReportReasons([]);
+    setReportOtherReason('');
+    setIsSubmittingReport(false);
+    setReportFeedback({
+      type: 'idle',
+      message: ''
+    });
     startTimeRef.current = null;
     cancelAnimationFrame(requestRef.current);
     if (completionFrameRef.current) {
@@ -333,6 +373,100 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setVisibilityError('공개 범위를 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
   };
 
+  const openReportDialog = () => {
+    setSelectedReportReasons([]);
+    setReportOtherReason('');
+    setIsSubmittingReport(false);
+    setReportFeedback({
+      type: 'idle',
+      message: ''
+    });
+    setIsReportDialogOpen(true);
+  };
+
+  const closeReportDialog = () => {
+    if (isSubmittingReport) {
+      return;
+    }
+
+    setIsReportDialogOpen(false);
+    setSelectedReportReasons([]);
+    setReportOtherReason('');
+    setReportFeedback({
+      type: 'idle',
+      message: ''
+    });
+  };
+
+  const handleToggleReportReason = reasonCode => {
+    setReportFeedback({
+      type: 'idle',
+      message: ''
+    });
+
+    setSelectedReportReasons(prevReasons => {
+      const hasReason = prevReasons.includes(reasonCode);
+      const nextReasons = hasReason
+        ? prevReasons.filter(code => code !== reasonCode)
+        : [...prevReasons, reasonCode];
+
+      if (hasReason && reasonCode === OTHER_REPORT_REASON_CODE) {
+        setReportOtherReason('');
+      }
+
+      return nextReasons;
+    });
+  };
+
+  const handleSubmitReport = async () => {
+    if (selectedReportReasons.length === 0) {
+      setReportFeedback({
+        type: 'error',
+        message: '신고 사유를 하나 이상 선택해주세요.'
+      });
+      return;
+    }
+
+    if (selectedReportReasons.includes(OTHER_REPORT_REASON_CODE) && !reportOtherReason.trim()) {
+      setReportFeedback({
+        type: 'error',
+        message: '기타 사유를 입력해주세요.'
+      });
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    setReportFeedback({
+      type: 'idle',
+      message: ''
+    });
+
+    const result = await createHappinessItemReport({
+      item: currentItem,
+      reporterUserId: authUser?.id || null,
+      reasonCodes: selectedReportReasons,
+      otherReason: reportOtherReason
+    });
+
+    setIsSubmittingReport(false);
+
+    if (!result?.success) {
+      setReportFeedback({
+        type: 'error',
+        message: '신고를 접수하지 못했어요. 잠시 후 다시 시도해주세요.'
+      });
+      return;
+    }
+
+    setIsReportDialogOpen(false);
+    setSelectedReportReasons([]);
+    setReportOtherReason('');
+    setReportFeedback({
+      type: 'success',
+      message: '신고가 접수되었어요. 검토 후 조치할게요.'
+    });
+  };
+
   return (
     <div className="modal-overlay detail-modal-overlay" data-block-pull-refresh="true" onClick={handleClose}>
       <div
@@ -341,6 +475,16 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
         onClick={event => event.stopPropagation()}
       >
         <div className="detail-top-actions">
+          {canReportItem && (
+            <button
+              type="button"
+              className="detail-icon-btn detail-report-trigger"
+              onClick={openReportDialog}
+              aria-label="행복 항목 신고"
+            >
+              <ReportIcon />
+            </button>
+          )}
           <button
             type="button"
             className="detail-icon-btn detail-memo-trigger"
@@ -369,6 +513,12 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
 
         <h2 className="detail-title">{currentItem.title}</h2>
         <p className="detail-desc">{currentItem.description}</p>
+
+        {reportFeedback.message && (
+          <div className={`detail-inline-feedback ${reportFeedback.type === 'error' ? 'error' : 'success'}`}>
+            {reportFeedback.message}
+          </div>
+        )}
 
         {canDelete && currentItem.isCustom && isOwner && (
           <div className="detail-visibility-section">
@@ -593,6 +743,80 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                 onClick={handleDeleteConfirm}
               >
                 삭제하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isReportDialogOpen && (
+        <div
+          className="report-dialog-overlay"
+          onClick={event => {
+            event.stopPropagation();
+            closeReportDialog();
+          }}
+        >
+          <div
+            className="glass-panel report-dialog-modal"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="report-dialog-copy">
+              <span className="report-dialog-eyebrow">REPORT</span>
+              <h3>이 행복 항목을 신고할까요?</h3>
+              <p>검토에 도움이 되도록 신고 사유를 선택해주세요.</p>
+            </div>
+
+            <div className="report-reason-list">
+              {REPORT_REASON_OPTIONS.map(option => {
+                const isChecked = selectedReportReasons.includes(option.code);
+
+                return (
+                  <label key={option.code} className={`report-reason-option ${isChecked ? 'checked' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => handleToggleReportReason(option.code)}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {selectedReportReasons.includes(OTHER_REPORT_REASON_CODE) && (
+              <label className="report-other-field">
+                <span>기타 신고 사유</span>
+                <textarea
+                  value={reportOtherReason}
+                  onChange={event => setReportOtherReason(event.target.value)}
+                  placeholder="신고 사유를 자세히 입력해주세요."
+                  rows={4}
+                  maxLength={500}
+                />
+              </label>
+            )}
+
+            {reportFeedback.type === 'error' && (
+              <p className="report-dialog-feedback error">{reportFeedback.message}</p>
+            )}
+
+            <div className="report-dialog-actions">
+              <button
+                type="button"
+                className="report-dialog-cancel"
+                onClick={closeReportDialog}
+                disabled={isSubmittingReport}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="report-dialog-submit"
+                onClick={handleSubmitReport}
+                disabled={isSubmittingReport}
+              >
+                {isSubmittingReport ? '신고 중...' : '신고하기'}
               </button>
             </div>
           </div>
