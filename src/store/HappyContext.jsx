@@ -2415,16 +2415,38 @@ export const HappyProvider = ({ children }) => {
     APP_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
   };
 
+  const enterIsolatedReviewAdminMode = async () => {
+    if (supabase) {
+      await supabase.auth.signOut({ scope: 'local' });
+    }
+
+    clearSignedInAuthState();
+    clearLocalAppStorage();
+    resetLocalAppState();
+    clearAuthRedirectState();
+    setIsGuestMode(false);
+    localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+    setAuthFeedback(defaultAuthFeedback);
+    startReviewAdminSession();
+  };
+
+  const exitIsolatedReviewAdminMode = () => {
+    clearReviewAdminSession();
+    clearSignedInAuthState();
+    clearLocalAppStorage();
+    resetLocalAppState();
+    clearAuthRedirectState();
+    setIsGuestMode(false);
+    localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+    setAuthFeedback(defaultAuthFeedback);
+  };
+
   const signInWithPassword = async (email, password) => {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedPassword = password.trim();
 
     if (isReviewAdminCredentials({ usernameOrEmail: normalizedEmail, password: normalizedPassword })) {
-      clearAuthRedirectState();
-      setIsGuestMode(false);
-      localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-      setAuthFeedback(defaultAuthFeedback);
-      startReviewAdminSession();
+      await enterIsolatedReviewAdminMode();
       return { success: true, reason: null };
     }
 
@@ -3016,10 +3038,7 @@ export const HappyProvider = ({ children }) => {
 
   const signOutFromSupabase = async () => {
     if (reviewAuthUser) {
-      clearReviewAdminSession();
-      setIsGuestMode(false);
-      localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
-      setAuthFeedback(defaultAuthFeedback);
+      exitIsolatedReviewAdminMode();
       return { success: true };
     }
 
