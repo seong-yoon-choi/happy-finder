@@ -57,12 +57,16 @@
 }
 
 .detail-report-trigger {
-    color: var(--danger);
+    width: 42px;
+    height: 42px;
+    color: white;
+    background: linear-gradient(135deg, #ff7f87 0%, #ff4757 100%);
+    box-shadow: 0 8px 18px rgba(255, 71, 87, 0.28);
 }
 
 .detail-report-trigger svg {
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
 }
 
 .detail-header {
