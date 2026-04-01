@@ -28,7 +28,7 @@ const getStatusMessage = (error) => {
     return '문의 내역 연결이 아직 준비되지 않았어요.';
   }
 
-  return '문의 내역을 불러오지 못했어요.';
+  return '';
 };
 
 const formatDateTime = (value) => {
