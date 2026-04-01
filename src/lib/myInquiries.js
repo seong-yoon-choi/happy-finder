@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
-const MY_INQUIRIES_FUNCTION = 'my-inquiries-list';
+const WEBSITE_INQUIRIES_TABLE = 'website_inquiries';
 
 const ensureSupabase = () => {
   if (!isSupabaseConfigured || !supabase) {
@@ -8,7 +8,7 @@ const ensureSupabase = () => {
   }
 };
 
-const getAuthHeaders = async () => {
+const ensureTrustedSession = async () => {
   ensureSupabase();
 
   let { data, error } = await supabase.auth.getSession();
@@ -37,59 +37,27 @@ const getAuthHeaders = async () => {
     throw new Error('AUTH_SESSION_MISSING');
   }
 
-  return {
-    Authorization: `Bearer ${accessToken}`
-  };
-};
+  const userResult = await supabase.auth.getUser();
 
-const unwrapFunctionError = async (error) => {
-  if (typeof error?.context?.json === 'function') {
-    const payload = await error.context.json().catch(() => null);
-
-    if (payload?.error === 'invalid_user') {
-      throw new Error('INVALID_USER_SESSION');
-    }
-
-    if (payload?.error === 'missing_authorization') {
-      throw new Error('AUTH_SESSION_MISSING');
-    }
-
-    if (payload?.error) {
-      throw new Error(String(payload.error));
-    }
-
-    if (payload?.message) {
-      throw new Error(String(payload.message));
-    }
+  if (userResult.error || !userResult.data?.user?.id) {
+    throw new Error('INVALID_USER_SESSION');
   }
 
-  if (typeof error?.context?.text === 'function') {
-    const text = await error.context.text().catch(() => '');
-
-    if (typeof text === 'string' && text.trim()) {
-      throw new Error(text.trim());
-    }
-  }
-
-  throw error;
+  return userResult.data.user;
 };
 
 export const listMyInquiries = async () => {
   ensureSupabase();
+  await ensureTrustedSession();
 
-  const headers = await getAuthHeaders();
-  const { data, error } = await supabase.functions.invoke(MY_INQUIRIES_FUNCTION, {
-    headers,
-    body: {}
-  });
+  const { data, error } = await supabase
+    .from(WEBSITE_INQUIRIES_TABLE)
+    .select('*')
+    .order('created_at', { ascending: false });
 
   if (error) {
-    await unwrapFunctionError(error);
+    throw error;
   }
 
-  if (!Array.isArray(data?.inquiries)) {
-    throw new Error('INVALID_INQUIRIES_RESPONSE');
-  }
-
-  return data.inquiries;
+  return Array.isArray(data) ? data : [];
 };

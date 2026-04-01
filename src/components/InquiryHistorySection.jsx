@@ -15,11 +15,12 @@ const submissionTypeLabels = {
 
 const getStatusMessage = (error) => {
   const message = typeof error?.message === 'string' ? error.message : '';
+  const normalizedMessage = message.toLowerCase();
 
   if (
     message.includes('AUTH_SESSION_MISSING')
     || message.includes('INVALID_USER_SESSION')
-    || message.includes('invalid_user')
+    || normalizedMessage.includes('invalid_user')
   ) {
     return '로그인 정보를 다시 확인한 뒤 문의 내역을 새로 불러와 주세요.';
   }
@@ -28,7 +29,15 @@ const getStatusMessage = (error) => {
     return '문의 내역 연결이 아직 준비되지 않았어요.';
   }
 
-  return '';
+  if (
+    normalizedMessage.includes('permission denied')
+    || normalizedMessage.includes('row-level security')
+    || normalizedMessage.includes('42501')
+  ) {
+    return '문의 내역을 불러올 권한 설정을 다시 적용하고 있어요. 잠시 후 다시 시도해 주세요.';
+  }
+
+  return '문의 내역을 불러오는 중 문제가 생겼어요. 새로고침 후 다시 확인해 주세요.';
 };
 
 const formatDateTime = (value) => {
