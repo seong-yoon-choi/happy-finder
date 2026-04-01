@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import AuthScreen from '../components/AuthScreen';
 import { listAdminInquiries, replyAdminInquiry } from '../lib/adminInquiries';
-import { isAdminEmail } from '../lib/adminAccess';
 import { useHappy } from '../store/HappyContext';
 import './AdminInquiriesPage.css';
 
@@ -104,7 +103,7 @@ const getReplyErrorMessage = rawMessage => {
 };
 
 const AdminInquiriesPage = () => {
-  const { authUser, isAuthLoading } = useHappy();
+  const { authUser, isAuthLoading, isReviewAuthUser } = useHappy();
   const [isAuthScreenOpen, setIsAuthScreenOpen] = useState(false);
   const [inquiries, setInquiries] = useState([]);
   const [replyDrafts, setReplyDrafts] = useState({});
@@ -114,7 +113,7 @@ const AdminInquiriesPage = () => {
   const [replyingId, setReplyingId] = useState('');
   const [expandedId, setExpandedId] = useState('');
 
-  const isAdmin = isAdminEmail(authUser?.email);
+  const isAdmin = isReviewAuthUser;
 
   const loadInquiries = useCallback(async () => {
     if (!isAdmin) {

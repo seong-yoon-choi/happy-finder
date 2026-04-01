@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core';
+
 export const APP_PATH = '/app';
 export const PROFILE_PATH = '/profile';
 export const PASSWORD_RESET_PATH = '/password-reset';
@@ -6,6 +8,8 @@ export const ADMIN_INQUIRIES_PATH = '/admin/inquiries';
 export const SUPPORT_PATH = '/support';
 export const QNA_PATH = '/qna';
 export const FEEDBACK_PATH = '/feedback';
+
+const isNativeRuntime = () => Capacitor.isNativePlatform();
 
 const getNativeAuthCallbackBaseUrl = () => {
   const overrideRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL;
@@ -121,7 +125,12 @@ export const getAppRedirectUrl = (pathname = APP_PATH) => {
     return undefined;
   }
 
-  const normalizedTargetPath = normalizePath(pathname);
+  const normalizedRequestedPath = normalizePath(pathname);
+  const normalizedTargetPath = (
+    !isNativeRuntime() && normalizedRequestedPath === APP_PATH
+      ? PROFILE_PATH
+      : normalizedRequestedPath
+  );
   const isHttpOrigin = window.location.origin.startsWith('http');
 
   if (isHttpOrigin) {
@@ -149,7 +158,7 @@ export const getPublicWebUrl = (pathname = '/') => {
   const overrideWebUrl = import.meta.env.VITE_AUTH_WEB_URL;
   const appBaseUrl = typeof overrideWebUrl === 'string' && overrideWebUrl.trim()
     ? overrideWebUrl.trim()
-    : window.location.origin.startsWith('http')
+    : !isNativeRuntime() && window.location.origin.startsWith('http')
       ? window.location.origin
       : undefined;
 

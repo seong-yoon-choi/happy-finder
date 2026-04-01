@@ -64,6 +64,10 @@ const resolveRuntimePath = rawPathname => {
   const normalizedPathname = normalizePath(rawPathname);
 
   if (!isNativeRuntime()) {
+    if (isAppPath(normalizedPathname)) {
+      return '/';
+    }
+
     return normalizedPathname;
   }
 

@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { isAdminEmail } from '../lib/adminAccess';
 import { ADMIN_INQUIRIES_PATH, PASSWORD_RESET_PATH } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './WebProfilePage.css';
@@ -22,6 +21,7 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
   const {
     authUser,
     authUserNickname,
+    isReviewAuthUser,
     isAuthLoading,
     isAuthBusy,
     authFeedback,
@@ -36,7 +36,6 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
   const accountEmail = typeof authUser?.email === 'string' ? authUser.email : '';
   const expectedEmail = accountEmail.toLowerCase();
   const isConfirmationMatched = Boolean(expectedEmail && normalizedEmail === expectedEmail);
-  const isAdmin = isAdminEmail(accountEmail);
   const displayName = useMemo(() => {
     if (typeof authUserNickname === 'string' && authUserNickname.trim()) {
       return authUserNickname.trim();
@@ -105,7 +104,7 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
           </div>
 
           <div className="web-profile-header-actions">
-            {authUser && isAdmin && (
+            {authUser && isReviewAuthUser && (
               <button
                 type="button"
                 className="web-profile-secondary-btn web-profile-header-btn"

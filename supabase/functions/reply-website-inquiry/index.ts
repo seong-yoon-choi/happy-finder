@@ -1,5 +1,6 @@
 import nodemailer from 'npm:nodemailer@7';
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { resolveAuthorizedAdminEmail } from '../_shared/reviewAdmin.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +8,6 @@ const corsHeaders = {
 };
 
 const WEBSITE_INQUIRIES_TABLE = 'website_inquiries';
-const DEFAULT_ADMIN_EMAILS = ['sychoi04180605@gmail.com'];
 const DEFAULT_EMAIL_SEND_ERROR = 'email_send_failed';
 const DEFAULT_RESEND_FROM = 'Happy Finder <onboarding@resend.dev>';
 const DEFAULT_SMTP_HOST = 'smtp.resend.com';
@@ -30,16 +30,6 @@ const normalizeText = (value: unknown) => {
   }
 
   return value.trim();
-};
-
-const getAdminEmails = () => {
-  const rawValue = Deno.env.get('SUPPORT_ADMIN_EMAILS') || '';
-  const configuredEmails = rawValue
-    .split(',')
-    .map(value => value.trim().toLowerCase())
-    .filter(Boolean);
-
-  return configuredEmails.length > 0 ? configuredEmails : DEFAULT_ADMIN_EMAILS;
 };
 
 const escapeHtml = (value: string) => value
@@ -224,39 +214,21 @@ Deno.serve(async req => {
     return jsonResponse(500, { error: 'server_not_configured' });
   }
 
+  const requestPayload = await req.json().catch(() => ({}));
   const authHeader = req.headers.get('Authorization');
-
-  if (!authHeader) {
-    return jsonResponse(401, { error: 'missing_authorization' });
-  }
-
-  const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: authHeader
-      }
-    },
-    auth: {
-      persistSession: false
-    }
+  const reviewAdminToken = normalizeText(requestPayload?.reviewAdminToken);
+  const authorizedAdmin = await resolveAuthorizedAdminEmail({
+    supabaseUrl,
+    supabaseAnonKey,
+    authHeader,
+    reviewAdminToken
   });
 
-  const {
-    data: { user },
-    error: userError
-  } = await userClient.auth.getUser();
-
-  if (userError || !user) {
-    return jsonResponse(401, { error: 'invalid_user' });
+  if (!('email' in authorizedAdmin)) {
+    return jsonResponse(authorizedAdmin.status, { error: authorizedAdmin.error });
   }
 
-  const userEmail = normalizeText(user.email).toLowerCase();
-
-  if (!getAdminEmails().includes(userEmail)) {
-    return jsonResponse(403, { error: 'forbidden' });
-  }
-
-  const requestPayload = await req.json().catch(() => ({}));
+  const userEmail = authorizedAdmin.email;
   const inquiryId = normalizeText(requestPayload?.inquiryId);
   const replyMessage = normalizeText(requestPayload?.replyMessage);
 

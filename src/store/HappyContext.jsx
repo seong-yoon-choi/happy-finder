@@ -26,6 +26,7 @@ import {
   createReviewAdminUser,
   isReviewAdminCredentials
 } from '../lib/reviewAdminAccess';
+import { requestReviewAdminSession } from '../lib/reviewAdminSession';
 import { APP_PATH, PASSWORD_RESET_PATH, getAppRedirectUrl, getNativeAuthCallbackPathFromUrl } from '../lib/routes';
 
 const LEGACY_LOCAL_CREATOR_ID = 'local-user';
@@ -2415,7 +2416,7 @@ export const HappyProvider = ({ children }) => {
     APP_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
   };
 
-  const enterIsolatedReviewAdminMode = async () => {
+  const enterIsolatedReviewAdminMode = async (user = createReviewAdminUser()) => {
     if (supabase) {
       await supabase.auth.signOut({ scope: 'local' });
     }
@@ -2427,7 +2428,7 @@ export const HappyProvider = ({ children }) => {
     setIsGuestMode(false);
     localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
     setAuthFeedback(defaultAuthFeedback);
-    startReviewAdminSession();
+    startReviewAdminSession(user);
   };
 
   const exitIsolatedReviewAdminMode = () => {
@@ -2446,8 +2447,24 @@ export const HappyProvider = ({ children }) => {
     const normalizedPassword = password.trim();
 
     if (isReviewAdminCredentials({ usernameOrEmail: normalizedEmail, password: normalizedPassword })) {
-      await enterIsolatedReviewAdminMode();
-      return { success: true, reason: null };
+      try {
+        setIsAuthBusy(true);
+        setAuthFeedback(defaultAuthFeedback);
+
+        const reviewAdminUser = await requestReviewAdminSession({
+          usernameOrEmail: normalizedEmail,
+          password: normalizedPassword
+        });
+
+        await enterIsolatedReviewAdminMode(reviewAdminUser);
+        setIsAuthBusy(false);
+        return { success: true, reason: null };
+      } catch (error) {
+        setIsAuthBusy(false);
+        const nextFeedback = getAuthFeedbackFromError(error, '관리자 로그인 세션을 준비하지 못했어요.');
+        setAuthFeedback(nextFeedback);
+        return { success: false, error: nextFeedback.message, reason: 'auth' };
+      }
     }
 
     if (!supabase) {
