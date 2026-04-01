@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const WEBSITE_INQUIRIES_TABLE = 'website_inquiries';
-const LIST_WEBSITE_INQUIRIES_FUNCTION = 'list-website-inquiries';
+const LIST_WEBSITE_INQUIRIES_FUNCTION = 'admin-inquiries-list';
 const REPLY_WEBSITE_INQUIRY_FUNCTION = 'reply-website-inquiry';
 const REVIEW_ADMIN_AUTH_STORAGE_KEY = 'happy_review_admin_auth_user';
 
