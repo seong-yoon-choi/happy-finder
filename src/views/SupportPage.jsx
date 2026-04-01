@@ -205,7 +205,7 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
                     type="email"
                     value={feedbackForm.email}
                     onChange={handleFeedbackChange('email')}
-                    placeholder="이메일 주소를 입력해주세요"
+                    placeholder="답변 받을 이메일을 입력해 주세요"
                     required
                   />
                 </label>
@@ -268,7 +268,7 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
                     type="email"
                     value={qnaForm.email}
                     onChange={handleQnaChange('email')}
-                    placeholder="이메일 주소를 입력해주세요"
+                    placeholder="답변 받을 이메일을 입력해 주세요"
                     required
                   />
                 </label>

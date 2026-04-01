@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import InquiryHistorySection from '../components/InquiryHistorySection';
 import { ADMIN_INQUIRIES_PATH, PASSWORD_RESET_PATH } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './WebProfilePage.css';
@@ -189,6 +190,10 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
                   {isAuthBusy ? '처리 중...' : '로그아웃'}
                 </button>
               </div>
+            </section>
+
+            <section className="web-profile-card">
+              <InquiryHistorySection variant="web" />
             </section>
 
             <section className="web-profile-card web-profile-danger">

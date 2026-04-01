@@ -4,6 +4,7 @@ import HappinessCard from '../components/HappinessCard';
 import CategoryTabs from '../components/CategoryTabs';
 import CreateHappinessModal from '../components/CreateHappinessModal';
 import GrowthStageAvatar from '../components/GrowthStageAvatar';
+import InquiryHistorySection from '../components/InquiryHistorySection';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { getTreeInfo } from '../utils/progress';
 import { getLocalDateKey } from '../utils/date';
@@ -165,6 +166,12 @@ const Profile = () => {
         >
           만든 행복 ({myItems.length})
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'inquiries' ? 'active' : ''}`}
+          onClick={() => setActiveTab('inquiries')}
+        >
+          문의 내역
+        </button>
       </div>
 
       <div className="feed-container">
@@ -228,6 +235,10 @@ const Profile = () => {
               + 버튼으로 나만의 행복을 추가해보세요!
             </div>
           )
+        )}
+
+        {activeTab === 'inquiries' && (
+          <InquiryHistorySection variant="profile" />
         )}
       </div>
 
