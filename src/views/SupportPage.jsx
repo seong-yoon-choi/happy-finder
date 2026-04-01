@@ -69,9 +69,11 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
 
     return authUser.email.trim().toLowerCase();
   }, [authUser?.email]);
-  const isAccountEmailLocked = Boolean(accountEmail) && !isReviewAuthUser;
-  const qnaReplyEmail = isAccountEmailLocked ? accountEmail : qnaForm.email;
-  const feedbackReplyEmail = isAccountEmailLocked ? accountEmail : feedbackForm.email;
+  const linkedAccountUserId = !isReviewAuthUser && typeof authUser?.id === 'string'
+    ? authUser.id.trim()
+    : '';
+  const linkedAccountEmail = !isReviewAuthUser ? accountEmail : '';
+  const shouldShowAccountLinkNote = Boolean(linkedAccountUserId);
 
   const handleNavigate = nextPath => () => onNavigate?.(nextPath);
 
@@ -98,7 +100,9 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
     try {
       await submitWebsiteIntake({
         submissionType: 'qna',
-        email: qnaReplyEmail,
+        email: qnaForm.email,
+        accountUserId: linkedAccountUserId,
+        accountEmail: linkedAccountEmail,
         subject: qnaForm.subject,
         message: qnaForm.message
       });
@@ -106,8 +110,8 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
       setQnaForm(initialQnaForm);
       setQnaStatus({
         type: 'success',
-        message: isAccountEmailLocked
-          ? '문의가 접수됐어요. 확인 후 계정 이메일로 안내드릴게요.'
+        message: shouldShowAccountLinkNote
+          ? '문의가 접수됐어요. 답변은 입력한 이메일로 안내드리고, 프로필 문의 내역에도 표시될게요.'
           : '문의가 접수됐어요. 확인 후 필요한 경우 입력한 이메일을 참고해 안내드릴게요.'
       });
     } catch (error) {
@@ -133,7 +137,9 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
     try {
       await submitWebsiteIntake({
         submissionType: 'feedback',
-        email: feedbackReplyEmail,
+        email: feedbackForm.email,
+        accountUserId: linkedAccountUserId,
+        accountEmail: linkedAccountEmail,
         subject: feedbackForm.subject,
         message: feedbackForm.message
       });
@@ -217,15 +223,14 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
                   이메일
                   <input
                     type="email"
-                    value={feedbackReplyEmail}
+                    value={feedbackForm.email}
                     onChange={handleFeedbackChange('email')}
-                    placeholder={isAccountEmailLocked ? '' : '답변 받을 이메일을 입력해 주세요'}
-                    readOnly={isAccountEmailLocked}
+                    placeholder="답변 받을 이메일을 입력해 주세요"
                     required
                   />
-                  {isAccountEmailLocked && (
+                  {shouldShowAccountLinkNote && (
                     <span className="support-field-note">
-                      로그인한 계정 이메일로 자동 접수돼요.
+                      프로필 문의 내역은 지금 로그인한 계정에 저장돼요.
                     </span>
                   )}
                 </label>
@@ -286,15 +291,14 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
                   이메일
                   <input
                     type="email"
-                    value={qnaReplyEmail}
+                    value={qnaForm.email}
                     onChange={handleQnaChange('email')}
-                    placeholder={isAccountEmailLocked ? '' : '답변 받을 이메일을 입력해 주세요'}
-                    readOnly={isAccountEmailLocked}
+                    placeholder="답변 받을 이메일을 입력해 주세요"
                     required
                   />
-                  {isAccountEmailLocked && (
+                  {shouldShowAccountLinkNote && (
                     <span className="support-field-note">
-                      로그인한 계정 이메일로 자동 접수돼요.
+                      프로필 문의 내역은 지금 로그인한 계정에 저장돼요.
                     </span>
                   )}
                 </label>

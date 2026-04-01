@@ -15,6 +15,8 @@ export const submitWebsiteIntake = async ({
   submissionType,
   name,
   email,
+  accountUserId,
+  accountEmail,
   subject,
   message,
   score
@@ -34,6 +36,8 @@ export const submitWebsiteIntake = async ({
     submission_type: normalizedSubmissionType,
     name: normalizeText(name),
     email: normalizeText(email)?.toLowerCase() || null,
+    account_user_id: normalizeText(accountUserId),
+    account_email: normalizeText(accountEmail)?.toLowerCase() || null,
     subject: normalizeText(subject),
     message: normalizedMessage,
     score: Number.isFinite(score) ? score : null,

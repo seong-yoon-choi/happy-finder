@@ -57,16 +57,16 @@ const InquiryHistorySection = ({ variant = 'profile' }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState(emptyStatus);
 
-  const accountEmail = useMemo(() => {
-    if (typeof authUser?.email !== 'string') {
+  const accountUserId = useMemo(() => {
+    if (typeof authUser?.id !== 'string') {
       return '';
     }
 
-    return authUser.email.trim().toLowerCase();
-  }, [authUser?.email]);
+    return authUser.id.trim();
+  }, [authUser?.id]);
 
   const loadInquiries = async () => {
-    if (!authUser || !accountEmail || isReviewAuthUser) {
+    if (!authUser || !accountUserId || isReviewAuthUser) {
       setInquiries([]);
       setStatus(emptyStatus);
       return;
@@ -94,7 +94,7 @@ const InquiryHistorySection = ({ variant = 'profile' }) => {
     }
 
     loadInquiries();
-  }, [accountEmail, authUser, isAuthLoading, isReviewAuthUser]);
+  }, [accountUserId, authUser, isAuthLoading, isReviewAuthUser]);
 
   if (isAuthLoading) {
     return (
@@ -132,7 +132,7 @@ const InquiryHistorySection = ({ variant = 'profile' }) => {
         <div className="inquiry-history-copy">
           <span className="inquiry-history-eyebrow">MY SUPPORT</span>
           <h3>내 문의와 답변</h3>
-          <p>로그인한 계정 이메일과 연결된 QnA, Feedback 내역을 확인할 수 있어요.</p>
+          <p>로그인한 계정으로 남긴 QnA, Feedback 내역을 확인할 수 있어요.</p>
         </div>
 
         <button

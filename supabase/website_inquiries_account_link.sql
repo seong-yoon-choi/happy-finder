@@ -1,24 +1,6 @@
-create table if not exists public.website_inquiries (
-  id uuid primary key default gen_random_uuid(),
-  submission_type text not null check (submission_type in ('qna', 'feedback')),
-  name text,
-  email text,
-  account_user_id uuid references auth.users(id) on delete set null,
-  account_email text,
-  subject text,
-  message text not null check (char_length(trim(message)) between 1 and 3000),
-  score integer check (score between 1 and 5 or score is null),
-  status text not null default 'received' check (status in ('received', 'reviewing', 'resolved', 'archived')),
-  page_path text,
-  user_agent text,
-  created_at timestamptz not null default timezone('utc', now())
-);
-
-create index if not exists website_inquiries_created_at_idx
-  on public.website_inquiries (created_at desc);
-
-create index if not exists website_inquiries_submission_type_idx
-  on public.website_inquiries (submission_type);
+alter table public.website_inquiries
+  add column if not exists account_user_id uuid references auth.users(id) on delete set null,
+  add column if not exists account_email text;
 
 create index if not exists website_inquiries_account_user_id_idx
   on public.website_inquiries (account_user_id, created_at desc)
@@ -32,15 +14,15 @@ create index if not exists website_inquiries_account_email_idx
   on public.website_inquiries (account_email, created_at desc)
   where account_email is not null;
 
-alter table public.website_inquiries
-  add column if not exists account_user_id uuid references auth.users(id) on delete set null,
-  add column if not exists account_email text,
-  add column if not exists admin_reply text,
-  add column if not exists replied_at timestamptz,
-  add column if not exists replied_by_email text,
-  add column if not exists reply_email_id text;
-
-alter table public.website_inquiries enable row level security;
+update public.website_inquiries as wi
+set
+  account_user_id = au.id,
+  account_email = lower(trim(au.email))
+from auth.users as au
+where wi.account_user_id is null
+  and wi.email is not null
+  and trim(wi.email) <> ''
+  and lower(trim(wi.email)) = lower(trim(au.email));
 
 drop policy if exists "Anyone can submit website inquiries" on public.website_inquiries;
 create policy "Anyone can submit website inquiries"
