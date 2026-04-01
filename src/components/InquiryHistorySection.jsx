@@ -60,11 +60,26 @@ const formatDateTime = (value) => {
   }).format(date);
 };
 
+const ChevronIcon = ({ isOpen = false }) => (
+  <span className={`inquiry-history-chevron ${isOpen ? 'open' : ''}`.trim()} aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" focusable="false">
+      <path
+        d="M5 7.5L10 12.5L15 7.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  </span>
+);
+
 const InquiryHistorySection = ({ variant = 'profile' }) => {
   const { authUser, isAuthLoading, isReviewAuthUser } = useHappy();
   const [inquiries, setInquiries] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState(emptyStatus);
+  const [openInquiryIds, setOpenInquiryIds] = useState([]);
 
   const accountUserId = useMemo(() => {
     if (typeof authUser?.id !== 'string') {
@@ -104,6 +119,18 @@ const InquiryHistorySection = ({ variant = 'profile' }) => {
 
     loadInquiries();
   }, [accountUserId, authUser, isAuthLoading, isReviewAuthUser]);
+
+  useEffect(() => {
+    setOpenInquiryIds(prev => prev.filter(id => inquiries.some(inquiry => inquiry.id === id)));
+  }, [inquiries]);
+
+  const toggleInquiry = (inquiryId) => {
+    setOpenInquiryIds(prev => (
+      prev.includes(inquiryId)
+        ? prev.filter(id => id !== inquiryId)
+        : [...prev, inquiryId]
+    ));
+  };
 
   if (isAuthLoading) {
     return (
@@ -173,38 +200,51 @@ const InquiryHistorySection = ({ variant = 'profile' }) => {
           {inquiries.map(inquiry => {
             const typeLabel = submissionTypeLabels[inquiry.submission_type] || '문의';
             const hasReply = typeof inquiry.admin_reply === 'string' && inquiry.admin_reply.trim();
+            const isOpen = openInquiryIds.includes(inquiry.id);
 
             return (
               <article
                 key={inquiry.id}
-                className={`inquiry-history-card ${hasReply ? 'answered' : 'pending'}`}
+                className={`inquiry-history-card ${hasReply ? 'answered' : 'pending'} ${isOpen ? 'open' : ''}`}
               >
-                <div className="inquiry-history-card-head">
-                  <div className="inquiry-history-card-meta">
-                    <span className="inquiry-history-type">{typeLabel}</span>
-                    <span className={`inquiry-history-status ${hasReply ? 'answered' : 'pending'}`}>
-                      {hasReply ? '답변 완료' : '접수됨'}
-                    </span>
+                <button
+                  type="button"
+                  className="inquiry-history-card-toggle"
+                  onClick={() => toggleInquiry(inquiry.id)}
+                  aria-expanded={isOpen}
+                >
+                  <h4>{inquiry.subject || '(제목 없음)'}</h4>
+                  <ChevronIcon isOpen={isOpen} />
+                </button>
+
+                {isOpen && (
+                  <div className="inquiry-history-card-content">
+                    <div className="inquiry-history-card-head">
+                      <div className="inquiry-history-card-meta">
+                        <span className="inquiry-history-type">{typeLabel}</span>
+                        <span className={`inquiry-history-status ${hasReply ? 'answered' : 'pending'}`}>
+                          {hasReply ? '답변 완료' : '접수됨'}
+                        </span>
+                      </div>
+                      <span className="inquiry-history-date">{formatDateTime(inquiry.created_at)}</span>
+                    </div>
+
+                    <div className="inquiry-history-block">
+                      <strong>문의 내용</strong>
+                      <p>{inquiry.message || '-'}</p>
+                    </div>
+
+                    <div className={`inquiry-history-block reply ${hasReply ? 'answered' : 'pending'}`}>
+                      <strong>받은 답변</strong>
+                      <p>{hasReply ? inquiry.admin_reply : '아직 답변이 등록되지 않았어요.'}</p>
+                      {hasReply && inquiry.replied_at && (
+                        <span className="inquiry-history-reply-date">
+                          답변 등록: {formatDateTime(inquiry.replied_at)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="inquiry-history-date">{formatDateTime(inquiry.created_at)}</span>
-                </div>
-
-                <h4>{inquiry.subject || '(제목 없음)'}</h4>
-
-                <div className="inquiry-history-block">
-                  <strong>문의 내용</strong>
-                  <p>{inquiry.message || '-'}</p>
-                </div>
-
-                <div className={`inquiry-history-block reply ${hasReply ? 'answered' : 'pending'}`}>
-                  <strong>받은 답변</strong>
-                  <p>{hasReply ? inquiry.admin_reply : '아직 답변이 등록되지 않았어요.'}</p>
-                  {hasReply && inquiry.replied_at && (
-                    <span className="inquiry-history-reply-date">
-                      답변 등록: {formatDateTime(inquiry.replied_at)}
-                    </span>
-                  )}
-                </div>
+                )}
               </article>
             );
           })}

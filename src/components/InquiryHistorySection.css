@@ -90,13 +90,33 @@
 .inquiry-history-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
   border: 1px solid rgba(255, 142, 139, 0.18);
   background: rgba(255, 255, 255, 0.76);
 }
 
 .dark-theme .inquiry-history-card {
   background: rgba(255, 255, 255, 0.04);
+}
+
+.inquiry-history-card-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inquiry-history-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 18px 18px;
 }
 
 .inquiry-history-card-head {
@@ -151,6 +171,27 @@
   color: var(--text-dark);
 }
 
+.inquiry-history-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  color: var(--text-light);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.inquiry-history-chevron svg {
+  width: 18px;
+  height: 18px;
+}
+
+.inquiry-history-chevron.open {
+  transform: rotate(180deg);
+  color: var(--primary-color);
+}
+
 .inquiry-history-block {
   display: flex;
   flex-direction: column;
@@ -190,6 +231,10 @@
   .inquiry-history-header,
   .inquiry-history-card-head {
     flex-direction: column;
+  }
+
+  .inquiry-history-card-toggle {
+    align-items: flex-start;
   }
 
   .inquiry-history-refresh-btn {
