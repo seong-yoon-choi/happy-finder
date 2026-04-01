@@ -128,7 +128,7 @@ export const getAppRedirectUrl = (pathname = APP_PATH) => {
   const normalizedRequestedPath = normalizePath(pathname);
   const normalizedTargetPath = (
     !isNativeRuntime() && normalizedRequestedPath === APP_PATH
-      ? PROFILE_PATH
+      ? '/'
       : normalizedRequestedPath
   );
   const isHttpOrigin = window.location.origin.startsWith('http');
