@@ -360,6 +360,12 @@
     font-weight: 600;
 }
 
+.support-field-note {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-light);
+}
+
 .support-form input,
 .support-form textarea,
 .support-form select {
@@ -372,6 +378,12 @@
     color: var(--text-dark);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.support-form input[readonly] {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-dark);
+    cursor: default;
 }
 
 .support-form input:focus,

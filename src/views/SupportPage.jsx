@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useHappy } from '../store/HappyContext';
 import { submitWebsiteIntake } from '../lib/websiteIntake';
 import { ACCOUNT_DELETE_PATH, FEEDBACK_PATH, QNA_PATH, SUPPORT_PATH, isFeedbackPath } from '../lib/routes';
 import './SupportPage.css';
@@ -49,6 +50,7 @@ const getSubmissionErrorMessage = (error, fallbackMessage) => {
 };
 
 const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthenticated = false }) => {
+  const { authUser, isReviewAuthUser } = useHappy();
   const [qnaForm, setQnaForm] = useState(initialQnaForm);
   const [feedbackForm, setFeedbackForm] = useState(initialFeedbackForm);
   const [qnaStatus, setQnaStatus] = useState(emptyStatus);
@@ -60,6 +62,16 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
   const isFeedbackTab = activeTab === 'feedback';
   const handleAccountAction = isAuthenticated ? onOpenProfile : onOpenAuth;
   const accountActionLabel = isAuthenticated ? '프로필' : '로그인';
+  const accountEmail = useMemo(() => {
+    if (typeof authUser?.email !== 'string') {
+      return '';
+    }
+
+    return authUser.email.trim().toLowerCase();
+  }, [authUser?.email]);
+  const isAccountEmailLocked = Boolean(accountEmail) && !isReviewAuthUser;
+  const qnaReplyEmail = isAccountEmailLocked ? accountEmail : qnaForm.email;
+  const feedbackReplyEmail = isAccountEmailLocked ? accountEmail : feedbackForm.email;
 
   const handleNavigate = nextPath => () => onNavigate?.(nextPath);
 
@@ -86,7 +98,7 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
     try {
       await submitWebsiteIntake({
         submissionType: 'qna',
-        email: qnaForm.email,
+        email: qnaReplyEmail,
         subject: qnaForm.subject,
         message: qnaForm.message
       });
@@ -94,7 +106,9 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
       setQnaForm(initialQnaForm);
       setQnaStatus({
         type: 'success',
-        message: '문의가 접수됐어요. 확인 후 필요한 경우 입력한 이메일을 참고해 안내드릴게요.'
+        message: isAccountEmailLocked
+          ? '문의가 접수됐어요. 확인 후 계정 이메일로 안내드릴게요.'
+          : '문의가 접수됐어요. 확인 후 필요한 경우 입력한 이메일을 참고해 안내드릴게요.'
       });
     } catch (error) {
       setQnaStatus({
@@ -119,7 +133,7 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
     try {
       await submitWebsiteIntake({
         submissionType: 'feedback',
-        email: feedbackForm.email,
+        email: feedbackReplyEmail,
         subject: feedbackForm.subject,
         message: feedbackForm.message
       });
@@ -203,11 +217,17 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
                   이메일
                   <input
                     type="email"
-                    value={feedbackForm.email}
+                    value={feedbackReplyEmail}
                     onChange={handleFeedbackChange('email')}
-                    placeholder="답변 받을 이메일을 입력해 주세요"
+                    placeholder={isAccountEmailLocked ? '' : '답변 받을 이메일을 입력해 주세요'}
+                    readOnly={isAccountEmailLocked}
                     required
                   />
+                  {isAccountEmailLocked && (
+                    <span className="support-field-note">
+                      로그인한 계정 이메일로 자동 접수돼요.
+                    </span>
+                  )}
                 </label>
 
                 <label>
@@ -266,11 +286,17 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
                   이메일
                   <input
                     type="email"
-                    value={qnaForm.email}
+                    value={qnaReplyEmail}
                     onChange={handleQnaChange('email')}
-                    placeholder="답변 받을 이메일을 입력해 주세요"
+                    placeholder={isAccountEmailLocked ? '' : '답변 받을 이메일을 입력해 주세요'}
+                    readOnly={isAccountEmailLocked}
                     required
                   />
+                  {isAccountEmailLocked && (
+                    <span className="support-field-note">
+                      로그인한 계정 이메일로 자동 접수돼요.
+                    </span>
+                  )}
                 </label>
 
                 <label>
