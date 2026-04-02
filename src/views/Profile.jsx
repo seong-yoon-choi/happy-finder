@@ -4,7 +4,6 @@ import HappinessCard from '../components/HappinessCard';
 import CategoryTabs from '../components/CategoryTabs';
 import CreateHappinessModal from '../components/CreateHappinessModal';
 import GrowthStageAvatar from '../components/GrowthStageAvatar';
-import InquiryHistorySection from '../components/InquiryHistorySection';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { getTreeInfo } from '../utils/progress';
 import { getLocalDateKey } from '../utils/date';
@@ -168,6 +167,7 @@ const Profile = () => {
         </button>
         <button
           className={`tab-btn ${activeTab === 'inquiries' ? 'active' : ''}`}
+          style={{ display: 'none' }}
           onClick={() => setActiveTab('inquiries')}
         >
           문의 내역
@@ -237,9 +237,6 @@ const Profile = () => {
           )
         )}
 
-        {activeTab === 'inquiries' && (
-          <InquiryHistorySection variant="profile" />
-        )}
       </div>
 
       {isModalOpen && (
