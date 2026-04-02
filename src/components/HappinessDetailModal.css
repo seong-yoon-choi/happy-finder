@@ -34,7 +34,8 @@
 
 .detail-close,
 .detail-memo-trigger,
-.detail-report-trigger {
+.detail-report-trigger,
+.detail-favorite-trigger {
     background: rgba(255, 255, 255, 0.7);
     width: clamp(30px, 7vw, 32px);
     height: clamp(30px, 7vw, 32px);
@@ -62,6 +63,19 @@
     color: var(--danger);
     background: rgba(255, 255, 255, 0.7);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detail-favorite-trigger {
+    color: rgba(51, 51, 51, 0.72);
+}
+
+.detail-favorite-trigger svg {
+    width: clamp(17px, 4.6vw, 19px);
+    height: clamp(17px, 4.6vw, 19px);
+}
+
+.detail-favorite-trigger.active {
+    color: var(--secondary-color);
 }
 
 .detail-report-trigger svg {
@@ -117,6 +131,7 @@
 }
 
 .favorite-btn {
+    display: none;
     background: none;
     border: none;
     font-size: clamp(1.05rem, 3.6vw, 1.25rem);

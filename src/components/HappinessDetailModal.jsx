@@ -93,6 +93,17 @@ const ReportIcon = () => (
   </svg>
 );
 
+const FavoriteIcon = ({ isActive = false }) => (
+  <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} aria-hidden="true" focusable="false">
+    <path
+      d="M12 3.9L14.5 9.06L20.18 9.89L16.07 13.88L17.04 19.5L12 16.8L6.96 19.5L7.93 13.88L3.82 9.89L9.5 9.06L12 3.9Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const {
     items,
@@ -158,6 +169,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const isOwner = currentItem ? isItemOwnedByCurrentUser(currentItem.id) : false;
   const itemMemos = currentItem ? getItemMemos(currentItem.id) : [];
   const canReportItem = Boolean(currentItem?.isCustom && currentItem.isPublic && !isOwner);
+  const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
   const reportNoticeMessage = '신고한 계정에서는 그 계정에서만 신고한 리스트 입니다.';
   const shouldShowReportedNotice = Boolean(
     currentItem?.id
@@ -521,6 +533,14 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
               <ReportIcon />
             </button>
           )}
+          <button
+            type="button"
+            className={`detail-icon-btn detail-favorite-trigger ${isFavorited ? 'active' : ''}`}
+            onClick={() => toggleFavorite(currentItem.id)}
+            aria-label="利먭꺼李얘린 ?좉?"
+          >
+            <FavoriteIcon isActive={isFavorited} />
+          </button>
           <button
             type="button"
             className="detail-icon-btn detail-memo-trigger"
