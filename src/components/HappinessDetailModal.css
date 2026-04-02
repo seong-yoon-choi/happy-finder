@@ -131,34 +131,7 @@
 }
 
 .favorite-btn {
-    display: none;
-    background: none;
-    border: none;
-    font-size: clamp(1.05rem, 3.6vw, 1.25rem);
-    color: var(--text-dark);
-    cursor: pointer;
-    padding: 0;
-    margin: 0;
-    width: clamp(20px, 5vw, 22px);
-    height: clamp(20px, 5vw, 22px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    /* Remove tap highlight on mobile */
-    -webkit-tap-highlight-color: transparent;
-    /* Use a rounder font family for the star if possible, or just rely on the OS emoji */
-    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
-    line-height: 1;
-}
-
-.favorite-btn:active {
-    transform: scale(0.8);
-}
-
-.favorite-btn.active {
-    color: var(--secondary-color);
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    display: none !important;
 }
 
 .detail-title {
