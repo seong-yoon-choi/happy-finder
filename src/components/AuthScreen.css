@@ -2,6 +2,13 @@
     position: fixed;
     inset: 0;
     z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     background:
         radial-gradient(circle at top, rgba(247, 183, 51, 0.24), transparent 35%),
         linear-gradient(160deg, rgba(255, 245, 232, 0.96), rgba(255, 229, 229, 0.98));
@@ -17,39 +24,32 @@
 
 .auth-screen-panel {
     position: relative;
-    width: 100%;
-    min-height: 100dvh;
-    padding:
-        max(40px, calc(env(safe-area-inset-top) + 28px))
-        clamp(16px, 4vw, 24px)
-        max(32px, calc(env(safe-area-inset-bottom) + 24px));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    background: transparent;
-}
-
-.auth-screen-content {
-    width: min(100%, clamp(300px, 82vw, 400px));
+    width: min(100%, 400px);
+    max-height: calc(100dvh - 48px);
+    padding: 28px 24px 24px;
     display: flex;
     flex-direction: column;
-    gap: clamp(16px, 4vw, 18px);
+    gap: 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(255, 246, 231, 0.88));
+}
+
+.dark-theme .auth-screen-panel {
+    background: linear-gradient(150deg, rgba(35, 42, 66, 0.94), rgba(25, 30, 46, 0.92));
 }
 
 .auth-screen-close {
-    position: fixed;
-    top: max(18px, calc(env(safe-area-inset-top) + 10px));
-    right: max(18px, calc(env(safe-area-inset-right) + 10px));
-    width: var(--touch-target-sm);
-    height: var(--touch-target-sm);
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 38px;
+    height: 38px;
     border: none;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.72);
     color: var(--text-dark);
-    font-size: clamp(1.25rem, 3.8vw, 1.5rem);
+    font-size: 1.5rem;
     line-height: 1;
     cursor: pointer;
 }
@@ -61,31 +61,25 @@
 .auth-screen-copy {
     display: flex;
     flex-direction: column;
-    gap: clamp(8px, 2.4vw, 10px);
-    align-items: center;
-    text-align: center;
+    gap: 10px;
 }
 
 .auth-screen-eyebrow {
-    font-size: var(--font-body-sm);
+    font-size: 0.76rem;
     font-weight: 700;
     letter-spacing: 0.18em;
     color: var(--primary-color);
 }
 
 .auth-screen-copy h1 {
-    font-size: clamp(1.8rem, 5.2vw, 2rem);
+    font-size: 2rem;
     line-height: 1.08;
-}
-
-.auth-screen-copy p {
-    max-width: 32ch;
 }
 
 .auth-screen-socials {
     display: flex;
     flex-direction: column;
-    gap: clamp(8px, 2vw, 10px);
+    gap: 10px;
     margin-top: 2px;
 }
 
@@ -95,9 +89,9 @@
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
-    border-radius: clamp(16px, 4vw, 18px);
-    padding: clamp(12px, 3vw, 14px) clamp(14px, 3vw, 16px);
-    font-size: var(--font-body-md);
+    border-radius: 18px;
+    padding: 14px 16px;
+    font-size: 0.96rem;
     font-weight: 700;
     cursor: pointer;
     transition: transform 0.18s ease, opacity 0.18s ease;
@@ -119,21 +113,21 @@
 }
 
 .auth-screen-social-icon {
-    width: clamp(28px, 7vw, 32px);
-    height: clamp(28px, 7vw, 32px);
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: var(--font-body-md);
+    font-size: 0.95rem;
     font-weight: 800;
-    margin-right: clamp(10px, 2.8vw, 12px);
+    margin-right: 12px;
 }
 
 .auth-screen-social-icon svg {
-    width: clamp(16px, 4vw, 18px);
-    height: clamp(16px, 4vw, 18px);
+    width: 18px;
+    height: 18px;
     display: block;
 }
 
@@ -149,15 +143,15 @@
 .auth-screen-form {
     display: flex;
     flex-direction: column;
-    gap: clamp(9px, 2.4vw, 10px);
+    gap: 10px;
 }
 
 .auth-screen-mode-tabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(6px, 2vw, 8px);
-    padding: clamp(5px, 1.6vw, 6px);
-    border-radius: clamp(18px, 4vw, 20px);
+    gap: 8px;
+    padding: 6px;
+    border-radius: 20px;
     background: rgba(255, 255, 255, 0.54);
 }
 
@@ -167,11 +161,11 @@
 
 .auth-screen-mode-btn {
     border: none;
-    border-radius: var(--border-radius-md);
+    border-radius: 16px;
     background: transparent;
     color: var(--text-light);
-    padding: clamp(11px, 2.8vw, 12px) clamp(12px, 3vw, 14px);
-    font-size: var(--font-body-md);
+    padding: 12px 14px;
+    font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
 }
@@ -183,7 +177,7 @@
 }
 
 .auth-screen-label {
-    font-size: var(--font-body-md);
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-dark);
 }
@@ -191,11 +185,11 @@
 .auth-screen-input {
     width: 100%;
     border: 1px solid rgba(255, 142, 139, 0.25);
-    border-radius: clamp(16px, 4vw, 18px);
+    border-radius: 18px;
     background: rgba(255, 255, 255, 0.88);
     color: var(--text-dark);
-    padding: clamp(12px, 3vw, 14px) clamp(14px, 3vw, 16px);
-    font-size: var(--font-body-md);
+    padding: 14px 16px;
+    font-size: 1rem;
     font-family: inherit;
 }
 
@@ -211,7 +205,7 @@
     border: none;
     background: transparent;
     color: var(--primary-color);
-    font-size: var(--font-body-sm);
+    font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
 }
@@ -223,7 +217,7 @@
 
 .auth-screen-field-hint {
     margin: -2px 2px 0;
-    font-size: var(--font-body-sm);
+    font-size: 0.8rem;
     line-height: 1.45;
     color: var(--text-light);
 }
@@ -231,11 +225,11 @@
 .auth-screen-code-confirm-btn {
     width: 100%;
     border: 1px solid rgba(255, 142, 139, 0.28);
-    border-radius: var(--border-radius-md);
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.72);
     color: var(--primary-color);
-    padding: clamp(11px, 2.8vw, 12px) clamp(12px, 3vw, 14px);
-    font-size: var(--font-body-md);
+    padding: 12px 14px;
+    font-size: 0.92rem;
     font-weight: 700;
     cursor: pointer;
 }
@@ -254,16 +248,16 @@
 }
 
 .auth-screen-input-password {
-    padding-right: clamp(70px, 16vw, 82px);
+    padding-right: 82px;
 }
 
 .auth-screen-password-toggle {
     position: absolute;
     top: 50%;
-    right: clamp(12px, 3vw, 14px);
+    right: 14px;
     transform: translateY(-50%);
-    width: var(--touch-target-sm);
-    height: var(--touch-target-sm);
+    width: 36px;
+    height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -274,8 +268,8 @@
 }
 
 .auth-screen-password-toggle svg {
-    width: clamp(18px, 4.5vw, 20px);
-    height: clamp(18px, 4.5vw, 20px);
+    width: 20px;
+    height: 20px;
     display: block;
 }
 
@@ -291,16 +285,16 @@
 .auth-screen-check {
     display: flex;
     align-items: flex-start;
-    gap: clamp(8px, 2vw, 10px);
-    padding: clamp(8px, 2vw, 10px) 2px 0;
-    font-size: var(--font-body-md);
+    gap: 10px;
+    padding: 10px 2px 0;
+    font-size: 0.9rem;
     color: var(--text-dark);
     line-height: 1.5;
 }
 
 .auth-screen-check input {
-    width: clamp(16px, 4vw, 18px);
-    height: clamp(16px, 4vw, 18px);
+    width: 18px;
+    height: 18px;
     margin-top: 2px;
     accent-color: var(--primary-color);
     flex-shrink: 0;
@@ -312,7 +306,7 @@
     border: none;
     background: transparent;
     color: var(--primary-color);
-    font-size: var(--font-body-sm);
+    font-size: 0.88rem;
     font-weight: 700;
     text-align: left;
     cursor: pointer;
@@ -334,9 +328,9 @@
 
 .auth-screen-note,
 .auth-screen-feedback {
-    padding: clamp(11px, 2.8vw, 12px) clamp(12px, 3vw, 14px);
-    border-radius: var(--border-radius-md);
-    font-size: var(--font-body-sm);
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: 0.88rem;
     line-height: 1.5;
 }
 
@@ -358,9 +352,9 @@
 .auth-screen-divider {
     display: flex;
     align-items: center;
-    gap: clamp(10px, 2.6vw, 12px);
+    gap: 12px;
     color: var(--text-light);
-    font-size: var(--font-body-sm);
+    font-size: 0.82rem;
 }
 
 .auth-screen-divider-form {
@@ -382,11 +376,11 @@
 
 .auth-screen-guest-btn {
     border: 1px solid var(--glass-border);
-    border-radius: clamp(16px, 4vw, 18px);
+    border-radius: 18px;
     background: rgba(255, 255, 255, 0.66);
     color: var(--text-dark);
-    padding: clamp(12px, 3vw, 14px) clamp(14px, 3vw, 16px);
-    font-size: var(--font-body-md);
+    padding: 14px 16px;
+    font-size: 0.98rem;
     font-weight: 700;
     cursor: pointer;
 }
@@ -396,33 +390,17 @@
 }
 
 @media (max-width: 640px) {
-    .auth-screen-panel {
+    .auth-screen-overlay {
+        align-items: center;
         padding:
-            max(36px, calc(env(safe-area-inset-top) + 24px))
+            max(40px, calc(env(safe-area-inset-top) + 28px))
             16px
-            max(20px, calc(env(safe-area-inset-bottom) + 12px));
-        justify-content: flex-start;
+            max(14px, calc(env(safe-area-inset-bottom) + 8px));
     }
 
-    .auth-screen-content {
-        width: min(100%, 380px);
-        padding-top: 24px;
-    }
-}
-
-@media (max-height: 760px) {
     .auth-screen-panel {
-        padding:
-            max(24px, calc(env(safe-area-inset-top) + 18px))
-            clamp(14px, 4vw, 20px)
-            max(20px, calc(env(safe-area-inset-bottom) + 12px));
-    }
-
-    .auth-screen-content {
-        gap: 14px;
-    }
-
-    .auth-screen-copy h1 {
-        font-size: clamp(1.6rem, 4.8vw, 1.85rem);
+        width: 100%;
+        max-height: calc(100dvh - 54px);
+        padding: 34px 22px 20px;
     }
 }

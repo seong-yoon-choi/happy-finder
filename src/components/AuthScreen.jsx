@@ -332,14 +332,12 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
 
   return (
     <div className="auth-screen-overlay">
-      <div className="auth-screen-panel">
+      <div className="glass-panel auth-screen-panel">
         {canClose && (
           <button type="button" className="auth-screen-close" onClick={handleClose} aria-label="로그인 창 닫기">
             &times;
           </button>
         )}
-
-        <div className="auth-screen-content">
 
         <div className="auth-screen-copy">
           <span className="auth-screen-eyebrow">HAPPY FINDER</span>
@@ -394,7 +392,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
                   <button
                     type="button"
                     className="auth-screen-email-verify-link"
-                  onClick={handleRequestSignupVerification}
+                    onClick={handleRequestSignupVerification}
                     disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured || isSignupVerificationConfirmed}
                   >
                     {isSignupVerificationConfirmed
@@ -580,7 +578,6 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
             </button>
           </>
         )}
-        </div>
       </div>
     </div>
   );
