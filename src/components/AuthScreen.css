@@ -33,7 +33,7 @@
 }
 
 .auth-screen-content {
-    width: min(100%, clamp(320px, 88vw, 460px));
+    width: min(100%, clamp(300px, 82vw, 400px));
     display: flex;
     flex-direction: column;
     gap: clamp(16px, 4vw, 18px);
@@ -79,7 +79,7 @@
 }
 
 .auth-screen-copy p {
-    max-width: 36ch;
+    max-width: 32ch;
 }
 
 .auth-screen-socials {
@@ -405,7 +405,7 @@
     }
 
     .auth-screen-content {
-        width: 100%;
+        width: min(100%, 380px);
         padding-top: 24px;
     }
 }
