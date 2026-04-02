@@ -4,11 +4,11 @@
 }
 
 .home-header {
-    padding: calc(env(safe-area-inset-top) + 18px) var(--screen-side-padding) 20px;
+    padding: calc(env(safe-area-inset-top) + clamp(14px, 3.4vw, 18px)) var(--screen-side-padding) clamp(16px, 4vw, 20px);
 }
 
 .home-header h1 {
-    font-size: 2.2rem;
+    font-size: var(--font-title-xl);
     letter-spacing: -0.5px;
     color: var(--primary-color);
     line-height: 1.08;
@@ -17,26 +17,26 @@
 
 .home-header p {
     max-width: 24ch;
-    font-size: 1.05rem;
+    font-size: var(--font-body-lg);
     font-weight: 500;
     line-height: 1.65;
 }
 
 .feed-container {
-    padding: 0 var(--screen-side-padding) 14px;
+    padding: 0 var(--screen-side-padding) clamp(12px, 3vw, 14px);
     display: flex;
     flex-direction: column;
 }
 
 .empty-state {
     text-align: center;
-    padding: 56px 24px 28px;
+    padding: clamp(40px, 10vw, 56px) clamp(20px, 5vw, 24px) clamp(24px, 5vw, 28px);
     color: var(--text-light);
     line-height: 1.6;
 }
 
 .empty-icon {
-    font-size: 3rem;
+    font-size: clamp(2.4rem, 8vw, 3rem);
     margin-bottom: 16px;
     opacity: 0.8;
 }

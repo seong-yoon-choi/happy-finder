@@ -18,9 +18,9 @@
 .settings-trigger-btn {
     position: absolute;
     top: var(--app-safe-top);
-    right: 18px;
-    width: 50px;
-    height: 50px;
+    right: clamp(14px, 4vw, 18px);
+    width: var(--touch-target-md);
+    height: var(--touch-target-md);
     border-radius: 50%;
     border: none;
     background: var(--glass-bg);
@@ -37,8 +37,8 @@
 }
 
 .settings-trigger-icon {
-    width: 28px;
-    height: 28px;
+    width: clamp(24px, 5vw, 28px);
+    height: clamp(24px, 5vw, 28px);
     color: var(--text-dark);
 }
 

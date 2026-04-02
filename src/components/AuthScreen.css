@@ -21,7 +21,7 @@
     min-height: 100dvh;
     padding:
         max(40px, calc(env(safe-area-inset-top) + 28px))
-        24px
+        clamp(16px, 4vw, 24px)
         max(32px, calc(env(safe-area-inset-bottom) + 24px));
     display: flex;
     align-items: center;
@@ -33,23 +33,23 @@
 }
 
 .auth-screen-content {
-    width: min(100%, 460px);
+    width: min(100%, clamp(320px, 88vw, 460px));
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: clamp(16px, 4vw, 18px);
 }
 
 .auth-screen-close {
     position: fixed;
     top: max(18px, calc(env(safe-area-inset-top) + 10px));
     right: max(18px, calc(env(safe-area-inset-right) + 10px));
-    width: 38px;
-    height: 38px;
+    width: var(--touch-target-sm);
+    height: var(--touch-target-sm);
     border: none;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.72);
     color: var(--text-dark);
-    font-size: 1.5rem;
+    font-size: clamp(1.25rem, 3.8vw, 1.5rem);
     line-height: 1;
     cursor: pointer;
 }
@@ -61,20 +61,20 @@
 .auth-screen-copy {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: clamp(8px, 2.4vw, 10px);
     align-items: center;
     text-align: center;
 }
 
 .auth-screen-eyebrow {
-    font-size: 0.76rem;
+    font-size: var(--font-body-sm);
     font-weight: 700;
     letter-spacing: 0.18em;
     color: var(--primary-color);
 }
 
 .auth-screen-copy h1 {
-    font-size: 2rem;
+    font-size: clamp(1.8rem, 5.2vw, 2rem);
     line-height: 1.08;
 }
 
@@ -85,7 +85,7 @@
 .auth-screen-socials {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: clamp(8px, 2vw, 10px);
     margin-top: 2px;
 }
 
@@ -95,9 +95,9 @@
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
-    border-radius: 18px;
-    padding: 14px 16px;
-    font-size: 0.96rem;
+    border-radius: clamp(16px, 4vw, 18px);
+    padding: clamp(12px, 3vw, 14px) clamp(14px, 3vw, 16px);
+    font-size: var(--font-body-md);
     font-weight: 700;
     cursor: pointer;
     transition: transform 0.18s ease, opacity 0.18s ease;
@@ -119,21 +119,21 @@
 }
 
 .auth-screen-social-icon {
-    width: 32px;
-    height: 32px;
+    width: clamp(28px, 7vw, 32px);
+    height: clamp(28px, 7vw, 32px);
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 0.95rem;
+    font-size: var(--font-body-md);
     font-weight: 800;
-    margin-right: 12px;
+    margin-right: clamp(10px, 2.8vw, 12px);
 }
 
 .auth-screen-social-icon svg {
-    width: 18px;
-    height: 18px;
+    width: clamp(16px, 4vw, 18px);
+    height: clamp(16px, 4vw, 18px);
     display: block;
 }
 
@@ -149,15 +149,15 @@
 .auth-screen-form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: clamp(9px, 2.4vw, 10px);
 }
 
 .auth-screen-mode-tabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    padding: 6px;
-    border-radius: 20px;
+    gap: clamp(6px, 2vw, 8px);
+    padding: clamp(5px, 1.6vw, 6px);
+    border-radius: clamp(18px, 4vw, 20px);
     background: rgba(255, 255, 255, 0.54);
 }
 
@@ -167,11 +167,11 @@
 
 .auth-screen-mode-btn {
     border: none;
-    border-radius: 16px;
+    border-radius: var(--border-radius-md);
     background: transparent;
     color: var(--text-light);
-    padding: 12px 14px;
-    font-size: 0.95rem;
+    padding: clamp(11px, 2.8vw, 12px) clamp(12px, 3vw, 14px);
+    font-size: var(--font-body-md);
     font-weight: 700;
     cursor: pointer;
 }
@@ -183,7 +183,7 @@
 }
 
 .auth-screen-label {
-    font-size: 0.9rem;
+    font-size: var(--font-body-md);
     font-weight: 600;
     color: var(--text-dark);
 }
@@ -191,11 +191,11 @@
 .auth-screen-input {
     width: 100%;
     border: 1px solid rgba(255, 142, 139, 0.25);
-    border-radius: 18px;
+    border-radius: clamp(16px, 4vw, 18px);
     background: rgba(255, 255, 255, 0.88);
     color: var(--text-dark);
-    padding: 14px 16px;
-    font-size: 1rem;
+    padding: clamp(12px, 3vw, 14px) clamp(14px, 3vw, 16px);
+    font-size: var(--font-body-md);
     font-family: inherit;
 }
 
@@ -211,7 +211,7 @@
     border: none;
     background: transparent;
     color: var(--primary-color);
-    font-size: 0.78rem;
+    font-size: var(--font-body-sm);
     font-weight: 700;
     cursor: pointer;
 }
@@ -223,7 +223,7 @@
 
 .auth-screen-field-hint {
     margin: -2px 2px 0;
-    font-size: 0.8rem;
+    font-size: var(--font-body-sm);
     line-height: 1.45;
     color: var(--text-light);
 }
@@ -231,11 +231,11 @@
 .auth-screen-code-confirm-btn {
     width: 100%;
     border: 1px solid rgba(255, 142, 139, 0.28);
-    border-radius: 16px;
+    border-radius: var(--border-radius-md);
     background: rgba(255, 255, 255, 0.72);
     color: var(--primary-color);
-    padding: 12px 14px;
-    font-size: 0.92rem;
+    padding: clamp(11px, 2.8vw, 12px) clamp(12px, 3vw, 14px);
+    font-size: var(--font-body-md);
     font-weight: 700;
     cursor: pointer;
 }
@@ -254,16 +254,16 @@
 }
 
 .auth-screen-input-password {
-    padding-right: 82px;
+    padding-right: clamp(70px, 16vw, 82px);
 }
 
 .auth-screen-password-toggle {
     position: absolute;
     top: 50%;
-    right: 14px;
+    right: clamp(12px, 3vw, 14px);
     transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
+    width: var(--touch-target-sm);
+    height: var(--touch-target-sm);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -274,8 +274,8 @@
 }
 
 .auth-screen-password-toggle svg {
-    width: 20px;
-    height: 20px;
+    width: clamp(18px, 4.5vw, 20px);
+    height: clamp(18px, 4.5vw, 20px);
     display: block;
 }
 
@@ -291,16 +291,16 @@
 .auth-screen-check {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 10px 2px 0;
-    font-size: 0.9rem;
+    gap: clamp(8px, 2vw, 10px);
+    padding: clamp(8px, 2vw, 10px) 2px 0;
+    font-size: var(--font-body-md);
     color: var(--text-dark);
     line-height: 1.5;
 }
 
 .auth-screen-check input {
-    width: 18px;
-    height: 18px;
+    width: clamp(16px, 4vw, 18px);
+    height: clamp(16px, 4vw, 18px);
     margin-top: 2px;
     accent-color: var(--primary-color);
     flex-shrink: 0;
@@ -312,7 +312,7 @@
     border: none;
     background: transparent;
     color: var(--primary-color);
-    font-size: 0.88rem;
+    font-size: var(--font-body-sm);
     font-weight: 700;
     text-align: left;
     cursor: pointer;
@@ -334,9 +334,9 @@
 
 .auth-screen-note,
 .auth-screen-feedback {
-    padding: 12px 14px;
-    border-radius: 16px;
-    font-size: 0.88rem;
+    padding: clamp(11px, 2.8vw, 12px) clamp(12px, 3vw, 14px);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-body-sm);
     line-height: 1.5;
 }
 
@@ -358,9 +358,9 @@
 .auth-screen-divider {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: clamp(10px, 2.6vw, 12px);
     color: var(--text-light);
-    font-size: 0.82rem;
+    font-size: var(--font-body-sm);
 }
 
 .auth-screen-divider-form {
@@ -382,11 +382,11 @@
 
 .auth-screen-guest-btn {
     border: 1px solid var(--glass-border);
-    border-radius: 18px;
+    border-radius: clamp(16px, 4vw, 18px);
     background: rgba(255, 255, 255, 0.66);
     color: var(--text-dark);
-    padding: 14px 16px;
-    font-size: 0.98rem;
+    padding: clamp(12px, 3vw, 14px) clamp(14px, 3vw, 16px);
+    font-size: var(--font-body-md);
     font-weight: 700;
     cursor: pointer;
 }
@@ -407,5 +407,22 @@
     .auth-screen-content {
         width: 100%;
         padding-top: 24px;
+    }
+}
+
+@media (max-height: 760px) {
+    .auth-screen-panel {
+        padding:
+            max(24px, calc(env(safe-area-inset-top) + 18px))
+            clamp(14px, 4vw, 20px)
+            max(20px, calc(env(safe-area-inset-bottom) + 12px));
+    }
+
+    .auth-screen-content {
+        gap: 14px;
+    }
+
+    .auth-screen-copy h1 {
+        font-size: clamp(1.6rem, 4.8vw, 1.85rem);
     }
 }

@@ -1,7 +1,7 @@
 .happiness-card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: clamp(10px, 3vw, 12px);
     animation: slideUp 0.28s ease both;
     will-change: transform, opacity;
 }
@@ -10,12 +10,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: clamp(10px, 3vw, 12px);
 }
 
 .card-header {
     display: flex;
-    gap: 8px;
+    gap: clamp(6px, 2vw, 8px);
     align-items: center;
     flex-wrap: wrap;
     min-width: 0;
@@ -24,43 +24,44 @@
 .category-badge {
     background: var(--primary-color);
     color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    padding: var(--pill-padding-y) var(--pill-padding-x);
+    border-radius: clamp(16px, 4vw, 20px);
+    font-size: var(--font-body-sm);
     font-weight: 600;
 }
 
 .custom-badge {
     background: var(--secondary-color);
     color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    padding: var(--pill-padding-y) var(--pill-padding-x);
+    border-radius: clamp(16px, 4vw, 20px);
+    font-size: var(--font-body-sm);
     font-weight: 600;
 }
 
 .public-badge {
     background: #2f9e85;
     color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    padding: var(--pill-padding-y) var(--pill-padding-x);
+    border-radius: clamp(16px, 4vw, 20px);
+    font-size: var(--font-body-sm);
     font-weight: 600;
 }
 
 .card-title {
-    font-size: 1.4rem;
+    font-size: clamp(1.2rem, 3.8vw, 1.4rem);
+    line-height: 1.25;
     margin: 4px 0;
 }
 
 .card-desc {
-    font-size: 0.95rem;
+    font-size: var(--font-body-md);
     margin-bottom: 8px;
     flex-grow: 1;
 }
 
 .card-desc-short {
-    font-size: 0.95rem;
+    font-size: var(--font-body-md);
     color: var(--text-light);
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -72,8 +73,8 @@
 
 .happiness-card.compact {
     cursor: pointer;
-    padding: 16px;
-    gap: 8px;
+    padding: clamp(14px, 3.8vw, 16px);
+    gap: clamp(6px, 2vw, 8px);
 }
 
 .happiness-card.compact:active {
@@ -85,18 +86,18 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     flex-shrink: 0;
-    gap: 8px;
+    gap: clamp(6px, 2vw, 8px);
 }
 
 .card-corner-stat {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 4px 8px;
+    padding: var(--pill-padding-y) clamp(7px, 2vw, 8px);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(8px);
-    font-size: 0.8rem;
+    font-size: var(--font-body-sm);
     font-weight: 600;
     line-height: 1;
 }

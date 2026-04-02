@@ -1,39 +1,41 @@
 .profile-view {
+    --profile-side-rail: clamp(90px, 22vw, 108px);
+    --profile-avatar-size: clamp(84px, 20vw, 100px);
     padding-bottom: var(--screen-content-bottom-padding);
 }
 
 .profile-header {
-    padding: calc(env(safe-area-inset-top) + 18px) var(--screen-side-padding) 0;
+    padding: calc(env(safe-area-inset-top) + clamp(14px, 3.4vw, 18px)) var(--screen-side-padding) 0;
 }
 
 .profile-brand {
-    font-size: 2.2rem;
+    font-size: var(--font-title-xl);
     font-weight: 700;
     letter-spacing: -0.5px;
     line-height: 1.08;
     color: var(--primary-color);
-    margin-bottom: 18px;
+    margin-bottom: clamp(14px, 3.8vw, 18px);
 }
 
 .profile-overview {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 22px 20px;
-    margin-bottom: 24px;
+    gap: clamp(16px, 4vw, 20px);
+    padding: clamp(18px, 4.6vw, 22px) var(--screen-side-padding);
+    margin-bottom: clamp(20px, 5vw, 24px);
 }
 
 .profile-overview-top {
     display: grid;
-    grid-template-columns: 108px minmax(0, 1fr) 108px;
+    grid-template-columns: var(--profile-side-rail) minmax(0, 1fr) var(--profile-side-rail);
     align-items: center;
-    column-gap: 18px;
+    column-gap: clamp(12px, 3vw, 18px);
 }
 
 .profile-overview-copy {
     grid-column: 2;
     justify-self: center;
-    width: min(100%, 280px);
+    width: min(100%, clamp(220px, 52vw, 280px));
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -43,15 +45,15 @@
 
 .profile-avatar {
     background: rgba(255, 255, 255, 0.82);
-    width: 100px;
-    height: 100px;
+    width: var(--profile-avatar-size);
+    height: var(--profile-avatar-size);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0;
     border-radius: 50%;
     box-shadow: var(--glass-shadow);
-    margin-bottom: 14px;
+    margin-bottom: clamp(10px, 3vw, 14px);
     border: 2px solid var(--glass-border);
     overflow: hidden;
 }
@@ -63,7 +65,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 108px;
+    width: var(--profile-side-rail);
     flex-shrink: 0;
 }
 
@@ -77,13 +79,13 @@
 }
 
 .tree-title {
-    font-size: 1.1rem;
+    font-size: clamp(0.95rem, 2.8vw, 1.1rem);
     font-weight: 700;
     color: var(--primary-color);
-    margin-bottom: 20px;
-    padding: 4px 12px;
+    margin-bottom: clamp(16px, 4vw, 20px);
+    padding: var(--pill-padding-y) clamp(10px, 2.8vw, 12px);
     background: var(--glass-bg);
-    border-radius: 12px;
+    border-radius: clamp(10px, 2.8vw, 12px);
     border: 1px solid var(--glass-border);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     text-align: center;
@@ -100,15 +102,15 @@
 
 .tree-tooltip {
     position: absolute;
-    top: 105px;
+    top: calc(var(--profile-avatar-size) + 5px);
     /* Appears just below the avatar overlaying the title temporarily */
     left: 50%;
     transform: translateX(-50%);
     background: var(--text-dark);
     color: var(--white);
-    padding: 8px 16px;
+    padding: clamp(7px, 2vw, 8px) clamp(12px, 3vw, 16px);
     border-radius: var(--border-radius-lg);
-    font-size: 0.95rem;
+    font-size: var(--font-body-md);
     font-weight: 500;
     white-space: nowrap;
     z-index: 10;
@@ -128,27 +130,27 @@
 }
 
 .profile-overview-copy h2 {
-    font-size: 1.6rem;
-    margin-bottom: 12px;
+    font-size: var(--font-title-lg);
+    margin-bottom: clamp(10px, 3vw, 12px);
     color: var(--text-dark);
     line-height: 1.2;
 }
 
 .stamp-summary {
-    font-size: 1.1rem;
+    font-size: var(--font-body-lg);
     color: var(--text-light);
-    margin-bottom: 12px;
+    margin-bottom: clamp(10px, 3vw, 12px);
 }
 
 .streak-summary {
-    font-size: 1.2rem;
+    font-size: clamp(1rem, 3vw, 1.2rem);
     font-weight: 700;
     margin-bottom: 0;
-    padding: 8px 20px;
-    border-radius: 24px;
+    padding: clamp(7px, 2vw, 8px) clamp(16px, 4vw, 20px);
+    border-radius: clamp(20px, 5vw, 24px);
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: clamp(6px, 2vw, 8px);
     transition: color 0.22s ease, background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
@@ -170,7 +172,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: clamp(1rem, 3vw, 1.2rem);
     line-height: 1;
     flex-shrink: 0;
 }
@@ -189,7 +191,7 @@
 }
 
 .highlight-number {
-    font-size: 1.8rem;
+    font-size: clamp(1.45rem, 4.6vw, 1.8rem);
     font-weight: 700;
     color: var(--primary-color);
     margin: 0 4px;
@@ -197,8 +199,8 @@
 
 .create-btn {
     width: 100%;
-    font-size: 1.1rem;
-    border-radius: 30px;
+    font-size: var(--font-body-lg);
+    border-radius: clamp(24px, 6vw, 30px);
 }
 
 .glow-effect {
@@ -208,16 +210,16 @@
 .profile-tabs {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
+    gap: clamp(10px, 3vw, 12px);
     padding: 0 var(--screen-side-padding);
-    margin-bottom: 24px;
+    margin-bottom: clamp(20px, 5vw, 24px);
 }
 
 .profile-tabs .tab-btn {
     width: 100%;
     min-width: 0;
-    min-height: 56px;
-    padding: 12px 10px;
+    min-height: clamp(50px, 11vw, 56px);
+    padding: clamp(10px, 2.8vw, 12px) clamp(8px, 2.4vw, 10px);
     text-align: center;
     line-height: 1.35;
     white-space: normal;
@@ -230,7 +232,7 @@
 }
 
 .profile-stamped-categories {
-    margin-bottom: 26px;
+    margin-bottom: clamp(20px, 5vw, 26px);
 }
 
 @keyframes treeTooltipEnter {
