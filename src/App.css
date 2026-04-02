@@ -17,7 +17,7 @@
 
 .settings-trigger-btn {
     position: absolute;
-    top: var(--app-safe-top);
+    top: calc(var(--app-safe-top) - clamp(6px, 1.8vw, 8px));
     right: clamp(14px, 4vw, 18px);
     width: var(--touch-target-md);
     height: var(--touch-target-md);
