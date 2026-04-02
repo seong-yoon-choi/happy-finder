@@ -73,6 +73,7 @@
     /* Match top padding with the close button's top (16px) and add min-height to ensure vertical centering */
     padding: clamp(14px, 3.4vw, 16px) clamp(112px, 30vw, 132px) 0 var(--screen-side-padding);
     min-height: 40px;
+    margin-bottom: clamp(18px, 5vw, 26px);
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
@@ -149,7 +150,7 @@
     padding: 0 var(--screen-side-padding);
     font-size: clamp(1.35rem, 4.6vw, 1.6rem);
     line-height: 1.28;
-    margin-top: clamp(20px, 5vw, 28px);
+    margin-top: 0;
     margin-bottom: clamp(10px, 2.8vw, 12px);
 }
 
