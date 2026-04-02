@@ -71,7 +71,7 @@
 
 .detail-header {
     /* Match top padding with the close button's top (16px) and add min-height to ensure vertical centering */
-    padding: 16px 132px 8px 20px;
+    padding: 16px 132px 16px 20px;
     min-height: 40px;
     display: flex;
     justify-content: flex-start;
@@ -148,6 +148,8 @@
 .detail-title {
     padding: 0 20px;
     font-size: 1.6rem;
+    line-height: 1.28;
+    margin-top: 4px;
     margin-bottom: 12px;
 }
 
@@ -483,7 +485,7 @@
 
 @media (max-width: 420px) {
     .detail-header {
-        padding-right: 122px;
+        padding: 16px 122px 14px 20px;
     }
 
     .detail-header .category-badge,
