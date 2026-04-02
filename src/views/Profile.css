@@ -218,6 +218,11 @@
 .profile-tabs .tab-btn {
     width: 100%;
     min-width: 0;
+    display: grid;
+    place-items: center;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline: clamp(10px, 2.8vw, 14px);
     text-align: center;
     line-height: 1.35;
 }
