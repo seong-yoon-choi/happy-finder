@@ -24,7 +24,6 @@ const getSessionShuffleRank = (itemId, seed) => {
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState('랜덤행복');
   const [selectedCard, setSelectedCard] = useState(null);
-  const [detailEntryMode, setDetailEntryMode] = useState('view');
   const [sessionShuffleSeed] = useState(() => `${Date.now()}-${Math.random()}`);
   const { items, authUserNickname } = useHappy();
 
@@ -48,17 +47,10 @@ const Home = () => {
   }, [items, selectedCategory, sessionShuffleSeed]);
 
   const handleCardClick = useCallback(item => {
-    setDetailEntryMode('view');
-    setSelectedCard(item);
-  }, []);
-
-  const handleCardReportClick = useCallback(item => {
-    setDetailEntryMode('report');
     setSelectedCard(item);
   }, []);
 
   const handleCloseDetailModal = useCallback(() => {
-    setDetailEntryMode('view');
     setSelectedCard(null);
   }, []);
 
@@ -82,7 +74,6 @@ const Home = () => {
               key={item.id}
               item={item}
               onClick={handleCardClick}
-              onReportClick={handleCardReportClick}
             />
           ))
         ) : (
@@ -100,13 +91,12 @@ const Home = () => {
           errorTitle="행복 상세 화면을 열지 못했어요."
           errorMessage="잠시 후 다시 시도해주세요."
           onDismiss={handleCloseDetailModal}
-          resetKey={`${selectedCard.id}-${detailEntryMode}`}
+          resetKey={selectedCard.id}
         >
           <HappinessDetailModal
             item={selectedCard}
             isOpen={!!selectedCard}
             onClose={handleCloseDetailModal}
-            initialAction={detailEntryMode}
             showOwnerInsights={false}
             canDelete={false}
           />

@@ -104,7 +104,7 @@ const FavoriteIcon = ({ isActive = false }) => (
   </svg>
 );
 
-const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, initialAction = 'view' }) => {
+const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const {
     items,
     userStamps,
@@ -132,9 +132,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, initia
   const [editingMemoText, setEditingMemoText] = useState('');
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [visibilityError, setVisibilityError] = useState('');
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(() => (
-    initialAction === 'report' && item?.isCloudBacked === true
-  ));
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [selectedReportReasons, setSelectedReportReasons] = useState([]);
   const [reportOtherReason, setReportOtherReason] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
