@@ -112,6 +112,10 @@
     white-space: nowrap;
 }
 
+.detail-header .public-badge {
+    display: none;
+}
+
 .custom-badge {
     background: var(--secondary-color);
     color: white;

@@ -34,6 +34,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('stamped');
   const [selectedStampedCategory, setSelectedStampedCategory] = useState('전체');
   const [selectedCard, setSelectedCard] = useState(null);
+  const [detailEntryMode, setDetailEntryMode] = useState('view');
   const [showTreeTooltip, setShowTreeTooltip] = useState(false);
   const [todayKey, setTodayKey] = useState(() => getLocalDateKey());
 
@@ -84,10 +85,17 @@ const Profile = () => {
   };
 
   const handleCardClick = useCallback(item => {
+    setDetailEntryMode('view');
+    setSelectedCard(item);
+  }, []);
+
+  const handleCardReportClick = useCallback(item => {
+    setDetailEntryMode('report');
     setSelectedCard(item);
   }, []);
 
   const handleCloseDetailModal = useCallback(() => {
+    setDetailEntryMode('view');
     setSelectedCard(null);
   }, []);
 
@@ -190,7 +198,12 @@ const Profile = () => {
             {stampedItems.length > 0 ? (
               filteredStampedItems.length > 0 ? (
                 filteredStampedItems.map(item => (
-                  <HappinessCard key={item.id} item={item} onClick={handleCardClick} />
+                  <HappinessCard
+                    key={item.id}
+                    item={item}
+                    onClick={handleCardClick}
+                    onReportClick={handleCardReportClick}
+                  />
                 ))
               ) : (
                 <div className="empty-state">
@@ -212,7 +225,12 @@ const Profile = () => {
         {activeTab === 'favorites' && (
           favoriteItems.length > 0 ? (
             favoriteItems.map(item => (
-              <HappinessCard key={item.id} item={item} onClick={handleCardClick} />
+              <HappinessCard
+                key={item.id}
+                item={item}
+                onClick={handleCardClick}
+                onReportClick={handleCardReportClick}
+              />
             ))
           ) : (
             <div className="empty-state">
@@ -226,7 +244,12 @@ const Profile = () => {
         {activeTab === 'myItems' && (
           myItems.length > 0 ? (
             myItems.map(item => (
-              <HappinessCard key={item.id} item={item} onClick={handleCardClick} />
+              <HappinessCard
+                key={item.id}
+                item={item}
+                onClick={handleCardClick}
+                onReportClick={handleCardReportClick}
+              />
             ))
           ) : (
             <div className="empty-state">
@@ -253,12 +276,13 @@ const Profile = () => {
           errorTitle="행복 상세 화면을 열지 못했어요."
           errorMessage="잠시 후 다시 시도해주세요."
           onDismiss={handleCloseDetailModal}
-          resetKey={`${selectedCard.id}-${activeTab}`}
+          resetKey={`${selectedCard.id}-${activeTab}-${detailEntryMode}`}
         >
           <HappinessDetailModal
             item={selectedCard}
             isOpen={!!selectedCard}
             onClose={handleCloseDetailModal}
+            initialAction={detailEntryMode}
             showOwnerInsights
             canDelete={activeTab === 'myItems'}
           />

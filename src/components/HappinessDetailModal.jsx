@@ -104,7 +104,7 @@ const FavoriteIcon = ({ isActive = false }) => (
   </svg>
 );
 
-const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
+const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, initialAction = 'view' }) => {
   const {
     items,
     userStamps,
@@ -132,7 +132,9 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const [editingMemoText, setEditingMemoText] = useState('');
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [visibilityError, setVisibilityError] = useState('');
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(() => (
+    initialAction === 'report' && item?.isCloudBacked === true
+  ));
   const [selectedReportReasons, setSelectedReportReasons] = useState([]);
   const [reportOtherReason, setReportOtherReason] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
@@ -168,7 +170,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const alreadyStampedCount = stampData ? (typeof stampData === 'number' ? stampData : stampData.count) : 0;
   const isOwner = currentItem ? isItemOwnedByCurrentUser(currentItem.id) : false;
   const itemMemos = currentItem ? getItemMemos(currentItem.id) : [];
-  const canReportItem = Boolean(currentItem?.isCustom && currentItem.isPublic && !isOwner);
+  const canReportItem = Boolean(currentItem?.isCloudBacked === true);
   const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
   const reportNoticeMessage = '신고한 계정에서는 그 계정에서만 신고한 리스트 입니다.';
   const shouldShowReportedNotice = Boolean(

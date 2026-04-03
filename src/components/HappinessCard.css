@@ -39,15 +39,6 @@
     font-weight: 600;
 }
 
-.public-badge {
-    background: #2f9e85;
-    color: white;
-    padding: var(--pill-padding-y) var(--pill-padding-x);
-    border-radius: clamp(16px, 4vw, 20px);
-    font-size: var(--font-body-sm);
-    font-weight: 600;
-}
-
 .card-title {
     font-size: clamp(1.2rem, 3.8vw, 1.4rem);
     line-height: 1.25;
@@ -81,11 +72,19 @@
     transform: scale(0.98);
 }
 
+.card-side-actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: clamp(8px, 2.4vw, 10px);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
 .card-corner-stats {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    flex-shrink: 0;
     gap: clamp(6px, 2vw, 8px);
 }
 
@@ -110,8 +109,44 @@
     color: var(--text-light);
 }
 
+.card-report-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid rgba(255, 71, 87, 0.2);
+    background: rgba(255, 71, 87, 0.08);
+    color: var(--danger);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
+}
+
+.card-report-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.card-report-btn:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.card-report-btn.disabled,
+.card-report-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
 .dark-theme .card-corner-stat {
     background: rgba(17, 24, 39, 0.48);
+}
+
+.dark-theme .card-report-btn {
+    background: rgba(255, 71, 87, 0.12);
 }
 
 @media (max-width: 420px) {
@@ -119,6 +154,7 @@
         gap: 10px;
     }
 
+    .card-side-actions,
     .card-corner-stats {
         gap: 6px;
     }
@@ -126,5 +162,10 @@
     .card-corner-stat {
         padding: 4px 7px;
         font-size: 0.75rem;
+    }
+
+    .card-report-btn {
+        padding: 5px 9px;
+        font-size: 0.74rem;
     }
 }

@@ -30,12 +30,6 @@ with check (
     from public.happiness_items hi
     where hi.id = item_id
       and hi.is_active
-      and hi.source = 'custom'
-      and hi.is_public
-      and (
-        (select auth.uid()) is null
-        or hi.owner_user_id is distinct from (select auth.uid())
-      )
   )
   and (
     reporter_user_id is null
