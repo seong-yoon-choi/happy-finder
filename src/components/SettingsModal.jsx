@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { isNativeNotificationPlatform } from '../lib/localNotifications';
 import { useHappy } from '../store/HappyContext';
 import { openExternalUrl } from '../lib/externalBrowser';
@@ -238,10 +239,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const reminders = reminderSettings.reminders || [];
   const isNativeReminderPlatform = isNativeNotificationPlatform();
 
-  if (!isOpen) {
-    return null;
-  }
-
   const reminderMessage = (() => {
     if (isNativeReminderPlatform) {
       if (notificationPermission === 'granted') {
@@ -306,26 +303,28 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     onClose();
   };
 
+  const requestClose = useModalBackNavigation({
+    isOpen,
+    onClose: handleClose,
+    historyKey: 'settings'
+  });
+
+  if (!isOpen) {
+    return null;
+  }
+
   const handleOpenAuth = () => {
     clearAuthFeedback();
-    resetModalState();
-    onClose();
-    onOpenAuth();
+    requestClose(() => onOpenAuth?.());
   };
 
   const handleOpenNicknameEditor = () => {
     clearAuthFeedback();
-    resetAccountDangerState();
-    resetModalState();
-    onClose();
-    onOpenNicknameEditor?.();
+    requestClose(() => onOpenNicknameEditor?.());
   };
 
   const handleOpenAgreement = () => {
-    resetAccountDangerState();
-    resetModalState();
-    onClose();
-    onOpenAgreement?.();
+    requestClose(() => onOpenAgreement?.());
   };
 
   const handleSignOut = async () => {
@@ -423,13 +422,13 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   };
 
   return (
-    <div className="settings-overlay" onClick={handleClose}>
+    <div className="settings-overlay" onClick={() => requestClose()}>
       <div className="glass-panel settings-modal" onClick={event => event.stopPropagation()}>
         <div className="settings-header">
           <div>
             <h2>설정</h2>
           </div>
-          <button type="button" className="settings-close" onClick={handleClose} aria-label="설정 닫기">
+          <button type="button" className="settings-close" onClick={() => requestClose()} aria-label="설정 닫기">
             &times;
           </button>
         </div>

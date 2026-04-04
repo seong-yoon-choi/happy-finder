@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { useHappy } from '../store/HappyContext';
 import './CreateHappinessModal.css';
 
@@ -30,6 +31,12 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     resetForm();
     onClose();
   };
+
+  const requestClose = useModalBackNavigation({
+    isOpen,
+    onClose: handleClose,
+    historyKey: 'create-happiness'
+  });
 
   const handleSubmit = async event => {
     event.preventDefault();
@@ -64,7 +71,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   }
 
   return (
-    <div className="modal-overlay create-modal-overlay" data-block-pull-refresh="true" onClick={handleClose}>
+    <div className="modal-overlay create-modal-overlay" data-block-pull-refresh="true" onClick={() => requestClose()}>
       <div
         className="glass-panel modal-content create-modal-content"
         data-block-pull-refresh="true"
@@ -74,7 +81,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
           <button
             type="button"
             className="close-btn create-modal-close"
-            onClick={handleClose}
+            onClick={() => requestClose()}
             aria-label="나만의 행복 만들기 닫기"
           >
             &times;

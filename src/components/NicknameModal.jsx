@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { useHappy } from '../store/HappyContext';
 import './NicknameModal.css';
 
@@ -14,6 +15,12 @@ const NicknameModal = ({
   const { isAuthBusy, updateAuthNickname } = useHappy();
   const [nickname, setNickname] = useState(initialValue);
   const [feedback, setFeedback] = useState('');
+  const requestClose = useModalBackNavigation({
+    isOpen,
+    onClose,
+    canClose,
+    historyKey: 'nickname'
+  });
 
   if (!isOpen) {
     return null;
@@ -37,7 +44,7 @@ const NicknameModal = ({
     <div className="nickname-overlay">
       <div className="glass-panel nickname-modal" onClick={event => event.stopPropagation()}>
         {canClose && (
-          <button type="button" className="nickname-close" onClick={onClose} aria-label="닉네임 모달 닫기">
+          <button type="button" className="nickname-close" onClick={() => requestClose()} aria-label="닉네임 모달 닫기">
             &times;
           </button>
         )}

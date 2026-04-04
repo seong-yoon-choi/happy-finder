@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { useHappy } from '../store/HappyContext';
 import { GoogleIcon } from './AuthProviderIcons';
 import './AuthScreen.css';
@@ -106,10 +107,6 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     syncScreenState();
   }, [initialMode, isOpen, isPasswordRecovery]);
 
-  if (!isOpen) {
-    return null;
-  }
-
   const isResetRequestMode = mode === 'reset-request';
   const isResetPasswordMode = mode === 'reset-password';
   const isSignupMode = mode === 'signup';
@@ -136,6 +133,17 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     clearAuthFeedback();
     onClose?.();
   };
+
+  const requestClose = useModalBackNavigation({
+    isOpen,
+    onClose: handleClose,
+    canClose,
+    historyKey: 'auth-screen'
+  });
+
+  if (!isOpen) {
+    return null;
+  }
 
   const handleModeChange = nextMode => {
     if (isPasswordRecovery) {
@@ -334,7 +342,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     <div className="auth-screen-overlay">
       <div className="glass-panel auth-screen-panel">
         {canClose && (
-          <button type="button" className="auth-screen-close" onClick={handleClose} aria-label="로그인 창 닫기">
+          <button type="button" className="auth-screen-close" onClick={() => requestClose()} aria-label="로그인 창 닫기">
             &times;
           </button>
         )}

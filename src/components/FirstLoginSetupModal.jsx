@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { useHappy } from '../store/HappyContext';
 import './FirstLoginSetupModal.css';
 
@@ -16,6 +17,12 @@ const FirstLoginSetupModal = ({
   const [hasAcceptedMarketing, setHasAcceptedMarketing] = useState(Boolean(initialValues.hasAcceptedMarketing));
   const [feedback, setFeedback] = useState('');
   const isSubmitEnabled = isOver14 && hasAcceptedTerms && hasAcceptedPrivacy;
+  const requestClose = useModalBackNavigation({
+    isOpen,
+    onClose,
+    canClose,
+    historyKey: 'first-login-setup'
+  });
 
   useEffect(() => {
     const resetModalState = () => {
@@ -63,10 +70,10 @@ const FirstLoginSetupModal = ({
   };
 
   return (
-    <div className="first-login-overlay" onClick={canClose ? onClose : undefined}>
+    <div className="first-login-overlay" onClick={canClose ? () => requestClose() : undefined}>
       <div className="glass-panel first-login-modal" onClick={event => event.stopPropagation()}>
         {canClose && (
-          <button type="button" className="first-login-close" onClick={onClose} aria-label="동의 사항 닫기">
+          <button type="button" className="first-login-close" onClick={() => requestClose()} aria-label="동의 사항 닫기">
             &times;
           </button>
         )}

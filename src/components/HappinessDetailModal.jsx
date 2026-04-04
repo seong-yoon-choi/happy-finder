@@ -1,4 +1,5 @@
 import React, { startTransition, useEffect, useRef, useState } from 'react';
+import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import confetti from 'canvas-confetti';
 import {
   createHappinessItemReport,
@@ -288,6 +289,12 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     onClose();
   };
 
+  const requestClose = useModalBackNavigation({
+    isOpen: isOpen && Boolean(currentItem),
+    onClose: handleClose,
+    historyKey: 'happiness-detail'
+  });
+
   const openDeleteConfirm = () => {
     setConfirmDialog({ type: 'item' });
   };
@@ -296,12 +303,18 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setConfirmDialog(null);
   };
 
+  const requestCloseDeleteConfirm = useModalBackNavigation({
+    isOpen: isOpen && Boolean(confirmDialog),
+    onClose: closeDeleteConfirm,
+    historyKey: 'detail-delete-confirm'
+  });
+
   const handleDeleteConfirm = async () => {
     if (confirmDialog?.type === 'item') {
       const deleted = await deleteCustomItem(item.id);
 
       if (deleted) {
-        handleClose();
+        requestCloseDeleteConfirm(() => requestClose());
       }
 
       return;
@@ -414,6 +427,13 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     });
   };
 
+  const requestCloseReportDialog = useModalBackNavigation({
+    isOpen: isOpen && isReportDialogOpen,
+    onClose: closeReportDialog,
+    canClose: !isSubmittingReport,
+    historyKey: 'detail-report-dialog'
+  });
+
   const handleToggleReportReason = reasonCode => {
     setReportFeedback({
       type: 'idle',
@@ -516,7 +536,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   }
 
   return (
-    <div className="modal-overlay detail-modal-overlay" data-block-pull-refresh="true" onClick={handleClose}>
+    <div className="modal-overlay detail-modal-overlay" data-block-pull-refresh="true" onClick={() => requestClose()}>
       <div
         className="glass-panel detail-modal-content"
         data-block-pull-refresh="true"
@@ -549,7 +569,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
           >
             ✏️
           </button>
-          <button className="close-btn detail-close" onClick={handleClose}>&times;</button>
+          <button className="close-btn detail-close" onClick={() => requestClose()}>&times;</button>
         </div>
 
         <div className="detail-header">
@@ -776,7 +796,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
           className="delete-confirm-overlay"
           onClick={event => {
             event.stopPropagation();
-            closeDeleteConfirm();
+            requestCloseDeleteConfirm();
           }}
         >
           <div
@@ -795,7 +815,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
               <button
                 type="button"
                 className="delete-confirm-cancel"
-                onClick={closeDeleteConfirm}
+                onClick={() => requestCloseDeleteConfirm()}
               >
                 취소
               </button>
@@ -816,7 +836,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
           className="report-dialog-overlay"
           onClick={event => {
             event.stopPropagation();
-            closeReportDialog();
+            requestCloseReportDialog();
           }}
         >
           <div
@@ -867,7 +887,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
               <button
                 type="button"
                 className="report-dialog-cancel"
-                onClick={closeReportDialog}
+                onClick={() => requestCloseReportDialog()}
                 disabled={isSubmittingReport}
               >
                 취소
