@@ -159,6 +159,15 @@ export const syncNativeReminderNotifications = async (reminders, enabled) => {
     return;
   }
 
+  if (isNativeAndroidNotificationPlatform()) {
+    const exactAlarmPermission = await checkNativeExactAlarmPermission();
+
+    if (exactAlarmPermission !== 'granted') {
+      writeStoredNativeReminderNotificationIds([]);
+      return;
+    }
+  }
+
   await LocalNotifications.schedule({
     notifications: reminders.map(reminder => {
       const { hour, minute } = parseReminderTime(reminder.time);

@@ -59,6 +59,15 @@ const defaultReminderSettings = {
   enabled: false,
   reminders: [createReminderItem(DEFAULT_REMINDER_TIME, { id: 'default-reminder' })]
 };
+
+const hasRequiredNativeReminderPermissions = (notificationPermission, exactAlarmPermission) => (
+  notificationPermission === 'granted'
+  && (
+    !isNativeAndroidNotificationPlatform()
+    || exactAlarmPermission === 'granted'
+  )
+);
+
 const defaultAuthFeedback = {
   type: 'idle',
   message: ''
@@ -1009,6 +1018,7 @@ export const HappyProvider = ({ children }) => {
     isNativeAndroidNotificationPlatform() ? 'default' : 'unsupported'
   ));
   const pendingReminderEnableRef = useRef(false);
+  const hasPromptedExactAlarmSettingsRef = useRef(false);
 
   const [celebrationQueue, setCelebrationQueue] = useState([]);
   const [authSession, setAuthSession] = useState(null);
@@ -1865,7 +1875,7 @@ export const HappyProvider = ({ children }) => {
         setNotificationPermission(permission);
         setExactAlarmPermission(exactAlarm);
 
-        if (permission !== 'granted' && reminderSettings.enabled) {
+        if (!hasRequiredNativeReminderPermissions(permission, exactAlarm) && reminderSettings.enabled) {
           setReminderSettings(prev => (
             prev.enabled
               ? { ...prev, enabled: false }
@@ -1904,8 +1914,9 @@ export const HappyProvider = ({ children }) => {
       setNotificationPermission(permission);
       setExactAlarmPermission(exactAlarm);
 
-      if (permission === 'granted' && pendingReminderEnableRef.current) {
+      if (hasRequiredNativeReminderPermissions(permission, exactAlarm) && pendingReminderEnableRef.current) {
         pendingReminderEnableRef.current = false;
+        hasPromptedExactAlarmSettingsRef.current = false;
         setReminderSettings(prev => (
           prev.enabled
             ? prev
@@ -1914,7 +1925,25 @@ export const HappyProvider = ({ children }) => {
         return;
       }
 
-      if (permission !== 'granted' && reminderSettings.enabled) {
+      if (
+        pendingReminderEnableRef.current
+        && permission === 'granted'
+        && isNativeAndroidNotificationPlatform()
+        && exactAlarm !== 'granted'
+        && !hasPromptedExactAlarmSettingsRef.current
+      ) {
+        hasPromptedExactAlarmSettingsRef.current = true;
+        void openNativeExactAlarmSettings().then(nextExactAlarmPermission => {
+          if (!isMounted) {
+            return;
+          }
+
+          setExactAlarmPermission(nextExactAlarmPermission);
+        });
+        return;
+      }
+
+      if (!hasRequiredNativeReminderPermissions(permission, exactAlarm) && reminderSettings.enabled) {
         setReminderSettings(prev => (
           prev.enabled
             ? { ...prev, enabled: false }
@@ -3392,7 +3421,13 @@ export const HappyProvider = ({ children }) => {
     const permission = await openNativeExactAlarmSettings();
     setExactAlarmPermission(permission);
 
-    if (permission === 'granted' && reminderSettings.enabled) {
+    if (
+      permission === 'granted'
+      && (
+        reminderSettings.enabled
+        || pendingReminderEnableRef.current
+      )
+    ) {
       await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled);
     }
 
@@ -3404,21 +3439,34 @@ export const HappyProvider = ({ children }) => {
 
     if (enabled && isNativeNotificationPlatform()) {
       const wasDenied = currentPermission === 'denied';
+      hasPromptedExactAlarmSettingsRef.current = false;
       currentPermission = await requestNotificationPermission();
 
       if (currentPermission !== 'granted') {
-        if (wasDenied && isNativeAndroidNotificationPlatform()) {
+        if ((wasDenied || currentPermission === 'denied') && isNativeAndroidNotificationPlatform()) {
           pendingReminderEnableRef.current = true;
           await openNativeNotificationSettings();
         }
 
         return currentPermission;
       }
+
+      if (isNativeAndroidNotificationPlatform() && exactAlarmPermission !== 'granted') {
+        pendingReminderEnableRef.current = true;
+        hasPromptedExactAlarmSettingsRef.current = true;
+
+        const nextExactAlarmPermission = await openExactAlarmSettings();
+
+        if (nextExactAlarmPermission !== 'granted') {
+          return currentPermission;
+        }
+      }
     } else if (enabled && currentPermission === 'default') {
       currentPermission = await requestNotificationPermission();
     }
 
     pendingReminderEnableRef.current = false;
+    hasPromptedExactAlarmSettingsRef.current = false;
 
     setReminderSettings(prev => applyReminderEnabledState(prev, enabled));
 

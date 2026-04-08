@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
-import { isNativeNotificationPlatform } from '../lib/localNotifications';
+import { isNativeAndroidNotificationPlatform, isNativeNotificationPlatform } from '../lib/localNotifications';
 import { useHappy } from '../store/HappyContext';
 import { openExternalUrl } from '../lib/externalBrowser';
 import { SUPPORT_PATH, getPasswordResetWebUrl, getPublicWebUrl } from '../lib/routes';
@@ -214,10 +214,12 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     toggleTheme,
     reminderSettings,
     notificationPermission,
+    exactAlarmPermission,
     toggleReminder,
     addReminder,
     updateReminder,
     deleteReminder,
+    openExactAlarmSettings,
     authUser,
     authUserNickname,
     isGuestMode,
@@ -238,9 +240,19 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const reminders = reminderSettings.reminders || [];
   const isNativeReminderPlatform = isNativeNotificationPlatform();
+  const isNativeAndroidReminderPlatform = isNativeAndroidNotificationPlatform();
+  const needsExactAlarmAccess = (
+    isNativeAndroidReminderPlatform
+    && notificationPermission === 'granted'
+    && exactAlarmPermission !== 'granted'
+  );
 
   const reminderMessage = (() => {
     if (isNativeReminderPlatform) {
+      if (needsExactAlarmAccess) {
+        return '정시에 알림을 받으려면 알람 및 리마인더 권한도 허용해야 해요.';
+      }
+
       if (notificationPermission === 'granted') {
         return '설정한 시간마다 시스템 알림을 보내요.';
       }
@@ -419,6 +431,10 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const handleToggleReminder = async () => {
     const nextEnabled = !reminderSettings.enabled;
     await toggleReminder(nextEnabled);
+  };
+
+  const handleOpenExactAlarmSettings = async () => {
+    await openExactAlarmSettings();
   };
 
   return (
@@ -732,6 +748,15 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
           )}
 
           <div className="settings-note">{reminderMessage}</div>
+          {needsExactAlarmAccess && (
+            <button
+              type="button"
+              className="settings-secondary-btn"
+              onClick={handleOpenExactAlarmSettings}
+            >
+              알람 및 리마인더 허용
+            </button>
+          )}
           {isNativeReminderPlatform && nextReminderPreview && (
             <div className="settings-note">
               <div>{nextReminderPreview}</div>
