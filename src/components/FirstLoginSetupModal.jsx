@@ -8,7 +8,8 @@ const FirstLoginSetupModal = ({
   canClose = false,
   onClose,
   onComplete,
-  initialValues
+  initialValues,
+  lockRequiredAgreements = false
 }) => {
   const { isAuthBusy, completeAuthOnboarding } = useHappy();
   const [isOver14, setIsOver14] = useState(Boolean(initialValues.isOver14));
@@ -17,6 +18,7 @@ const FirstLoginSetupModal = ({
   const [hasAcceptedMarketing, setHasAcceptedMarketing] = useState(Boolean(initialValues.hasAcceptedMarketing));
   const [feedback, setFeedback] = useState('');
   const isSubmitEnabled = isOver14 && hasAcceptedTerms && hasAcceptedPrivacy;
+  const areRequiredAgreementsReadOnly = lockRequiredAgreements;
   const requestClose = useModalBackNavigation({
     isOpen,
     onClose,
@@ -90,7 +92,7 @@ const FirstLoginSetupModal = ({
                 type="checkbox"
                 checked={isOver14}
                 onChange={event => setIsOver14(event.target.checked)}
-                disabled={isAuthBusy}
+                disabled={isAuthBusy || areRequiredAgreementsReadOnly}
                 aria-label="만 14세 이상 동의"
               />
               <span>필수: 만 14세 이상</span>
@@ -101,7 +103,7 @@ const FirstLoginSetupModal = ({
                 type="checkbox"
                 checked={hasAcceptedTerms}
                 onChange={event => setHasAcceptedTerms(event.target.checked)}
-                disabled={isAuthBusy}
+                disabled={isAuthBusy || areRequiredAgreementsReadOnly}
                 aria-label="이용약관 동의"
               />
               <span>
@@ -118,7 +120,7 @@ const FirstLoginSetupModal = ({
                 type="checkbox"
                 checked={hasAcceptedPrivacy}
                 onChange={event => setHasAcceptedPrivacy(event.target.checked)}
-                disabled={isAuthBusy}
+                disabled={isAuthBusy || areRequiredAgreementsReadOnly}
                 aria-label="개인정보처리방침 동의"
               />
               <span>

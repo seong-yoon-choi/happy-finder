@@ -278,6 +278,7 @@ function AppContent() {
             onClose={closeAgreementModal}
             onComplete={closeAgreementModal}
             initialValues={authUserOnboarding}
+            lockRequiredAgreements={!needsAgreementSetup}
           />
         </LazyLoadBoundary>
       )}
