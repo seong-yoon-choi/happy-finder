@@ -12,6 +12,7 @@ export const REPORT_REASON_OPTIONS = [
 ];
 
 const HAPPINESS_ITEM_REPORTS_TABLE = 'happiness_item_reports';
+const REPORT_HAPPINESS_ITEM_FUNCTION_NAME = 'report-happiness-item';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const normalizeUuid = value => {
@@ -83,21 +84,30 @@ export const createHappinessItemReport = async ({
     return { success: false, code: 'OTHER_REASON_REQUIRED' };
   }
 
-  const { error } = await supabase
-    .from(HAPPINESS_ITEM_REPORTS_TABLE)
-    .insert({
-      item_id: normalizedItemId,
-      reported_item_owner_user_id: normalizeUuid(item?.creatorId),
-      reporter_user_id: normalizeUuid(reporterUserId),
-      reason_codes: normalizedReasonCodes,
-      other_reason: normalizedOtherReason || null,
-      item_snapshot_title: typeof item?.title === 'string' ? item.title.trim() : '',
-      item_snapshot_description: typeof item?.description === 'string' ? item.description.trim() : ''
-    });
+  const { data, error } = await supabase.functions.invoke(REPORT_HAPPINESS_ITEM_FUNCTION_NAME, {
+    body: {
+      itemId: normalizedItemId,
+      reporterUserId: normalizeUuid(reporterUserId),
+      reasonCodes: normalizedReasonCodes,
+      otherReason: normalizedOtherReason || null
+    }
+  });
 
   if (error) {
-    return { success: false, code: 'INSERT_FAILED', error };
+    return { success: false, code: 'FUNCTION_FAILED', error };
   }
 
-  return { success: true };
+  if (!data?.success) {
+    return {
+      success: false,
+      code: typeof data?.code === 'string' ? data.code : 'INSERT_FAILED',
+      error: data?.error || null
+    };
+  }
+
+  return {
+    success: true,
+    duplicate: data?.duplicate === true,
+    reportId: typeof data?.reportId === 'string' ? data.reportId : null
+  };
 };

@@ -96,6 +96,7 @@ const PROFILES_TABLE = 'profiles';
 const CLOUD_SNAPSHOT_TABLE = 'happy_user_snapshots';
 const HAPPINESS_ITEMS_TABLE = 'happiness_items';
 const DELETE_ACCOUNT_FUNCTION_NAME = 'delete-account';
+const DELETE_HAPPINESS_ITEM_FUNCTION_NAME = 'delete-happiness-item';
 const LEGACY_CATEGORY_MAP = {
   일주일행복: '기분전환',
   한달행복: '제대로'
@@ -2222,23 +2223,33 @@ export const HappyProvider = ({ children }) => {
       return false;
     }
 
-    if (targetItem.isCloudBacked && supabase && authUser?.id && targetItem.creatorId === authUser.id) {
-      const { error } = await supabase
-        .from(HAPPINESS_ITEMS_TABLE)
-        .update({
-          is_active: false,
-          is_public: false
-        })
-        .eq('id', itemId)
-        .eq('source', 'custom')
-        .eq('owner_user_id', authUser.id);
+    if (supabase && authUser?.id && targetItem.creatorId === authUser.id) {
+      const { data, error } = await supabase.functions.invoke(DELETE_HAPPINESS_ITEM_FUNCTION_NAME, {
+        body: {
+          itemId
+        }
+      });
 
       if (error) {
+        return false;
+      }
+
+      if (!data?.success && data?.code !== 'NOT_FOUND') {
         return false;
       }
     }
 
     setItems(prev => prev.filter(item => item.id !== itemId));
+
+    setUserStamps(prev => {
+      if (!(itemId in prev)) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
 
     setUserFavorites(prev => {
       if (!(itemId in prev)) {

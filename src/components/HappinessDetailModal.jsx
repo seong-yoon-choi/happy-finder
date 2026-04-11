@@ -105,6 +105,29 @@ const FavoriteIcon = ({ isActive = false }) => (
   </svg>
 );
 
+const getReportErrorMessage = code => {
+  switch (code) {
+    case 'REASONS_REQUIRED':
+      return '신고 사유를 하나 이상 선택해주세요.';
+    case 'OTHER_REASON_REQUIRED':
+      return '기타 신고 사유를 입력해주세요.';
+    case 'ITEM_NOT_FOUND':
+      return '이미 삭제되었거나 확인할 수 없는 항목이에요.';
+    case 'SUPABASE_NOT_CONFIGURED':
+      return '신고 기능을 준비하지 못했어요. 관리자에게 문의해주세요.';
+    default:
+      return '신고를 접수하지 못했어요. 잠시 후 다시 시도해주세요.';
+  }
+};
+
+const getReportSuccessMessage = duplicate => {
+  if (duplicate) {
+    return '이미 신고한 항목이에요. 검토 후 조치할게요.';
+  }
+
+  return '신고가 접수되었어요. 검토 후 조치할게요.';
+};
+
 const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const {
     items,
@@ -141,6 +164,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     type: 'idle',
     message: ''
   });
+  const [deleteFeedback, setDeleteFeedback] = useState('');
   const [reportedItemIdForViewer, setReportedItemIdForViewer] = useState('');
 
   const requestRef = useRef();
@@ -269,6 +293,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
       type: 'idle',
       message: ''
     });
+    setDeleteFeedback('');
     setReportedItemIdForViewer('');
     startTimeRef.current = null;
     cancelAnimationFrame(requestRef.current);
@@ -296,10 +321,12 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   });
 
   const openDeleteConfirm = () => {
+    setDeleteFeedback('');
     setConfirmDialog({ type: 'item' });
   };
 
   const closeDeleteConfirm = () => {
+    setDeleteFeedback('');
     setConfirmDialog(null);
   };
 
@@ -311,12 +338,14 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
 
   const handleDeleteConfirm = async () => {
     if (confirmDialog?.type === 'item') {
-      const deleted = await deleteCustomItem(item.id);
+      const deleted = await deleteCustomItem(currentItem.id);
 
       if (deleted) {
         requestCloseDeleteConfirm(() => requestClose());
+        return;
       }
 
+      setDeleteFeedback('행복을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.');
       return;
     }
 
@@ -489,7 +518,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     if (!result?.success) {
       setReportFeedback({
         type: 'error',
-        message: '신고를 접수하지 못했어요. 잠시 후 다시 시도해주세요.'
+        message: getReportErrorMessage(result?.code)
       });
       return;
     }
@@ -500,7 +529,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setReportedItemIdForViewer(currentItem.id);
     setReportFeedback({
       type: 'success',
-      message: '신고가 접수되었어요. 검토 후 조치할게요.'
+      message: getReportSuccessMessage(result?.duplicate === true)
     });
   };
 
@@ -811,6 +840,9 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                 ? `"${currentItem.title}"을 삭제하면 다시 되돌릴 수 없어요.`
                 : '이 메모를 삭제하면 다시 되돌릴 수 없어요.'}
             </p>
+            {confirmDialog.type === 'item' && deleteFeedback && (
+              <p className="report-dialog-feedback error">{deleteFeedback}</p>
+            )}
             <div className="delete-confirm-actions">
               <button
                 type="button"
