@@ -3,7 +3,6 @@ import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import confetti from 'canvas-confetti';
 import {
   createHappinessItemReport,
-  hasExistingHappinessItemReport,
   OTHER_REPORT_REASON_CODE,
   REPORT_REASON_OPTIONS
 } from '../lib/happinessItemReports';
@@ -165,7 +164,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     message: ''
   });
   const [deleteFeedback, setDeleteFeedback] = useState('');
-  const [reportedItemIdForViewer, setReportedItemIdForViewer] = useState('');
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
 
   const requestRef = useRef();
   const startTimeRef = useRef();
@@ -195,13 +194,6 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const itemMemos = currentItem ? getItemMemos(currentItem.id) : [];
   const canReportItem = Boolean(currentItem?.isCloudBacked === true);
   const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
-  const reportNoticeMessage = '신고한 계정에서는 그 계정에서만 신고한 리스트 입니다.';
-  const shouldShowReportedNotice = Boolean(
-    currentItem?.id
-    && authUser?.id
-    && canReportItem
-    && reportedItemIdForViewer === currentItem.id
-  );
 
   const todayKey = getLocalDateKey();
   const alreadyStampedToday = stampData && getLocalDateKey(stampData.lastStampedDate) === todayKey;
@@ -294,7 +286,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
       message: ''
     });
     setDeleteFeedback('');
-    setReportedItemIdForViewer('');
+    setIsDeletingItem(false);
     startTimeRef.current = null;
     cancelAnimationFrame(requestRef.current);
     if (completionFrameRef.current) {
@@ -322,23 +314,37 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
 
   const openDeleteConfirm = () => {
     setDeleteFeedback('');
+    setIsDeletingItem(false);
     setConfirmDialog({ type: 'item' });
   };
 
   const closeDeleteConfirm = () => {
+    if (isDeletingItem) {
+      return;
+    }
+
     setDeleteFeedback('');
+    setIsDeletingItem(false);
     setConfirmDialog(null);
   };
 
   const requestCloseDeleteConfirm = useModalBackNavigation({
     isOpen: isOpen && Boolean(confirmDialog),
     onClose: closeDeleteConfirm,
+    canClose: confirmDialog?.type !== 'item' || !isDeletingItem,
     historyKey: 'detail-delete-confirm'
   });
 
   const handleDeleteConfirm = async () => {
     if (confirmDialog?.type === 'item') {
+      if (isDeletingItem) {
+        return;
+      }
+
+      setDeleteFeedback('');
+      setIsDeletingItem(true);
       const deleted = await deleteCustomItem(currentItem.id);
+      setIsDeletingItem(false);
 
       if (deleted) {
         requestCloseDeleteConfirm(() => requestClose());
@@ -526,39 +532,11 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setIsReportDialogOpen(false);
     setSelectedReportReasons([]);
     setReportOtherReason('');
-    setReportedItemIdForViewer(currentItem.id);
     setReportFeedback({
       type: 'success',
       message: getReportSuccessMessage(result?.duplicate === true)
     });
   };
-
-  useEffect(() => {
-    if (!isOpen || !currentItem?.id || !canReportItem || !authUser?.id) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const loadExistingReport = async () => {
-      const result = await hasExistingHappinessItemReport({
-        itemId: currentItem?.id,
-        reporterUserId: authUser.id
-      });
-
-      if (!isMounted) {
-        return;
-      }
-
-      setReportedItemIdForViewer(result?.success && result.hasReported ? currentItem.id : '');
-    };
-
-    void loadExistingReport();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [authUser?.id, canReportItem, currentItem?.id, isOpen]);
 
   if (!isOpen || !currentItem) {
     return null;
@@ -622,12 +600,6 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
         {reportFeedback.message && (
           <div className={`detail-inline-feedback ${reportFeedback.type === 'error' ? 'error' : 'success'}`}>
             {reportFeedback.message}
-          </div>
-        )}
-
-        {shouldShowReportedNotice && (
-          <div className="detail-inline-feedback report-notice">
-            {reportNoticeMessage}
           </div>
         )}
 
@@ -825,6 +797,9 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
           className="delete-confirm-overlay"
           onClick={event => {
             event.stopPropagation();
+            if (isDeletingItem) {
+              return;
+            }
             requestCloseDeleteConfirm();
           }}
         >
@@ -848,15 +823,25 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                 type="button"
                 className="delete-confirm-cancel"
                 onClick={() => requestCloseDeleteConfirm()}
+                disabled={confirmDialog.type === 'item' && isDeletingItem}
               >
                 취소
               </button>
               <button
                 type="button"
-                className="delete-confirm-submit"
+                className={`delete-confirm-submit ${confirmDialog.type === 'item' && isDeletingItem ? 'loading' : ''}`}
                 onClick={handleDeleteConfirm}
+                disabled={confirmDialog.type === 'item' && isDeletingItem}
+                aria-busy={confirmDialog.type === 'item' && isDeletingItem}
               >
-                삭제하기
+                {confirmDialog.type === 'item' && isDeletingItem ? (
+                  <>
+                    <span className="delete-confirm-spinner" aria-hidden="true" />
+                    삭제 중...
+                  </>
+                ) : (
+                  '삭제하기'
+                )}
               </button>
             </div>
           </div>

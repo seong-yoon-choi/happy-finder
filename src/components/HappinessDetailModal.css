@@ -657,6 +657,28 @@
     border-color: rgba(255, 71, 87, 0.28);
 }
 
+.delete-confirm-cancel:disabled,
+.delete-confirm-submit:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.delete-confirm-submit.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.delete-confirm-spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 71, 87, 0.2);
+    border-top-color: currentColor;
+    animation: deleteConfirmSpin 0.7s linear infinite;
+}
+
 .report-dialog-overlay {
     position: fixed;
     inset: 0;
@@ -822,5 +844,15 @@
     100% {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes deleteConfirmSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
     }
 }
