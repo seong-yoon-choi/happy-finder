@@ -3,6 +3,7 @@ import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import confetti from 'canvas-confetti';
 import {
   createHappinessItemReport,
+  hasExistingHappinessItemReport,
   OTHER_REPORT_REASON_CODE,
   REPORT_REASON_OPTIONS
 } from '../lib/happinessItemReports';
@@ -163,6 +164,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     type: 'idle',
     message: ''
   });
+  const [hasReportedCurrentItem, setHasReportedCurrentItem] = useState(false);
+  const [isCheckingReportStatus, setIsCheckingReportStatus] = useState(false);
   const [deleteFeedback, setDeleteFeedback] = useState('');
   const [isDeletingItem, setIsDeletingItem] = useState(false);
 
@@ -194,6 +197,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const itemMemos = currentItem ? getItemMemos(currentItem.id) : [];
   const canReportItem = Boolean(currentItem?.isCloudBacked === true);
   const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
+  const isReportTriggerDisabled = isCheckingReportStatus || hasReportedCurrentItem;
 
   const todayKey = getLocalDateKey();
   const alreadyStampedToday = stampData && getLocalDateKey(stampData.lastStampedDate) === todayKey;
@@ -285,6 +289,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
       type: 'idle',
       message: ''
     });
+    setHasReportedCurrentItem(false);
+    setIsCheckingReportStatus(false);
     setDeleteFeedback('');
     setIsDeletingItem(false);
     startTimeRef.current = null;
@@ -438,6 +444,10 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   };
 
   const openReportDialog = () => {
+    if (isReportTriggerDisabled) {
+      return;
+    }
+
     setSelectedReportReasons([]);
     setReportOtherReason('');
     setIsSubmittingReport(false);
@@ -490,6 +500,14 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   };
 
   const handleSubmitReport = async () => {
+    if (hasReportedCurrentItem) {
+      setReportFeedback({
+        type: 'success',
+        message: getReportSuccessMessage(true)
+      });
+      return;
+    }
+
     if (selectedReportReasons.length === 0) {
       setReportFeedback({
         type: 'error',
@@ -532,11 +550,44 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setIsReportDialogOpen(false);
     setSelectedReportReasons([]);
     setReportOtherReason('');
+    setHasReportedCurrentItem(true);
     setReportFeedback({
       type: 'success',
       message: getReportSuccessMessage(result?.duplicate === true)
     });
   };
+
+  useEffect(() => {
+    if (!isOpen || !currentItem?.id || !canReportItem || !authUser?.id) {
+      setHasReportedCurrentItem(false);
+      setIsCheckingReportStatus(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    setIsCheckingReportStatus(true);
+
+    const loadExistingReport = async () => {
+      const result = await hasExistingHappinessItemReport({
+        itemId: currentItem.id,
+        reporterUserId: authUser.id
+      });
+
+      if (!isMounted) {
+        return;
+      }
+
+      setHasReportedCurrentItem(result?.success === true && result?.hasReported === true);
+      setIsCheckingReportStatus(false);
+    };
+
+    void loadExistingReport();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authUser?.id, canReportItem, currentItem?.id, isOpen]);
 
   if (!isOpen || !currentItem) {
     return null;
@@ -555,7 +606,9 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
               type="button"
               className="detail-icon-btn detail-report-trigger"
               onClick={openReportDialog}
-              aria-label="행복 항목 신고"
+              disabled={isReportTriggerDisabled}
+              aria-label={hasReportedCurrentItem ? '이미 신고한 행복 항목' : '행복 항목 신고'}
+              aria-busy={isCheckingReportStatus}
             >
               <ReportIcon />
             </button>
@@ -876,6 +929,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => handleToggleReportReason(option.code)}
+                      disabled={isSubmittingReport}
                     />
                     <span>{option.label}</span>
                   </label>
@@ -892,6 +946,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                   placeholder="신고 사유를 자세히 입력해주세요."
                   rows={4}
                   maxLength={500}
+                  disabled={isSubmittingReport}
                 />
               </label>
             )}
@@ -911,11 +966,19 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
               </button>
               <button
                 type="button"
-                className="report-dialog-submit"
+                className={`report-dialog-submit ${isSubmittingReport ? 'loading' : ''}`}
                 onClick={handleSubmitReport}
                 disabled={isSubmittingReport}
+                aria-busy={isSubmittingReport}
               >
-                {isSubmittingReport ? '신고 중...' : '신고하기'}
+                {isSubmittingReport ? (
+                  <>
+                    <span className="report-dialog-spinner" aria-hidden="true" />
+                    신고 중...
+                  </>
+                ) : (
+                  '신고하기'
+                )}
               </button>
             </div>
           </div>

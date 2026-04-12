@@ -65,6 +65,11 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.detail-report-trigger:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
 .detail-favorite-trigger {
     color: rgba(51, 51, 51, 0.72);
 }
@@ -823,6 +828,22 @@
     background: rgba(255, 71, 87, 0.12);
     color: var(--danger);
     border-color: rgba(255, 71, 87, 0.28);
+}
+
+.report-dialog-submit.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.report-dialog-spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 71, 87, 0.2);
+    border-top-color: currentColor;
+    animation: deleteConfirmSpin 0.7s linear infinite;
 }
 
 .report-dialog-cancel:disabled,
