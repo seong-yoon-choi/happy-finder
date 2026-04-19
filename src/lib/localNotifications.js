@@ -1,8 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { getReminderNotificationContent } from './reminderContent';
 
-const REMINDER_TITLE = '행복 찾을 시간이에요!';
-const REMINDER_BODY = '오늘도 행복한 하루!! 작은 행복 하나를 찾아볼까요?';
 const NATIVE_REMINDER_NOTIFICATION_STORAGE_KEY = 'happy_native_reminder_notification_ids';
 const AppNotificationSettings = registerPlugin('AppNotificationSettings');
 
@@ -15,14 +14,27 @@ const normalizePermissionState = (value) => {
 };
 
 const parseReminderTime = (timeValue) => {
-  const [rawHour = '20', rawMinute = '00'] = String(timeValue || '20:00').split(':');
+  const [rawHour = '12', rawMinute = '00'] = String(timeValue || '12:00').split(':');
   const hour = Number(rawHour);
   const minute = Number(rawMinute);
 
   return {
-    hour: Number.isFinite(hour) ? hour : 20,
+    hour: Number.isFinite(hour) ? hour : 12,
     minute: Number.isFinite(minute) ? minute : 0
   };
+};
+
+const getNextReminderTriggerTime = (timeValue, now = new Date()) => {
+  const { hour, minute } = parseReminderTime(timeValue);
+  const nextTrigger = new Date(now);
+
+  nextTrigger.setHours(hour, minute, 0, 0);
+
+  if (nextTrigger.getTime() <= now.getTime()) {
+    nextTrigger.setDate(nextTrigger.getDate() + 1);
+  }
+
+  return nextTrigger;
 };
 
 const createNativeReminderId = (reminderId) => {
@@ -129,7 +141,7 @@ export const openNativeNotificationSettings = async () => {
   return true;
 };
 
-export const syncNativeReminderNotifications = async (reminders, enabled) => {
+export const syncNativeReminderNotifications = async (reminders, enabled, globalStreak) => {
   if (!isNativeNotificationPlatform()) {
     return;
   }
@@ -171,11 +183,15 @@ export const syncNativeReminderNotifications = async (reminders, enabled) => {
   await LocalNotifications.schedule({
     notifications: reminders.map(reminder => {
       const { hour, minute } = parseReminderTime(reminder.time);
+      const reminderContent = getReminderNotificationContent(
+        globalStreak,
+        getNextReminderTriggerTime(reminder.time)
+      );
 
       return {
         id: createNativeReminderId(reminder.id),
-        title: REMINDER_TITLE,
-        body: REMINDER_BODY,
+        title: reminderContent.title,
+        body: reminderContent.body,
         schedule: {
           on: {
             hour,

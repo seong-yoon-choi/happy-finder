@@ -4,6 +4,7 @@ import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
+import { getReminderNotificationContent } from '../lib/reminderContent';
 import { getTreeInfo } from '../utils/progress';
 import {
   checkNativeExactAlarmPermission,
@@ -30,7 +31,8 @@ import { requestReviewAdminSession } from '../lib/reviewAdminSession';
 import { APP_PATH, PASSWORD_RESET_PATH, getAppRedirectUrl, getNativeAuthCallbackPathFromUrl } from '../lib/routes';
 
 const LEGACY_LOCAL_CREATOR_ID = 'local-user';
-const DEFAULT_REMINDER_TIME = '20:00';
+const DEFAULT_REMINDER_TIME = '12:00';
+const DEFAULT_SECONDARY_REMINDER_TIME = '18:00';
 
 const createReminderId = () => `reminder_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const createCustomItemId = () => `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -57,7 +59,10 @@ const applyReminderEnabledState = (settings, enabled) => {
 
 const defaultReminderSettings = {
   enabled: false,
-  reminders: [createReminderItem(DEFAULT_REMINDER_TIME, { id: 'default-reminder' })]
+  reminders: [
+    createReminderItem(DEFAULT_REMINDER_TIME, { id: 'default-reminder-noon' }),
+    createReminderItem(DEFAULT_SECONDARY_REMINDER_TIME, { id: 'default-reminder-evening' })
+  ]
 };
 
 const hasRequiredNativeReminderPermissions = (notificationPermission, exactAlarmPermission) => (
@@ -73,12 +78,14 @@ const defaultAuthFeedback = {
   message: ''
 };
 const AUTH_MODE_STORAGE_KEY = 'happy_auth_mode';
+const INITIAL_NOTIFICATION_PERMISSION_PROMPTED_STORAGE_KEY = 'happy_initial_notification_permission_prompted';
 const GUEST_LOCAL_CREATOR_ID_STORAGE_KEY = 'happy_guest_local_creator_id';
 const REVIEW_ADMIN_AUTH_STORAGE_KEY = 'happy_review_admin_auth_user';
 const AUTH_SESSION_BACKUP_STORAGE_KEY = 'happy_auth_session_backup';
 const LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY = 'happy_last_native_auth_callback_url';
 const APP_STORAGE_KEYS = [
   AUTH_SESSION_BACKUP_STORAGE_KEY,
+  INITIAL_NOTIFICATION_PERMISSION_PROMPTED_STORAGE_KEY,
   'happy_items',
   'happy_stamps',
   'happy_favorites',
@@ -581,6 +588,30 @@ const getCurrentTimeKey = (value = new Date()) => {
   return `${hours}:${minutes}`;
 };
 
+const createDefaultReminderSettings = (enabled = false) => {
+  const todayKey = getLocalDateKey();
+  const nowTimeKey = getCurrentTimeKey();
+
+  return {
+    enabled: Boolean(enabled),
+    reminders: [
+      createReminderItem(DEFAULT_REMINDER_TIME, {
+        id: 'default-reminder-noon',
+        lastTriggeredDate: enabled && nowTimeKey >= DEFAULT_REMINDER_TIME ? todayKey : null
+      }),
+      createReminderItem(DEFAULT_SECONDARY_REMINDER_TIME, {
+        id: 'default-reminder-evening',
+        lastTriggeredDate: enabled && nowTimeKey >= DEFAULT_SECONDARY_REMINDER_TIME ? todayKey : null
+      })
+    ]
+  };
+};
+
+const getMillisecondsUntilNextMidnight = (now = new Date()) => {
+  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return Math.max(nextMidnight.getTime() - now.getTime(), 1000);
+};
+
 const normalizeReminderItem = (value, fallbackId) => {
   if (!isRecord(value)) {
     return createReminderItem(DEFAULT_REMINDER_TIME, { id: fallbackId });
@@ -601,10 +632,10 @@ const createStreakCelebration = (dayCount) => ({
   message: '오늘도 행복한 하루!!'
 });
 
-const createReminderCelebration = () => ({
+const createReminderCelebration = (content = getReminderNotificationContent()) => ({
   icon: '⏰',
-  title: '행복 찾을 시간이에요!',
-  message: '오늘도 행복한 하루!! 작은 행복 하나를 찾아볼까요?'
+  title: content.title,
+  message: content.body
 });
 
 const initialItemCountMap = initialItems.reduce((acc, item) => {
@@ -724,6 +755,15 @@ const shouldResetAuthSession = (error) => {
     || normalizedCode.includes('user_not_found')
   );
 };
+
+const isLegacyDefaultReminder = (reminder) => (
+  isRecord(reminder)
+  && reminder.time === '20:00'
+  && (
+    reminder.id === 'default-reminder'
+    || reminder.id === 'legacy-reminder'
+  )
+);
 
 const isRecoverableAuthFetchError = (error) => {
   const rawMessage = typeof error?.message === 'string' ? error.message.trim() : '';
@@ -888,19 +928,31 @@ const normalizeReminderSettings = (value) => {
   }
 
   if (!Array.isArray(value.reminders)) {
+    const normalizedLegacyReminder = normalizeReminderItem({
+      id: 'legacy-reminder',
+      time: value.time,
+      lastTriggeredDate: value.lastTriggeredDate
+    }, 'legacy-reminder');
+
+    if (isLegacyDefaultReminder(normalizedLegacyReminder)) {
+      return createDefaultReminderSettings(Boolean(value.enabled));
+    }
+
     return {
       enabled: Boolean(value.enabled),
-      reminders: [normalizeReminderItem({
-        id: 'legacy-reminder',
-        time: value.time,
-        lastTriggeredDate: value.lastTriggeredDate
-      }, 'legacy-reminder')]
+      reminders: [normalizedLegacyReminder]
     };
+  }
+
+  const normalizedReminders = value.reminders.map((reminder, index) => normalizeReminderItem(reminder, `reminder-${index + 1}`));
+
+  if (normalizedReminders.length === 1 && isLegacyDefaultReminder(normalizedReminders[0])) {
+    return createDefaultReminderSettings(Boolean(value.enabled));
   }
 
   return {
     enabled: Boolean(value.enabled),
-    reminders: value.reminders.map((reminder, index) => normalizeReminderItem(reminder, `reminder-${index + 1}`))
+    reminders: normalizedReminders
   };
 };
 
@@ -1003,6 +1055,7 @@ export const HappyProvider = ({ children }) => {
     const savedReminder = readStoredJson('happy_reminder', defaultReminderSettings);
     return normalizeReminderSettings(savedReminder);
   });
+  const [reminderDayKey, setReminderDayKey] = useState(() => getLocalDateKey());
 
   const [notificationPermission, setNotificationPermission] = useState(() => {
     if (isNativeNotificationPlatform()) {
@@ -1017,6 +1070,9 @@ export const HappyProvider = ({ children }) => {
   });
   const [exactAlarmPermission, setExactAlarmPermission] = useState(() => (
     isNativeAndroidNotificationPlatform() ? 'default' : 'unsupported'
+  ));
+  const [hasLoadedInitialNotificationPermission, setHasLoadedInitialNotificationPermission] = useState(() => (
+    !isNativeNotificationPlatform()
   ));
   const pendingReminderEnableRef = useRef(false);
   const hasPromptedExactAlarmSettingsRef = useRef(false);
@@ -1043,6 +1099,27 @@ export const HappyProvider = ({ children }) => {
   const lastHandledNativeAuthCallbackRef = useRef(readLastHandledNativeAuthCallback());
   const effectiveAuthUser = reviewAuthUser || authUser;
   const isReviewAuthUser = Boolean(reviewAuthUser);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    let timeoutId;
+
+    const scheduleReminderDayRefresh = () => {
+      timeoutId = window.setTimeout(() => {
+        setReminderDayKey(getLocalDateKey());
+        scheduleReminderDayRefresh();
+      }, getMillisecondsUntilNextMidnight() + 100);
+    };
+
+    scheduleReminderDayRefresh();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
 
   const startReviewAdminSession = (user = createReviewAdminUser()) => {
     setReviewAuthUser(user);
@@ -1357,6 +1434,7 @@ export const HappyProvider = ({ children }) => {
       if (isMounted) {
         setNotificationPermission(permission);
         setExactAlarmPermission(exactAlarm);
+        setHasLoadedInitialNotificationPermission(true);
       }
     };
 
@@ -1366,6 +1444,36 @@ export const HappyProvider = ({ children }) => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      !isNativeNotificationPlatform()
+      || !hasLoadedInitialNotificationPermission
+      || notificationPermission !== 'default'
+      || typeof window === 'undefined'
+      || window.localStorage.getItem(INITIAL_NOTIFICATION_PERMISSION_PROMPTED_STORAGE_KEY) === 'true'
+    ) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const promptInitialNotificationPermission = async () => {
+      window.localStorage.setItem(INITIAL_NOTIFICATION_PERMISSION_PROMPTED_STORAGE_KEY, 'true');
+
+      const permission = await requestNativeNotificationPermission();
+
+      if (isMounted) {
+        setNotificationPermission(permission);
+      }
+    };
+
+    void promptInitialNotificationPermission();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hasLoadedInitialNotificationPermission, notificationPermission]);
 
   useEffect(() => {
     if (!supabase) {
@@ -1866,7 +1974,7 @@ export const HappyProvider = ({ children }) => {
     let isMounted = true;
 
     const syncReminders = async () => {
-      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled);
+      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled, globalStreak);
       const [permission, exactAlarm] = await Promise.all([
         checkNativeNotificationPermission(),
         checkNativeExactAlarmPermission()
@@ -1891,7 +1999,7 @@ export const HappyProvider = ({ children }) => {
     return () => {
       isMounted = false;
     };
-  }, [reminderSettings.enabled, reminderSettings.reminders]);
+  }, [globalStreak, reminderDayKey, reminderSettings.enabled, reminderSettings.reminders]);
 
   useEffect(() => {
     if (!isNativeNotificationPlatform()) {
@@ -1902,7 +2010,7 @@ export const HappyProvider = ({ children }) => {
     let appStateListener;
 
     const refreshNativeReminderState = async () => {
-      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled);
+      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled, globalStreak);
       const [permission, exactAlarm] = await Promise.all([
         checkNativeNotificationPermission(),
         checkNativeExactAlarmPermission()
@@ -1968,7 +2076,7 @@ export const HappyProvider = ({ children }) => {
         void appStateListener.remove();
       }
     };
-  }, [reminderSettings.enabled, reminderSettings.reminders]);
+  }, [globalStreak, reminderSettings.enabled, reminderSettings.reminders]);
 
   useEffect(() => {
     if (isNativeNotificationPlatform()) {
@@ -1991,11 +2099,13 @@ export const HappyProvider = ({ children }) => {
         return;
       }
 
-      setCelebrationQueue(prev => [...prev, createReminderCelebration()]);
+      const reminderContent = getReminderNotificationContent(globalStreak, now);
+
+      setCelebrationQueue(prev => [...prev, createReminderCelebration(reminderContent)]);
 
       if ('Notification' in window && window.Notification.permission === 'granted') {
-        new window.Notification('행복 찾을 시간이에요!', {
-          body: '오늘도 행복한 하루!! 작은 행복 하나를 찾아볼까요?'
+        new window.Notification(reminderContent.title, {
+          body: reminderContent.body
         });
       }
 
@@ -2015,7 +2125,7 @@ export const HappyProvider = ({ children }) => {
     return () => {
       window.clearInterval(reminderInterval);
     };
-  }, [reminderSettings.enabled, reminderSettings.reminders]);
+  }, [globalStreak, reminderSettings.enabled, reminderSettings.reminders]);
 
   const addStamp = (itemId) => {
     const today = new Date();
@@ -3439,7 +3549,7 @@ export const HappyProvider = ({ children }) => {
         || pendingReminderEnableRef.current
       )
     ) {
-      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled);
+      await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled, globalStreak);
     }
 
     return permission;

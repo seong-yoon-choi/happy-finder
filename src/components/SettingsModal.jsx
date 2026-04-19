@@ -6,7 +6,7 @@ import { openExternalUrl } from '../lib/externalBrowser';
 import { SUPPORT_PATH, getPasswordResetWebUrl, getPublicWebUrl } from '../lib/routes';
 import './SettingsModal.css';
 
-const DEFAULT_REMINDER_TIME = '20:00';
+const DEFAULT_REMINDER_TIME = '12:00';
 
 const PERIOD_OPTIONS = [
   { value: 'AM', label: '오전' },
@@ -24,14 +24,14 @@ const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) => {
 });
 
 const parseReminderTime = (timeValue) => {
-  const [rawHour = '20', rawMinute = '00'] = String(timeValue || DEFAULT_REMINDER_TIME).split(':');
+  const [rawHour = '12', rawMinute = '00'] = String(timeValue || DEFAULT_REMINDER_TIME).split(':');
   const hour24 = Number(rawHour);
   const minute = Number(rawMinute);
 
   if (!Number.isFinite(hour24) || !Number.isFinite(minute)) {
     return {
       period: 'PM',
-      hour: '08',
+      hour: '12',
       minute: '00'
     };
   }
@@ -64,13 +64,13 @@ const formatReminderTimeLabel = (timeValue) => {
 };
 
 const getNextReminderTrigger = (timeValue, now = new Date()) => {
-  const [rawHour = '20', rawMinute = '00'] = String(timeValue || DEFAULT_REMINDER_TIME).split(':');
+  const [rawHour = '12', rawMinute = '00'] = String(timeValue || DEFAULT_REMINDER_TIME).split(':');
   const hour = Number(rawHour);
   const minute = Number(rawMinute);
   const nextTrigger = new Date(now);
 
   nextTrigger.setHours(
-    Number.isFinite(hour) ? hour : 20,
+    Number.isFinite(hour) ? hour : 12,
     Number.isFinite(minute) ? minute : 0,
     0,
     0

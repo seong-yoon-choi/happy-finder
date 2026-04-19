@@ -164,8 +164,11 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     type: 'idle',
     message: ''
   });
-  const [hasReportedCurrentItem, setHasReportedCurrentItem] = useState(false);
-  const [isCheckingReportStatus, setIsCheckingReportStatus] = useState(false);
+  const [reportStatus, setReportStatus] = useState({
+    key: '',
+    hasReported: false,
+    isLoading: false
+  });
   const [deleteFeedback, setDeleteFeedback] = useState('');
   const [isDeletingItem, setIsDeletingItem] = useState(false);
 
@@ -191,12 +194,18 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   }, []);
 
   const currentItem = item ? items.find(existingItem => existingItem.id === item.id) || item : null;
+  const currentItemId = currentItem?.id ?? '';
+  const reportStatusKey = authUser?.id && currentItemId ? `${authUser.id}:${currentItemId}` : '';
   const stampData = currentItem ? userStamps[currentItem.id] : null;
   const alreadyStampedCount = stampData ? (typeof stampData === 'number' ? stampData : stampData.count) : 0;
   const isOwner = currentItem ? isItemOwnedByCurrentUser(currentItem.id) : false;
   const itemMemos = currentItem ? getItemMemos(currentItem.id) : [];
   const canReportItem = Boolean(currentItem?.isCloudBacked === true);
   const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
+  const shouldCheckReportStatus = Boolean(isOpen && canReportItem && reportStatusKey);
+  const hasReportStatusForCurrentItem = reportStatus.key === reportStatusKey;
+  const hasReportedCurrentItem = shouldCheckReportStatus && hasReportStatusForCurrentItem && reportStatus.hasReported;
+  const isCheckingReportStatus = shouldCheckReportStatus && (!hasReportStatusForCurrentItem || reportStatus.isLoading);
   const isReportTriggerDisabled = isCheckingReportStatus || hasReportedCurrentItem;
 
   const todayKey = getLocalDateKey();
@@ -289,8 +298,11 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
       type: 'idle',
       message: ''
     });
-    setHasReportedCurrentItem(false);
-    setIsCheckingReportStatus(false);
+    setReportStatus({
+      key: '',
+      hasReported: false,
+      isLoading: false
+    });
     setDeleteFeedback('');
     setIsDeletingItem(false);
     startTimeRef.current = null;
@@ -550,7 +562,11 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setIsReportDialogOpen(false);
     setSelectedReportReasons([]);
     setReportOtherReason('');
-    setHasReportedCurrentItem(true);
+    setReportStatus({
+      key: reportStatusKey,
+      hasReported: true,
+      isLoading: false
+    });
     setReportFeedback({
       type: 'success',
       message: getReportSuccessMessage(result?.duplicate === true)
@@ -558,28 +574,40 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   };
 
   useEffect(() => {
-    if (!isOpen || !currentItem?.id || !canReportItem || !authUser?.id) {
-      setHasReportedCurrentItem(false);
-      setIsCheckingReportStatus(false);
+    if (!shouldCheckReportStatus) {
       return;
     }
 
     let isMounted = true;
-
-    setIsCheckingReportStatus(true);
+    const itemId = currentItemId;
+    const reporterUserId = authUser.id;
+    const nextReportStatusKey = reportStatusKey;
 
     const loadExistingReport = async () => {
+      setReportStatus(prev => (
+        prev.key === nextReportStatusKey && prev.isLoading
+          ? prev
+          : {
+              key: nextReportStatusKey,
+              hasReported: false,
+              isLoading: true
+            }
+      ));
+
       const result = await hasExistingHappinessItemReport({
-        itemId: currentItem.id,
-        reporterUserId: authUser.id
+        itemId,
+        reporterUserId
       });
 
       if (!isMounted) {
         return;
       }
 
-      setHasReportedCurrentItem(result?.success === true && result?.hasReported === true);
-      setIsCheckingReportStatus(false);
+      setReportStatus({
+        key: nextReportStatusKey,
+        hasReported: result?.success === true && result?.hasReported === true,
+        isLoading: false
+      });
     };
 
     void loadExistingReport();
@@ -587,7 +615,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     return () => {
       isMounted = false;
     };
-  }, [authUser?.id, canReportItem, currentItem?.id, isOpen]);
+  }, [authUser?.id, currentItemId, reportStatusKey, shouldCheckReportStatus]);
 
   if (!isOpen || !currentItem) {
     return null;

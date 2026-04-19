@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { listMyInquiries } from '../lib/myInquiries';
 import { useHappy } from '../store/HappyContext';
 import './InquiryHistorySection.css';
@@ -89,7 +89,7 @@ const InquiryHistorySection = ({ variant = 'profile' }) => {
     return authUser.id.trim();
   }, [authUser?.id]);
 
-  const loadInquiries = async () => {
+  const loadInquiries = useCallback(async () => {
     if (!authUser || !accountUserId || isReviewAuthUser) {
       setInquiries([]);
       setStatus(emptyStatus);
@@ -110,15 +110,15 @@ const InquiryHistorySection = ({ variant = 'profile' }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accountUserId, authUser, isReviewAuthUser]);
 
   useEffect(() => {
     if (isAuthLoading) {
       return;
     }
 
-    loadInquiries();
-  }, [accountUserId, authUser, isAuthLoading, isReviewAuthUser]);
+    void loadInquiries();
+  }, [isAuthLoading, loadInquiries]);
 
   useEffect(() => {
     setOpenInquiryIds(prev => prev.filter(id => inquiries.some(inquiry => inquiry.id === id)));
