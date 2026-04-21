@@ -133,7 +133,7 @@ export const openNativeExactAlarmSettings = async () => {
 };
 
 export const openNativeNotificationSettings = async () => {
-  if (!isNativeAndroidNotificationPlatform()) {
+  if (!isNativeNotificationPlatform()) {
     return false;
   }
 

@@ -3564,7 +3564,7 @@ export const HappyProvider = ({ children }) => {
       currentPermission = await requestNotificationPermission();
 
       if (currentPermission !== 'granted') {
-        if ((wasDenied || currentPermission === 'denied') && isNativeAndroidNotificationPlatform()) {
+        if (wasDenied || currentPermission === 'denied') {
           pendingReminderEnableRef.current = true;
           await openNativeNotificationSettings();
         }

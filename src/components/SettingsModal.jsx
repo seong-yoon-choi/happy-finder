@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
-import { isNativeAndroidNotificationPlatform, isNativeNotificationPlatform } from '../lib/localNotifications';
+import {
+  isNativeAndroidNotificationPlatform,
+  isNativeNotificationPlatform,
+  openNativeNotificationSettings
+} from '../lib/localNotifications';
 import { useHappy } from '../store/HappyContext';
 import { openExternalUrl } from '../lib/externalBrowser';
 import { SUPPORT_PATH, getPasswordResetWebUrl, getPublicWebUrl } from '../lib/routes';
@@ -258,7 +262,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
       }
 
       if (notificationPermission === 'denied') {
-        return '이미 알림을 거절했다면, 다시 켤 때 앱 알림 설정 화면으로 이동해요.';
+        return '알림이 꺼져 있어요. 앱 설정에서 다시 허용하면 바로 사용할 수 있어요.';
       }
 
       return '알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';
@@ -435,6 +439,10 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
   const handleOpenExactAlarmSettings = async () => {
     await openExactAlarmSettings();
+  };
+
+  const handleOpenNotificationSettings = async () => {
+    await openNativeNotificationSettings();
   };
 
   return (
@@ -748,6 +756,15 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
           )}
 
           <div className="settings-note">{reminderMessage}</div>
+          {isNativeReminderPlatform && notificationPermission === 'denied' && (
+            <button
+              type="button"
+              className="settings-secondary-btn"
+              onClick={handleOpenNotificationSettings}
+            >
+              앱 알림 설정 열기
+            </button>
+          )}
           {needsExactAlarmAccess && (
             <button
               type="button"

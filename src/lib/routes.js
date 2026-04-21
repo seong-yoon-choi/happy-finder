@@ -25,6 +25,19 @@ const getNativeAuthCallbackBaseUrl = () => {
   }
 };
 
+const getAuthParamsFromUrl = (url) => {
+  const authParams = new URLSearchParams(url.search);
+  const hashParams = new URLSearchParams(
+    url.hash.startsWith('#') ? url.hash.slice(1) : url.hash
+  );
+
+  hashParams.forEach((value, key) => {
+    authParams.set(key, value);
+  });
+
+  return authParams;
+};
+
 export const normalizePath = (value) => {
   if (typeof value !== 'string' || !value.trim()) {
     return '/';
@@ -114,7 +127,15 @@ export const getNativeAuthCallbackPathFromUrl = (urlString) => {
       return null;
     }
 
-    return normalizePath(url.pathname);
+    const normalizedCallbackPath = normalizePath(callbackBaseUrl.pathname);
+    const normalizedIncomingPath = normalizePath(url.pathname);
+
+    if (normalizedIncomingPath !== normalizedCallbackPath) {
+      return normalizedIncomingPath;
+    }
+
+    const authParams = getAuthParamsFromUrl(url);
+    return authParams.get('type') === 'recovery' ? PASSWORD_RESET_PATH : APP_PATH;
   } catch {
     return null;
   }
@@ -140,11 +161,7 @@ export const getAppRedirectUrl = (pathname = APP_PATH) => {
   const callbackBaseUrl = getNativeAuthCallbackBaseUrl();
 
   if (callbackBaseUrl) {
-    const url = new URL(callbackBaseUrl.toString());
-    url.pathname = normalizedTargetPath;
-    url.search = '';
-    url.hash = '';
-    return url.toString();
+    return callbackBaseUrl.toString();
   }
 
   return `${window.location.origin}${normalizedTargetPath}`;
