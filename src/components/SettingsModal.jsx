@@ -232,11 +232,9 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     marketingConsent,
     updateMarketingConsent,
     reminderSettings,
-    notificationPreferences,
     notificationPermission,
     exactAlarmPermission,
     toggleReminder,
-    toggleInAppReminderNotifications,
     addReminder,
     updateReminder,
     deleteReminder,
@@ -265,7 +263,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const isNativeReminderPlatform = isNativeNotificationPlatform();
   const isNativeAndroidReminderPlatform = isNativeAndroidNotificationPlatform();
   const isScheduledReminderEnabled = reminderSettings.enabled;
-  const isInAppReminderEnabled = notificationPreferences.inAppReminders;
   const needsExactAlarmAccess = (
     isNativeAndroidReminderPlatform
     && isScheduledReminderEnabled
@@ -276,59 +273,39 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const reminderMessage = (() => {
     if (isScheduledReminderEnabled && isNativeReminderPlatform) {
       if (needsExactAlarmAccess) {
-        return isInAppReminderEnabled
-          ? '시스템 알림과 앱 안 알림이 함께 켜져 있어요. 더 정확한 시각에 받으려면 알람 및 리마인더 권한을 허용해주세요.'
-          : '알림은 계속 받을 수 있고, 정확한 시각에 더 가깝게 받으려면 알람 및 리마인더 권한을 허용해주세요.';
+        return '알림은 계속 받을 수 있고, 정확한 시각에 더 가깝게 받으려면 알람 및 리마인더 권한을 허용해주세요.';
       }
 
       if (notificationPermission === 'granted') {
-        return isInAppReminderEnabled
-          ? '설정한 시간마다 시스템 알림을 보내고, 앱이 열려 있으면 앱 안 알림도 함께 보여줘요.'
-          : '설정한 시간마다 시스템 알림을 보내요.';
+        return '설정한 시간마다 시스템 알림을 보내요.';
       }
 
       if (notificationPermission === 'denied') {
-        return isInAppReminderEnabled
-          ? '시스템 알림은 꺼져 있지만 앱이 열려 있으면 앱 안 알림은 계속 보여줘요.'
-          : '알림이 꺼져 있어요. 앱 설정에서 다시 허용하면 바로 사용할 수 있어요.';
+        return '알림이 꺼져 있어요. 앱 설정에서 다시 허용하면 바로 사용할 수 있어요.';
       }
 
-      return isInAppReminderEnabled
-        ? '시간 알림과 앱 안 알림이 함께 준비돼 있어요. 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.'
-        : '시간 알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';
+      return '시간 알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';
     }
 
     if (isScheduledReminderEnabled && notificationPermission === 'granted') {
-      return isInAppReminderEnabled
-        ? '설정한 시간마다 브라우저 알림과 앱 안 알림을 함께 보여줘요.'
-        : '설정한 시간마다 브라우저 알림을 보내요.';
+      return '설정한 시간마다 브라우저 알림을 보내요.';
     }
 
     if (isScheduledReminderEnabled && notificationPermission === 'unsupported') {
-      return isInAppReminderEnabled
-        ? '현재 환경에서는 시스템 알림이 지원되지 않아 앱 안 알림으로만 알려드려요.'
-        : '현재 환경에서는 시스템 알림이 지원되지 않아요.';
+      return '현재 환경에서는 시스템 알림이 지원되지 않아요.';
     }
 
     if (isScheduledReminderEnabled && notificationPermission === 'denied') {
-      return isInAppReminderEnabled
-        ? '브라우저 알림은 차단돼 있지만 앱이 열려 있으면 앱 안 알림은 계속 보여줘요.'
-        : '브라우저 알림이 차단되어 있어요.';
+      return '브라우저 알림이 차단되어 있어요.';
     }
 
     if (isScheduledReminderEnabled) {
-      return isInAppReminderEnabled
-        ? '브라우저 알림을 허용하면 등록한 시간에 브라우저 알림과 앱 안 알림을 함께 받을 수 있어요.'
-        : '브라우저 알림을 허용하면 등록한 시간에 알려드려요.';
+      return '브라우저 알림을 허용하면 등록한 시간에 알려드려요.';
     }
 
-    if (isInAppReminderEnabled) {
-      return '앱이 열려 있으면 등록한 시간에 앱 안 알림으로 알려드려요.';
-    }
-
-    return '오른쪽 위 설정에서 시간 알림과 앱 안 알림을 각각 켤 수 있어요.';
+    return '오른쪽 위 설정에서 마케팅 수신과 시간 알림을 각각 켤 수 있어요.';
   })();
-  const nextReminderPreview = (isScheduledReminderEnabled || isInAppReminderEnabled)
+  const nextReminderPreview = isScheduledReminderEnabled
     ? getNextReminderPreview(reminders)
     : '';
 
@@ -484,11 +461,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     setNotificationSettingsFeedback('');
     const nextEnabled = !reminderSettings.enabled;
     await toggleReminder(nextEnabled);
-  };
-
-  const handleToggleInAppReminder = () => {
-    setNotificationSettingsFeedback('');
-    toggleInAppReminderNotifications(!isInAppReminderEnabled);
   };
 
   const handleToggleMarketingConsent = async () => {
@@ -741,20 +713,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                   onClick={handleToggleReminder}
                 >
                   {isScheduledReminderEnabled ? '켜짐' : '꺼짐'}
-                </button>
-              </div>
-
-              <div className="settings-notification-row">
-                <div className="settings-notification-copy">
-                  <strong>앱 안 알림</strong>
-                  <p>앱이 열려 있을 때만 화면 안에서 바로 알려줘요.</p>
-                </div>
-                <button
-                  type="button"
-                  className={`settings-notification-switch ${isInAppReminderEnabled ? 'active' : ''}`}
-                  onClick={handleToggleInAppReminder}
-                >
-                  {isInAppReminderEnabled ? '켜짐' : '꺼짐'}
                 </button>
               </div>
             </div>

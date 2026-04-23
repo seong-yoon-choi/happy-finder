@@ -65,10 +65,6 @@ const defaultReminderSettings = {
   ]
 };
 
-const defaultNotificationPreferences = {
-  inAppReminders: true
-};
-
 const hasRequiredNativeReminderPermissions = (notificationPermission) => (
   notificationPermission === 'granted'
 );
@@ -84,12 +80,10 @@ const REVIEW_ADMIN_AUTH_STORAGE_KEY = 'happy_review_admin_auth_user';
 const AUTH_SESSION_BACKUP_STORAGE_KEY = 'happy_auth_session_backup';
 const LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY = 'happy_last_native_auth_callback_url';
 const MARKETING_CONSENT_STORAGE_KEY = 'happy_marketing_consent';
-const NOTIFICATION_PREFERENCES_STORAGE_KEY = 'happy_notification_preferences';
 const APP_STORAGE_KEYS = [
   AUTH_SESSION_BACKUP_STORAGE_KEY,
   INITIAL_NOTIFICATION_PERMISSION_PROMPTED_STORAGE_KEY,
   MARKETING_CONSENT_STORAGE_KEY,
-  NOTIFICATION_PREFERENCES_STORAGE_KEY,
   'happy_items',
   'happy_stamps',
   'happy_favorites',
@@ -636,12 +630,6 @@ const createStreakCelebration = (dayCount) => ({
   message: '오늘도 행복한 하루!!'
 });
 
-const createReminderCelebration = (content = getReminderNotificationContent()) => ({
-  icon: '⏰',
-  title: content.title,
-  message: content.body
-});
-
 const initialItemCountMap = initialItems.reduce((acc, item) => {
   acc[item.id] = item.totalEnjoyCount || 0;
   return acc;
@@ -960,16 +948,6 @@ const normalizeReminderSettings = (value) => {
   };
 };
 
-const normalizeNotificationPreferences = (value) => {
-  if (!isRecord(value)) {
-    return defaultNotificationPreferences;
-  }
-
-  return {
-    inAppReminders: value.inAppReminders !== false
-  };
-};
-
 const normalizeGlobalStreak = (value) => {
   if (!isRecord(value)) {
     return { current: 0, lastDate: null };
@@ -1003,8 +981,7 @@ const createCloudSnapshotPayload = ({
   userMemos,
   isDarkMode,
   globalStreak,
-  reminderSettings,
-  notificationPreferences
+  reminderSettings
 }) => ({
   version: 2,
   items,
@@ -1013,8 +990,7 @@ const createCloudSnapshotPayload = ({
   userMemos,
   isDarkMode,
   globalStreak,
-  reminderSettings,
-  notificationPreferences
+  reminderSettings
 });
 
 const normalizeCloudSnapshot = (payload) => {
@@ -1027,8 +1003,7 @@ const normalizeCloudSnapshot = (payload) => {
     userMemos: normalizeMemoMap(payload?.userMemos),
     isDarkMode: Boolean(payload?.isDarkMode),
     globalStreak: normalizeGlobalStreak(payload?.globalStreak),
-    reminderSettings: normalizeReminderSettings(payload?.reminderSettings),
-    notificationPreferences: normalizeNotificationPreferences(payload?.notificationPreferences)
+    reminderSettings: normalizeReminderSettings(payload?.reminderSettings)
   };
 };
 
@@ -1071,13 +1046,6 @@ export const HappyProvider = ({ children }) => {
   const [reminderSettings, setReminderSettings] = useState(() => {
     const savedReminder = readStoredJson('happy_reminder', defaultReminderSettings);
     return normalizeReminderSettings(savedReminder);
-  });
-  const [notificationPreferences, setNotificationPreferences] = useState(() => {
-    const savedPreferences = readStoredJson(
-      NOTIFICATION_PREFERENCES_STORAGE_KEY,
-      defaultNotificationPreferences
-    );
-    return normalizeNotificationPreferences(savedPreferences);
   });
   const [marketingConsent, setMarketingConsent] = useState(() => (
     Boolean(readStoredJson(MARKETING_CONSENT_STORAGE_KEY, false))
@@ -1710,10 +1678,9 @@ export const HappyProvider = ({ children }) => {
       userMemos,
       isDarkMode,
       globalStreak,
-      reminderSettings,
-      notificationPreferences
+      reminderSettings
     };
-  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings, notificationPreferences]);
+  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
 
   const syncRemoteCatalogItems = useEffectEvent(async () => {
     if (!supabase) {
@@ -1755,7 +1722,6 @@ export const HappyProvider = ({ children }) => {
     setIsDarkMode(snapshot.isDarkMode);
     setGlobalStreak(snapshot.globalStreak);
     setReminderSettings(snapshot.reminderSettings);
-    setNotificationPreferences(snapshot.notificationPreferences);
   };
 
   useEffect(() => {
@@ -1764,7 +1730,7 @@ export const HappyProvider = ({ children }) => {
     }
 
     isApplyingCloudSnapshotRef.current = false;
-  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings, notificationPreferences]);
+  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id) {
@@ -1946,13 +1912,6 @@ export const HappyProvider = ({ children }) => {
   }, [reminderSettings]);
 
   useEffect(() => {
-    localStorage.setItem(
-      NOTIFICATION_PREFERENCES_STORAGE_KEY,
-      JSON.stringify(notificationPreferences)
-    );
-  }, [notificationPreferences]);
-
-  useEffect(() => {
     localStorage.setItem(MARKETING_CONSENT_STORAGE_KEY, JSON.stringify(marketingConsent));
   }, [marketingConsent]);
 
@@ -1975,8 +1934,7 @@ export const HappyProvider = ({ children }) => {
         userMemos,
         isDarkMode,
         globalStreak,
-        reminderSettings,
-        notificationPreferences
+        reminderSettings
       });
 
       const { error } = await supabase
@@ -2012,7 +1970,7 @@ export const HappyProvider = ({ children }) => {
         cloudSyncTimeoutRef.current = null;
       }
     };
-  }, [authUser?.id, items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings, notificationPreferences]);
+  }, [authUser?.id, items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!isNativeNotificationPlatform()) {
@@ -2108,18 +2066,13 @@ export const HappyProvider = ({ children }) => {
   }, [globalStreak, reminderSettings.enabled, reminderSettings.reminders]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || reminderSettings.reminders.length === 0) {
-      return undefined;
-    }
-
-    const canShowInAppReminder = notificationPreferences.inAppReminders;
-    const canShowBrowserReminder = (
-      !isNativeNotificationPlatform()
-      && reminderSettings.enabled
-      && notificationPermission === 'granted'
-    );
-
-    if (!canShowInAppReminder && !canShowBrowserReminder) {
+    if (
+      typeof window === 'undefined'
+      || !reminderSettings.enabled
+      || reminderSettings.reminders.length === 0
+      || notificationPermission !== 'granted'
+      || isNativeNotificationPlatform()
+    ) {
       return undefined;
     }
 
@@ -2136,23 +2089,9 @@ export const HappyProvider = ({ children }) => {
       }
 
       const reminderContent = getReminderNotificationContent(globalStreak, now);
-      let hasDeliveredReminder = false;
-
-      if (canShowInAppReminder) {
-        setCelebrationQueue(prev => [...prev, createReminderCelebration(reminderContent)]);
-        hasDeliveredReminder = true;
-      }
-
-      if (canShowBrowserReminder) {
-        new window.Notification(reminderContent.title, {
-          body: reminderContent.body
-        });
-        hasDeliveredReminder = true;
-      }
-
-      if (!hasDeliveredReminder) {
-        return;
-      }
+      new window.Notification(reminderContent.title, {
+        body: reminderContent.body
+      });
 
       setReminderSettings(prev => ({
         ...prev,
@@ -2173,7 +2112,6 @@ export const HappyProvider = ({ children }) => {
   }, [
     globalStreak,
     notificationPermission,
-    notificationPreferences.inAppReminders,
     reminderSettings.enabled,
     reminderSettings.reminders
   ]);
@@ -2606,7 +2544,6 @@ export const HappyProvider = ({ children }) => {
     setIsDarkMode(false);
     setGlobalStreak({ current: 0, lastDate: null });
     setReminderSettings(defaultReminderSettings);
-    setNotificationPreferences(defaultNotificationPreferences);
     setMarketingConsent(false);
     setCelebrationQueue([]);
     setCloudSyncStatus(defaultCloudSyncStatus);
@@ -3625,13 +3562,6 @@ export const HappyProvider = ({ children }) => {
     }));
   };
 
-  const toggleInAppReminderNotifications = (enabled) => {
-    setNotificationPreferences(prev => ({
-      ...prev,
-      inAppReminders: Boolean(enabled)
-    }));
-  };
-
   const requestNotificationPermission = async () => {
     if (isNativeNotificationPlatform()) {
       const permission = await requestNativeNotificationPermission();
@@ -3760,11 +3690,9 @@ export const HappyProvider = ({ children }) => {
       updateMarketingConsent,
       globalStreak,
       reminderSettings,
-      notificationPreferences,
       notificationPermission,
       exactAlarmPermission,
       toggleReminder,
-      toggleInAppReminderNotifications,
       addReminder,
       updateReminder,
       deleteReminder,
