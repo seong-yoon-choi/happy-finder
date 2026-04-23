@@ -212,14 +212,31 @@ const PlusIcon = () => (
   </svg>
 );
 
+const GearIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" focusable="false" aria-hidden="true">
+    <path
+      d="M19.14 12.94C19.18 12.63 19.2 12.32 19.2 12C19.2 11.68 19.18 11.37 19.14 11.06L21.17 9.48C21.29 9.39 21.33 9.22 21.25 9.08L19.33 5.76C19.25 5.62 19.08 5.56 18.94 5.62L16.55 6.58C16.05 6.18 15.5 5.87 14.92 5.64L14.56 3.1C14.54 2.95 14.41 2.84 14.26 2.84H10.42C10.27 2.84 10.14 2.95 10.12 3.1L9.76 5.64C9.18 5.87 8.63 6.18 8.13 6.58L5.74 5.62C5.6 5.56 5.43 5.62 5.35 5.76L3.43 9.08C3.35 9.22 3.39 9.39 3.51 9.48L5.54 11.06C5.5 11.37 5.48 11.68 5.48 12C5.48 12.32 5.5 12.63 5.54 12.94L3.51 14.52C3.39 14.61 3.35 14.78 3.43 14.92L5.35 18.24C5.43 18.38 5.6 18.44 5.74 18.38L8.13 17.42C8.63 17.82 9.18 18.13 9.76 18.36L10.12 20.9C10.14 21.05 10.27 21.16 10.42 21.16H14.26C14.41 21.16 14.54 21.05 14.56 20.9L14.92 18.36C15.5 18.13 16.05 17.82 16.55 17.42L18.94 18.38C19.08 18.44 19.25 18.38 19.33 18.24L21.25 14.92C21.33 14.78 21.29 14.61 21.17 14.52L19.14 12.94Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12.34" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+);
+
 const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNicknameEditor }) => {
   const {
     isDarkMode,
     toggleTheme,
+    marketingConsent,
+    updateMarketingConsent,
     reminderSettings,
+    notificationPreferences,
     notificationPermission,
     exactAlarmPermission,
     toggleReminder,
+    toggleInAppReminderNotifications,
     addReminder,
     updateReminder,
     deleteReminder,
@@ -241,48 +258,77 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
+  const [isNotificationOptionsOpen, setIsNotificationOptionsOpen] = useState(false);
+  const [notificationSettingsFeedback, setNotificationSettingsFeedback] = useState('');
 
   const reminders = reminderSettings.reminders || [];
   const isNativeReminderPlatform = isNativeNotificationPlatform();
   const isNativeAndroidReminderPlatform = isNativeAndroidNotificationPlatform();
+  const isScheduledReminderEnabled = reminderSettings.enabled;
+  const isInAppReminderEnabled = notificationPreferences.inAppReminders;
   const needsExactAlarmAccess = (
     isNativeAndroidReminderPlatform
+    && isScheduledReminderEnabled
     && notificationPermission === 'granted'
     && exactAlarmPermission !== 'granted'
   );
 
   const reminderMessage = (() => {
-    if (isNativeReminderPlatform) {
+    if (isScheduledReminderEnabled && isNativeReminderPlatform) {
       if (needsExactAlarmAccess) {
-        return '정시에 알림을 받으려면 알람 및 리마인더 권한도 허용해야 해요.';
+        return isInAppReminderEnabled
+          ? '시스템 알림과 앱 안 알림이 함께 켜져 있어요. 더 정확한 시각에 받으려면 알람 및 리마인더 권한을 허용해주세요.'
+          : '알림은 계속 받을 수 있고, 정확한 시각에 더 가깝게 받으려면 알람 및 리마인더 권한을 허용해주세요.';
       }
 
       if (notificationPermission === 'granted') {
-        return '설정한 시간마다 시스템 알림을 보내요.';
+        return isInAppReminderEnabled
+          ? '설정한 시간마다 시스템 알림을 보내고, 앱이 열려 있으면 앱 안 알림도 함께 보여줘요.'
+          : '설정한 시간마다 시스템 알림을 보내요.';
       }
 
       if (notificationPermission === 'denied') {
-        return '알림이 꺼져 있어요. 앱 설정에서 다시 허용하면 바로 사용할 수 있어요.';
+        return isInAppReminderEnabled
+          ? '시스템 알림은 꺼져 있지만 앱이 열려 있으면 앱 안 알림은 계속 보여줘요.'
+          : '알림이 꺼져 있어요. 앱 설정에서 다시 허용하면 바로 사용할 수 있어요.';
       }
 
-      return '알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';
+      return isInAppReminderEnabled
+        ? '시간 알림과 앱 안 알림이 함께 준비돼 있어요. 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.'
+        : '시간 알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';
     }
 
-    if (notificationPermission === 'granted') {
-      return '설정한 시간마다 브라우저 알림을 보내고, 앱이 열려 있으면 앱 안 알림도 함께 보여줘요.';
+    if (isScheduledReminderEnabled && notificationPermission === 'granted') {
+      return isInAppReminderEnabled
+        ? '설정한 시간마다 브라우저 알림과 앱 안 알림을 함께 보여줘요.'
+        : '설정한 시간마다 브라우저 알림을 보내요.';
     }
 
-    if (notificationPermission === 'unsupported') {
-      return '현재 환경에서는 시스템 알림이 지원되지 않아요. 앱이 열려 있으면 앱 안 알림으로 알려드려요.';
+    if (isScheduledReminderEnabled && notificationPermission === 'unsupported') {
+      return isInAppReminderEnabled
+        ? '현재 환경에서는 시스템 알림이 지원되지 않아 앱 안 알림으로만 알려드려요.'
+        : '현재 환경에서는 시스템 알림이 지원되지 않아요.';
     }
 
-    if (notificationPermission === 'denied') {
-      return '브라우저 알림이 차단되어 있어요. 앱이 열려 있으면 앱 안 알림으로 계속 알려드려요.';
+    if (isScheduledReminderEnabled && notificationPermission === 'denied') {
+      return isInAppReminderEnabled
+        ? '브라우저 알림은 차단돼 있지만 앱이 열려 있으면 앱 안 알림은 계속 보여줘요.'
+        : '브라우저 알림이 차단되어 있어요.';
     }
 
-    return '브라우저 알림을 허용하면 시스템 알림까지 받을 수 있어요. 앱이 열려 있으면 앱 안 알림은 그대로 동작해요.';
+    if (isScheduledReminderEnabled) {
+      return isInAppReminderEnabled
+        ? '브라우저 알림을 허용하면 등록한 시간에 브라우저 알림과 앱 안 알림을 함께 받을 수 있어요.'
+        : '브라우저 알림을 허용하면 등록한 시간에 알려드려요.';
+    }
+
+    if (isInAppReminderEnabled) {
+      return '앱이 열려 있으면 등록한 시간에 앱 안 알림으로 알려드려요.';
+    }
+
+    return '오른쪽 위 설정에서 시간 알림과 앱 안 알림을 각각 켤 수 있어요.';
   })();
-  const nextReminderPreview = reminderSettings.enabled
+  const nextReminderPreview = (isScheduledReminderEnabled || isInAppReminderEnabled)
     ? getNextReminderPreview(reminders)
     : '';
 
@@ -311,6 +357,8 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     resetAccountDangerState();
     resetReminderEditor();
     setIsAccountActionsOpen(false);
+    setIsNotificationOptionsOpen(false);
+    setNotificationSettingsFeedback('');
   };
 
   const handleClose = () => {
@@ -433,8 +481,23 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   };
 
   const handleToggleReminder = async () => {
+    setNotificationSettingsFeedback('');
     const nextEnabled = !reminderSettings.enabled;
     await toggleReminder(nextEnabled);
+  };
+
+  const handleToggleInAppReminder = () => {
+    setNotificationSettingsFeedback('');
+    toggleInAppReminderNotifications(!isInAppReminderEnabled);
+  };
+
+  const handleToggleMarketingConsent = async () => {
+    setNotificationSettingsFeedback('');
+    const result = await updateMarketingConsent(!marketingConsent);
+
+    if (!result?.success) {
+      setNotificationSettingsFeedback(result?.error || '마케팅 수신 설정을 변경하지 못했어요.');
+    }
   };
 
   const handleOpenExactAlarmSettings = async () => {
@@ -623,18 +686,87 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
         </div>
 
         <div className="settings-section">
-          <div className="settings-section-copy">
-            <h3>행복 알림</h3>
-            <p>여러 시간대를 등록해서 하루에 여러 번 행복 알림을 받을 수 있어요.</p>
+          <div className="settings-section-copy settings-section-copy-row">
+            <div className="settings-section-copy-main">
+              <h3>행복 알림</h3>
+              <p>여러 시간대를 등록해서 하루에 여러 번 행복 알림을 받을 수 있어요.</p>
+            </div>
+            <button
+              type="button"
+              className={`settings-account-toggle settings-notification-trigger ${isNotificationOptionsOpen ? 'open' : ''}`}
+              onClick={() => {
+                setNotificationSettingsFeedback('');
+                setIsNotificationOptionsOpen(prev => !prev);
+              }}
+              aria-expanded={isNotificationOptionsOpen}
+              aria-label="알림 종류 설정 열기"
+            >
+              <GearIcon />
+            </button>
           </div>
+
+          {isNotificationOptionsOpen && (
+            <div className="settings-notification-panel">
+              <div className="settings-notification-row">
+                <div className="settings-notification-copy">
+                  <strong>마케팅 수신</strong>
+                  <p>
+                    {authUser
+                      ? '새 소식, 추천, 이벤트 안내를 받아요.'
+                      : '로그인하면 계정에 저장되고, 지금은 이 기기에서만 적용돼요.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={`settings-notification-switch ${marketingConsent ? 'active' : ''}`}
+                  onClick={handleToggleMarketingConsent}
+                  disabled={isAuthBusy}
+                >
+                  {marketingConsent ? '켜짐' : '꺼짐'}
+                </button>
+              </div>
+
+              <div className="settings-notification-row">
+                <div className="settings-notification-copy">
+                  <strong>시간 알림</strong>
+                  <p>
+                    {isNativeReminderPlatform
+                      ? '등록한 시간(예: 12시, 18시)에 시스템 알림을 보내요.'
+                      : '등록한 시간(예: 12시, 18시)에 브라우저 알림을 보내요.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={`settings-notification-switch ${isScheduledReminderEnabled ? 'active' : ''}`}
+                  onClick={handleToggleReminder}
+                >
+                  {isScheduledReminderEnabled ? '켜짐' : '꺼짐'}
+                </button>
+              </div>
+
+              <div className="settings-notification-row">
+                <div className="settings-notification-copy">
+                  <strong>앱 안 알림</strong>
+                  <p>앱이 열려 있을 때만 화면 안에서 바로 알려줘요.</p>
+                </div>
+                <button
+                  type="button"
+                  className={`settings-notification-switch ${isInAppReminderEnabled ? 'active' : ''}`}
+                  onClick={handleToggleInAppReminder}
+                >
+                  {isInAppReminderEnabled ? '켜짐' : '꺼짐'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="settings-reminder-toolbar">
             <button
               type="button"
-              className={`settings-action-btn settings-inline-btn ${reminderSettings.enabled ? 'active' : ''}`}
+              className={`settings-action-btn settings-inline-btn ${isScheduledReminderEnabled ? 'active' : ''}`}
               onClick={handleToggleReminder}
             >
-              {reminderSettings.enabled ? '알림 켜짐' : '알림 꺼짐'}
+              {isScheduledReminderEnabled ? '시간 알림 켜짐' : '시간 알림 꺼짐'}
             </button>
 
             <button
@@ -756,7 +888,10 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
           )}
 
           <div className="settings-note">{reminderMessage}</div>
-          {isNativeReminderPlatform && notificationPermission === 'denied' && (
+          {notificationSettingsFeedback && (
+            <div className="settings-feedback error">{notificationSettingsFeedback}</div>
+          )}
+          {isNativeReminderPlatform && isScheduledReminderEnabled && notificationPermission === 'denied' && (
             <button
               type="button"
               className="settings-secondary-btn"

@@ -65,12 +65,12 @@ const defaultReminderSettings = {
   ]
 };
 
-const hasRequiredNativeReminderPermissions = (notificationPermission, exactAlarmPermission) => (
+const defaultNotificationPreferences = {
+  inAppReminders: true
+};
+
+const hasRequiredNativeReminderPermissions = (notificationPermission) => (
   notificationPermission === 'granted'
-  && (
-    !isNativeAndroidNotificationPlatform()
-    || exactAlarmPermission === 'granted'
-  )
 );
 
 const defaultAuthFeedback = {
@@ -83,9 +83,13 @@ const GUEST_LOCAL_CREATOR_ID_STORAGE_KEY = 'happy_guest_local_creator_id';
 const REVIEW_ADMIN_AUTH_STORAGE_KEY = 'happy_review_admin_auth_user';
 const AUTH_SESSION_BACKUP_STORAGE_KEY = 'happy_auth_session_backup';
 const LAST_NATIVE_AUTH_CALLBACK_STORAGE_KEY = 'happy_last_native_auth_callback_url';
+const MARKETING_CONSENT_STORAGE_KEY = 'happy_marketing_consent';
+const NOTIFICATION_PREFERENCES_STORAGE_KEY = 'happy_notification_preferences';
 const APP_STORAGE_KEYS = [
   AUTH_SESSION_BACKUP_STORAGE_KEY,
   INITIAL_NOTIFICATION_PERMISSION_PROMPTED_STORAGE_KEY,
+  MARKETING_CONSENT_STORAGE_KEY,
+  NOTIFICATION_PREFERENCES_STORAGE_KEY,
   'happy_items',
   'happy_stamps',
   'happy_favorites',
@@ -956,6 +960,16 @@ const normalizeReminderSettings = (value) => {
   };
 };
 
+const normalizeNotificationPreferences = (value) => {
+  if (!isRecord(value)) {
+    return defaultNotificationPreferences;
+  }
+
+  return {
+    inAppReminders: value.inAppReminders !== false
+  };
+};
+
 const normalizeGlobalStreak = (value) => {
   if (!isRecord(value)) {
     return { current: 0, lastDate: null };
@@ -989,16 +1003,18 @@ const createCloudSnapshotPayload = ({
   userMemos,
   isDarkMode,
   globalStreak,
-  reminderSettings
+  reminderSettings,
+  notificationPreferences
 }) => ({
-  version: 1,
+  version: 2,
   items,
   userStamps,
   userFavorites,
   userMemos,
   isDarkMode,
   globalStreak,
-  reminderSettings
+  reminderSettings,
+  notificationPreferences
 });
 
 const normalizeCloudSnapshot = (payload) => {
@@ -1011,7 +1027,8 @@ const normalizeCloudSnapshot = (payload) => {
     userMemos: normalizeMemoMap(payload?.userMemos),
     isDarkMode: Boolean(payload?.isDarkMode),
     globalStreak: normalizeGlobalStreak(payload?.globalStreak),
-    reminderSettings: normalizeReminderSettings(payload?.reminderSettings)
+    reminderSettings: normalizeReminderSettings(payload?.reminderSettings),
+    notificationPreferences: normalizeNotificationPreferences(payload?.notificationPreferences)
   };
 };
 
@@ -1055,6 +1072,16 @@ export const HappyProvider = ({ children }) => {
     const savedReminder = readStoredJson('happy_reminder', defaultReminderSettings);
     return normalizeReminderSettings(savedReminder);
   });
+  const [notificationPreferences, setNotificationPreferences] = useState(() => {
+    const savedPreferences = readStoredJson(
+      NOTIFICATION_PREFERENCES_STORAGE_KEY,
+      defaultNotificationPreferences
+    );
+    return normalizeNotificationPreferences(savedPreferences);
+  });
+  const [marketingConsent, setMarketingConsent] = useState(() => (
+    Boolean(readStoredJson(MARKETING_CONSENT_STORAGE_KEY, false))
+  ));
   const [reminderDayKey, setReminderDayKey] = useState(() => getLocalDateKey());
 
   const [notificationPermission, setNotificationPermission] = useState(() => {
@@ -1075,7 +1102,6 @@ export const HappyProvider = ({ children }) => {
     !isNativeNotificationPlatform()
   ));
   const pendingReminderEnableRef = useRef(false);
-  const hasPromptedExactAlarmSettingsRef = useRef(false);
 
   const [celebrationQueue, setCelebrationQueue] = useState([]);
   const [authSession, setAuthSession] = useState(null);
@@ -1387,6 +1413,14 @@ export const HappyProvider = ({ children }) => {
   }, [authUser]);
 
   useEffect(() => {
+    if (!authUser || isReviewAuthUser) {
+      return;
+    }
+
+    setMarketingConsent(getAuthUserOnboardingState(authUser, authProfileNickname).hasAcceptedMarketing);
+  }, [authProfileNickname, authUser, isReviewAuthUser]);
+
+  useEffect(() => {
     if (!supabase || !Capacitor.isNativePlatform()) {
       return undefined;
     }
@@ -1676,9 +1710,10 @@ export const HappyProvider = ({ children }) => {
       userMemos,
       isDarkMode,
       globalStreak,
-      reminderSettings
+      reminderSettings,
+      notificationPreferences
     };
-  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings, notificationPreferences]);
 
   const syncRemoteCatalogItems = useEffectEvent(async () => {
     if (!supabase) {
@@ -1720,6 +1755,7 @@ export const HappyProvider = ({ children }) => {
     setIsDarkMode(snapshot.isDarkMode);
     setGlobalStreak(snapshot.globalStreak);
     setReminderSettings(snapshot.reminderSettings);
+    setNotificationPreferences(snapshot.notificationPreferences);
   };
 
   useEffect(() => {
@@ -1728,7 +1764,7 @@ export const HappyProvider = ({ children }) => {
     }
 
     isApplyingCloudSnapshotRef.current = false;
-  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings, notificationPreferences]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id) {
@@ -1910,6 +1946,17 @@ export const HappyProvider = ({ children }) => {
   }, [reminderSettings]);
 
   useEffect(() => {
+    localStorage.setItem(
+      NOTIFICATION_PREFERENCES_STORAGE_KEY,
+      JSON.stringify(notificationPreferences)
+    );
+  }, [notificationPreferences]);
+
+  useEffect(() => {
+    localStorage.setItem(MARKETING_CONSENT_STORAGE_KEY, JSON.stringify(marketingConsent));
+  }, [marketingConsent]);
+
+  useEffect(() => {
     if (!supabase || !authUser?.id || !hasBootstrappedCloudRef.current || isApplyingCloudSnapshotRef.current) {
       return undefined;
     }
@@ -1928,7 +1975,8 @@ export const HappyProvider = ({ children }) => {
         userMemos,
         isDarkMode,
         globalStreak,
-        reminderSettings
+        reminderSettings,
+        notificationPreferences
       });
 
       const { error } = await supabase
@@ -1964,7 +2012,7 @@ export const HappyProvider = ({ children }) => {
         cloudSyncTimeoutRef.current = null;
       }
     };
-  }, [authUser?.id, items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
+  }, [authUser?.id, items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings, notificationPreferences]);
 
   useEffect(() => {
     if (!isNativeNotificationPlatform()) {
@@ -1984,7 +2032,7 @@ export const HappyProvider = ({ children }) => {
         setNotificationPermission(permission);
         setExactAlarmPermission(exactAlarm);
 
-        if (!hasRequiredNativeReminderPermissions(permission, exactAlarm) && reminderSettings.enabled) {
+        if (!hasRequiredNativeReminderPermissions(permission) && reminderSettings.enabled) {
           setReminderSettings(prev => (
             prev.enabled
               ? { ...prev, enabled: false }
@@ -2023,9 +2071,8 @@ export const HappyProvider = ({ children }) => {
       setNotificationPermission(permission);
       setExactAlarmPermission(exactAlarm);
 
-      if (hasRequiredNativeReminderPermissions(permission, exactAlarm) && pendingReminderEnableRef.current) {
+      if (hasRequiredNativeReminderPermissions(permission) && pendingReminderEnableRef.current) {
         pendingReminderEnableRef.current = false;
-        hasPromptedExactAlarmSettingsRef.current = false;
         setReminderSettings(prev => (
           prev.enabled
             ? prev
@@ -2034,25 +2081,7 @@ export const HappyProvider = ({ children }) => {
         return;
       }
 
-      if (
-        pendingReminderEnableRef.current
-        && permission === 'granted'
-        && isNativeAndroidNotificationPlatform()
-        && exactAlarm !== 'granted'
-        && !hasPromptedExactAlarmSettingsRef.current
-      ) {
-        hasPromptedExactAlarmSettingsRef.current = true;
-        void openNativeExactAlarmSettings().then(nextExactAlarmPermission => {
-          if (!isMounted) {
-            return;
-          }
-
-          setExactAlarmPermission(nextExactAlarmPermission);
-        });
-        return;
-      }
-
-      if (!hasRequiredNativeReminderPermissions(permission, exactAlarm) && reminderSettings.enabled) {
+      if (!hasRequiredNativeReminderPermissions(permission) && reminderSettings.enabled) {
         setReminderSettings(prev => (
           prev.enabled
             ? { ...prev, enabled: false }
@@ -2079,11 +2108,18 @@ export const HappyProvider = ({ children }) => {
   }, [globalStreak, reminderSettings.enabled, reminderSettings.reminders]);
 
   useEffect(() => {
-    if (isNativeNotificationPlatform()) {
+    if (typeof window === 'undefined' || reminderSettings.reminders.length === 0) {
       return undefined;
     }
 
-    if (typeof window === 'undefined' || !reminderSettings.enabled || reminderSettings.reminders.length === 0) {
+    const canShowInAppReminder = notificationPreferences.inAppReminders;
+    const canShowBrowserReminder = (
+      !isNativeNotificationPlatform()
+      && reminderSettings.enabled
+      && notificationPermission === 'granted'
+    );
+
+    if (!canShowInAppReminder && !canShowBrowserReminder) {
       return undefined;
     }
 
@@ -2100,13 +2136,22 @@ export const HappyProvider = ({ children }) => {
       }
 
       const reminderContent = getReminderNotificationContent(globalStreak, now);
+      let hasDeliveredReminder = false;
 
-      setCelebrationQueue(prev => [...prev, createReminderCelebration(reminderContent)]);
+      if (canShowInAppReminder) {
+        setCelebrationQueue(prev => [...prev, createReminderCelebration(reminderContent)]);
+        hasDeliveredReminder = true;
+      }
 
-      if ('Notification' in window && window.Notification.permission === 'granted') {
+      if (canShowBrowserReminder) {
         new window.Notification(reminderContent.title, {
           body: reminderContent.body
         });
+        hasDeliveredReminder = true;
+      }
+
+      if (!hasDeliveredReminder) {
+        return;
       }
 
       setReminderSettings(prev => ({
@@ -2125,7 +2170,13 @@ export const HappyProvider = ({ children }) => {
     return () => {
       window.clearInterval(reminderInterval);
     };
-  }, [globalStreak, reminderSettings.enabled, reminderSettings.reminders]);
+  }, [
+    globalStreak,
+    notificationPermission,
+    notificationPreferences.inAppReminders,
+    reminderSettings.enabled,
+    reminderSettings.reminders
+  ]);
 
   const addStamp = (itemId) => {
     const today = new Date();
@@ -2555,6 +2606,8 @@ export const HappyProvider = ({ children }) => {
     setIsDarkMode(false);
     setGlobalStreak({ current: 0, lastDate: null });
     setReminderSettings(defaultReminderSettings);
+    setNotificationPreferences(defaultNotificationPreferences);
+    setMarketingConsent(false);
     setCelebrationQueue([]);
     setCloudSyncStatus(defaultCloudSyncStatus);
     setIsCloudSyncing(false);
@@ -3456,6 +3509,57 @@ export const HappyProvider = ({ children }) => {
       setAuthSession(prev => (prev ? { ...prev, user: data.user } : prev));
     }
 
+    setMarketingConsent(Boolean(hasAcceptedMarketing));
+
+    return { success: true };
+  };
+
+  const updateMarketingConsent = async (enabled) => {
+    const nextEnabled = Boolean(enabled);
+
+    if (!supabase || !authUser || isReviewAuthUser) {
+      setMarketingConsent(nextEnabled);
+      return { success: true };
+    }
+
+    setIsAuthBusy(true);
+    setAuthFeedback(defaultAuthFeedback);
+
+    const sessionState = await ensureTrustedAuthSession();
+
+    if (!sessionState.success || !sessionState.user) {
+      setIsAuthBusy(false);
+      return {
+        success: false,
+        error: sessionState.error || '인증 정보가 만료되었어요. 다시 로그인해주세요.'
+      };
+    }
+
+    const currentUser = sessionState.user;
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        ...(isRecord(currentUser.user_metadata) ? currentUser.user_metadata : {}),
+        marketingAccepted: nextEnabled
+      }
+    });
+
+    setIsAuthBusy(false);
+
+    if (error && !isRecoverableAuthFetchError(error)) {
+      const nextFeedback = getAuthFeedbackFromError(error, '마케팅 수신 설정을 저장하지 못했어요.');
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message };
+    }
+
+    setMarketingConsent(nextEnabled);
+
+    if (data.user) {
+      setAuthUser(data.user);
+      setAuthSession(prev => (prev ? { ...prev, user: data.user } : prev));
+    }
+
+    setAuthFeedback(defaultAuthFeedback);
+
     return { success: true };
   };
 
@@ -3521,6 +3625,13 @@ export const HappyProvider = ({ children }) => {
     }));
   };
 
+  const toggleInAppReminderNotifications = (enabled) => {
+    setNotificationPreferences(prev => ({
+      ...prev,
+      inAppReminders: Boolean(enabled)
+    }));
+  };
+
   const requestNotificationPermission = async () => {
     if (isNativeNotificationPlatform()) {
       const permission = await requestNativeNotificationPermission();
@@ -3544,10 +3655,7 @@ export const HappyProvider = ({ children }) => {
 
     if (
       permission === 'granted'
-      && (
-        reminderSettings.enabled
-        || pendingReminderEnableRef.current
-      )
+      && reminderSettings.enabled
     ) {
       await syncNativeReminderNotifications(reminderSettings.reminders, reminderSettings.enabled, globalStreak);
     }
@@ -3560,7 +3668,6 @@ export const HappyProvider = ({ children }) => {
 
     if (enabled && isNativeNotificationPlatform()) {
       const wasDenied = currentPermission === 'denied';
-      hasPromptedExactAlarmSettingsRef.current = false;
       currentPermission = await requestNotificationPermission();
 
       if (currentPermission !== 'granted') {
@@ -3572,22 +3679,11 @@ export const HappyProvider = ({ children }) => {
         return currentPermission;
       }
 
-      if (isNativeAndroidNotificationPlatform() && exactAlarmPermission !== 'granted') {
-        pendingReminderEnableRef.current = true;
-        hasPromptedExactAlarmSettingsRef.current = true;
-
-        const nextExactAlarmPermission = await openExactAlarmSettings();
-
-        if (nextExactAlarmPermission !== 'granted') {
-          return currentPermission;
-        }
-      }
     } else if (enabled && currentPermission === 'default') {
       currentPermission = await requestNotificationPermission();
     }
 
     pendingReminderEnableRef.current = false;
-    hasPromptedExactAlarmSettingsRef.current = false;
 
     setReminderSettings(prev => applyReminderEnabledState(prev, enabled));
 
@@ -3600,6 +3696,12 @@ export const HappyProvider = ({ children }) => {
 
   const totalStamps = getTotalStampCount(userStamps);
   const activeCelebration = celebrationQueue[0] || null;
+  const effectiveAuthUserOnboarding = {
+    ...getAuthUserOnboardingState(effectiveAuthUser, isReviewAuthUser ? '' : authProfileNickname),
+    hasAcceptedMarketing: isReviewAuthUser
+      ? getAuthUserOnboardingState(effectiveAuthUser, '').hasAcceptedMarketing
+      : marketingConsent
+  };
 
   return (
     <HappyContext.Provider value={{
@@ -3629,7 +3731,7 @@ export const HappyProvider = ({ children }) => {
       authUser: effectiveAuthUser,
       isReviewAuthUser,
       isGuestMode,
-      authUserOnboarding: getAuthUserOnboardingState(effectiveAuthUser, isReviewAuthUser ? '' : authProfileNickname),
+      authUserOnboarding: effectiveAuthUserOnboarding,
       authUserNickname: getAuthUserNickname(effectiveAuthUser, isReviewAuthUser ? '' : authProfileNickname),
       authUserDisplayName: getAuthUserDisplayName(effectiveAuthUser, isReviewAuthUser ? '' : authProfileNickname),
       isSignupCompletionPending,
@@ -3654,11 +3756,15 @@ export const HappyProvider = ({ children }) => {
       deleteAccount,
       completeAuthOnboarding,
       updateAuthNickname,
+      marketingConsent,
+      updateMarketingConsent,
       globalStreak,
       reminderSettings,
+      notificationPreferences,
       notificationPermission,
       exactAlarmPermission,
       toggleReminder,
+      toggleInAppReminderNotifications,
       addReminder,
       updateReminder,
       deleteReminder,
