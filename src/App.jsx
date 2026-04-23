@@ -1,10 +1,11 @@
-import React, { lazy, useEffect, useState } from 'react';
+import React, { lazy, useEffect, useEffectEvent, useState } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { HappyProvider, useHappy } from './store/HappyContext';
 import NavBar from './components/NavBar';
 import AuthScreen from './components/AuthScreen';
 import CelebrationModal from './components/CelebrationModal';
+import ExitConfirmModal from './components/ExitConfirmModal';
 import LazyLoadBoundary from './components/LazyLoadBoundary';
 import PullToRefreshShell from './components/PullToRefreshShell';
 import Home from './views/Home';
@@ -103,6 +104,7 @@ function AppContent() {
   const initialRequestedMode = getRequestedAuthModeFromUrl();
   const [currentView, setCurrentView] = useState(() => consumePreservedAppView());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
   const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(() => Boolean(initialRequestedMode));
   const [authScreenMode, setAuthScreenMode] = useState(() => initialRequestedMode || 'login');
   const [isAgreementModalRequested, setIsAgreementModalRequested] = useState(false);
@@ -121,6 +123,7 @@ function AppContent() {
   } = useHappy();
 
   const isForcedAuthScreen = !authUser && !isGuestMode;
+  const isAuthScreenClosable = !isForcedAuthScreen && !isPasswordRecovery && !isSignupCompletionPending;
   const isAuthScreenOpen = (
     isForcedAuthScreen
     || isPasswordRecovery
@@ -150,12 +153,15 @@ function AppContent() {
     (needsAgreementSetup && !isAgreementModalDismissed)
     || isAgreementModalRequested
   );
+  const isAgreementModalClosable = !needsAgreementSetup;
   const isNicknameModalOpen = Boolean(authUser) && !isGuestMode && (
     needsNicknameSetup
     || (isNicknameModalRequested && !needsAgreementSetup)
   );
+  const isNicknameModalClosable = !needsNicknameSetup;
   const isPullToRefreshEnabled = (
     !isSettingsOpen
+    && !isExitConfirmOpen
     && !isAuthScreenOpen
     && !isAgreementModalOpen
     && !isNicknameModalOpen
@@ -205,9 +211,58 @@ function AppContent() {
     setIsNicknameModalRequested(false);
   };
 
+  const handleNativeBackButton = useEffectEvent(event => {
+    if (event.canGoBack) {
+      window.history.back();
+      return;
+    }
+
+    if (isAuthScreenOpen && !isAuthScreenClosable) {
+      return;
+    }
+
+    if (isAgreementModalOpen && !isAgreementModalClosable) {
+      return;
+    }
+
+    if (isNicknameModalOpen && !isNicknameModalClosable) {
+      return;
+    }
+
+    if (currentView !== 'home') {
+      setCurrentView('home');
+      return;
+    }
+
+    setIsExitConfirmOpen(true);
+  });
+
+  useEffect(() => {
+    if (!isNativeRuntime() || Capacitor.getPlatform() !== 'android') {
+      return undefined;
+    }
+
+    let listenerHandle = null;
+
+    CapacitorApp.addListener('backButton', event => {
+      handleNativeBackButton(event);
+    }).then(handle => {
+      listenerHandle = handle;
+    });
+
+    return () => {
+      listenerHandle?.remove();
+    };
+  }, []);
+
   const handlePullRefresh = () => {
     preserveAppViewForRefresh(currentView);
     window.location.reload();
+  };
+
+  const handleConfirmExit = () => {
+    setIsExitConfirmOpen(false);
+    void CapacitorApp.exitApp();
   };
 
   return (
@@ -235,6 +290,11 @@ function AppContent() {
       {activeCelebration && (
         <CelebrationModal celebration={activeCelebration} onClose={dismissCelebration} />
       )}
+      <ExitConfirmModal
+        isOpen={isExitConfirmOpen}
+        onClose={() => setIsExitConfirmOpen(false)}
+        onConfirm={handleConfirmExit}
+      />
 
       {isSettingsOpen && (
         <LazyLoadBoundary
@@ -257,7 +317,7 @@ function AppContent() {
 
       <AuthScreen
         isOpen={isAuthScreenOpen}
-        canClose={!isForcedAuthScreen && !isPasswordRecovery && !isSignupCompletionPending}
+        canClose={isAuthScreenClosable}
         initialMode={authScreenMode}
         onClose={closeAuthScreen}
       />

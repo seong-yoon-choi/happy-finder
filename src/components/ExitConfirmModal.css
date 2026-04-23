@@ -1,0 +1,84 @@
+.exit-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    background: rgba(18, 22, 27, 0.42);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+.exit-confirm-modal {
+    width: min(100%, 340px);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-radius: 24px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 240, 209, 0.94));
+}
+
+.dark-theme .exit-confirm-modal {
+    background: linear-gradient(145deg, rgba(38, 42, 59, 0.96), rgba(24, 28, 42, 0.96));
+}
+
+.exit-confirm-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.exit-confirm-eyebrow {
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--primary-color);
+}
+
+.exit-confirm-copy h2 {
+    font-size: clamp(1.15rem, 4vw, 1.3rem);
+    line-height: 1.35;
+}
+
+.exit-confirm-copy p {
+    font-size: var(--font-body-md);
+    line-height: 1.6;
+    color: var(--text-light);
+}
+
+.exit-confirm-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.exit-confirm-cancel,
+.exit-confirm-submit {
+    min-height: 46px;
+    border-radius: 18px;
+    padding: 12px 14px;
+    font-size: var(--font-body-md);
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.exit-confirm-cancel {
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+    border-color: var(--glass-border);
+}
+
+.dark-theme .exit-confirm-cancel {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.exit-confirm-submit {
+    background: rgba(255, 71, 87, 0.12);
+    color: var(--danger);
+    border-color: rgba(255, 71, 87, 0.28);
+}

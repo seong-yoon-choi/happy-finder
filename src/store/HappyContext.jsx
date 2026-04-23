@@ -1007,6 +1007,269 @@ const normalizeCloudSnapshot = (payload) => {
   };
 };
 
+const getGuestCreatorIdSet = (guestCreatorId = getGuestLocalCreatorId()) => (
+  new Set(
+    [guestCreatorId, LEGACY_LOCAL_CREATOR_ID]
+      .filter(value => typeof value === 'string' && value.trim())
+  )
+);
+
+const getNormalizedCreatorId = value => (
+  typeof value === 'string' ? value.trim() : ''
+);
+
+const shouldPromoteCustomItemToAccount = (item, authUserId, guestCreatorIds = getGuestCreatorIdSet()) => {
+  if (!item?.isCustom || item?.creator !== 'user' || !authUserId) {
+    return false;
+  }
+
+  const creatorId = getNormalizedCreatorId(item.creatorId);
+
+  if (creatorId === authUserId) {
+    return true;
+  }
+
+  if (creatorId && guestCreatorIds.has(creatorId)) {
+    return true;
+  }
+
+  return !creatorId && item.isCloudBacked !== true;
+};
+
+const promoteCustomItemToAccount = (item, authUserId, guestCreatorIds = getGuestCreatorIdSet()) => {
+  if (!shouldPromoteCustomItemToAccount(item, authUserId, guestCreatorIds)) {
+    return item;
+  }
+
+  return {
+    ...item,
+    creator: 'user',
+    creatorId: authUserId
+  };
+};
+
+const repairCloudSnapshotForAuthenticatedUser = (snapshot, authUserId, guestCreatorIds = getGuestCreatorIdSet()) => {
+  const normalizedSnapshot = normalizeCloudSnapshot(snapshot);
+  let didRepairOwnership = false;
+
+  const repairedItems = normalizedSnapshot.items.map(item => {
+    const repairedItem = promoteCustomItemToAccount(item, authUserId, guestCreatorIds);
+
+    if (repairedItem !== item) {
+      didRepairOwnership = true;
+    }
+
+    return repairedItem;
+  });
+
+  return {
+    snapshot: {
+      ...normalizedSnapshot,
+      items: mergeItemsWithInitialItems(repairedItems, normalizedSnapshot.userStamps)
+    },
+    didRepairOwnership
+  };
+};
+
+const getComparableDateValue = value => {
+  const normalizedValue = typeof value === 'string' ? value.trim() : '';
+
+  if (!normalizedValue) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const timestamp = Date.parse(normalizedValue);
+  return Number.isNaN(timestamp) ? Number.NEGATIVE_INFINITY : timestamp;
+};
+
+const getMostRecentDateValue = (...values) => {
+  let latestValue = null;
+  let latestTimestamp = Number.NEGATIVE_INFINITY;
+
+  values.forEach(value => {
+    const normalizedValue = typeof value === 'string' ? value.trim() : '';
+    const timestamp = getComparableDateValue(normalizedValue);
+
+    if (!normalizedValue || timestamp <= latestTimestamp) {
+      return;
+    }
+
+    latestValue = normalizedValue;
+    latestTimestamp = timestamp;
+  });
+
+  return latestValue;
+};
+
+const mergeStampEntry = (baseEntry, incomingEntry) => {
+  const mergedCount = getStampCountFromData(baseEntry) + getStampCountFromData(incomingEntry);
+
+  if (mergedCount <= 0) {
+    return null;
+  }
+
+  const mergedLastStampedDate = getMostRecentDateValue(
+    baseEntry?.lastStampedDate,
+    incomingEntry?.lastStampedDate
+  );
+
+  return mergedLastStampedDate
+    ? {
+        count: mergedCount,
+        lastStampedDate: mergedLastStampedDate
+      }
+    : { count: mergedCount };
+};
+
+const mergeUserStampMap = (baseStamps = {}, incomingStamps = {}) => {
+  const mergedStamps = {};
+  const itemIds = new Set([
+    ...Object.keys(isRecord(baseStamps) ? baseStamps : {}),
+    ...Object.keys(isRecord(incomingStamps) ? incomingStamps : {})
+  ]);
+
+  itemIds.forEach(itemId => {
+    const mergedEntry = mergeStampEntry(baseStamps[itemId], incomingStamps[itemId]);
+
+    if (mergedEntry) {
+      mergedStamps[itemId] = mergedEntry;
+    }
+  });
+
+  return mergedStamps;
+};
+
+const getMemoMergeKey = memo => {
+  const normalizedId = getNormalizedCreatorId(memo?.id);
+
+  if (normalizedId) {
+    return `id:${normalizedId}`;
+  }
+
+  return `fallback:${memo?.createdAt || ''}:${memo?.content || ''}`;
+};
+
+const mergeMemoCollection = (baseMemos = [], incomingMemos = []) => {
+  const mergedMemoMap = new Map();
+
+  [...baseMemos, ...incomingMemos]
+    .map(normalizeMemo)
+    .forEach(memo => {
+      const mergeKey = getMemoMergeKey(memo);
+      const previousMemo = mergedMemoMap.get(mergeKey);
+
+      if (!previousMemo || getComparableDateValue(memo.updatedAt) >= getComparableDateValue(previousMemo.updatedAt)) {
+        mergedMemoMap.set(mergeKey, memo);
+      }
+    });
+
+  return Array.from(mergedMemoMap.values())
+    .sort((leftMemo, rightMemo) => getComparableDateValue(rightMemo.updatedAt) - getComparableDateValue(leftMemo.updatedAt));
+};
+
+const mergeMemoMap = (baseMemoMap = {}, incomingMemoMap = {}) => {
+  const mergedMemoMap = {};
+  const itemIds = new Set([
+    ...Object.keys(isRecord(baseMemoMap) ? baseMemoMap : {}),
+    ...Object.keys(isRecord(incomingMemoMap) ? incomingMemoMap : {})
+  ]);
+
+  itemIds.forEach(itemId => {
+    const mergedMemos = mergeMemoCollection(baseMemoMap[itemId], incomingMemoMap[itemId]);
+
+    if (mergedMemos.length > 0) {
+      mergedMemoMap[itemId] = mergedMemos;
+    }
+  });
+
+  return mergedMemoMap;
+};
+
+const mergeGlobalStreak = (baseStreak, incomingStreak) => {
+  const normalizedBaseStreak = normalizeGlobalStreak(baseStreak);
+  const normalizedIncomingStreak = normalizeGlobalStreak(incomingStreak);
+  const baseTimestamp = getComparableDateValue(normalizedBaseStreak.lastDate);
+  const incomingTimestamp = getComparableDateValue(normalizedIncomingStreak.lastDate);
+
+  if (incomingTimestamp > baseTimestamp) {
+    return normalizedIncomingStreak;
+  }
+
+  if (baseTimestamp > incomingTimestamp) {
+    return normalizedBaseStreak;
+  }
+
+  return normalizedIncomingStreak.current > normalizedBaseStreak.current
+    ? normalizedIncomingStreak
+    : normalizedBaseStreak;
+};
+
+const dedupeItemsById = (items = []) => {
+  const seenItemIds = new Set();
+
+  return items.filter(item => {
+    const itemId = typeof item?.id === 'string' ? item.id.trim() : '';
+
+    if (!itemId || seenItemIds.has(itemId)) {
+      return false;
+    }
+
+    seenItemIds.add(itemId);
+    return true;
+  });
+};
+
+const mergeCloudSnapshotsForAuthenticatedUser = ({
+  cloudSnapshot,
+  localSnapshot,
+  authUserId,
+  guestCreatorIds = getGuestCreatorIdSet()
+}) => {
+  const { snapshot: normalizedCloudSnapshot, didRepairOwnership } = repairCloudSnapshotForAuthenticatedUser(
+    cloudSnapshot,
+    authUserId,
+    guestCreatorIds
+  );
+  const { snapshot: normalizedLocalSnapshot } = repairCloudSnapshotForAuthenticatedUser(
+    localSnapshot,
+    authUserId,
+    guestCreatorIds
+  );
+  const mergedUserStamps = mergeUserStampMap(
+    normalizedCloudSnapshot.userStamps,
+    normalizedLocalSnapshot.userStamps
+  );
+  const mergedItems = mergeItemsWithInitialItems(
+    dedupeItemsById([
+      ...normalizedLocalSnapshot.items.filter(item => item?.isCustom && item?.creatorId === authUserId),
+      ...normalizedCloudSnapshot.items
+    ]),
+    mergedUserStamps
+  );
+
+  return {
+    snapshot: {
+      items: mergedItems,
+      userStamps: mergedUserStamps,
+      userFavorites: {
+        ...normalizedCloudSnapshot.userFavorites,
+        ...normalizedLocalSnapshot.userFavorites
+      },
+      userMemos: mergeMemoMap(
+        normalizedCloudSnapshot.userMemos,
+        normalizedLocalSnapshot.userMemos
+      ),
+      isDarkMode: normalizedCloudSnapshot.isDarkMode,
+      globalStreak: mergeGlobalStreak(
+        normalizedCloudSnapshot.globalStreak,
+        normalizedLocalSnapshot.globalStreak
+      ),
+      reminderSettings: normalizedCloudSnapshot.reminderSettings
+    },
+    didRepairOwnership
+  };
+};
+
 export const HappyContext = createContext();
 
 export const useHappy = () => useContext(HappyContext);
@@ -1088,6 +1351,9 @@ export const HappyProvider = ({ children }) => {
   const isApplyingCloudSnapshotRef = useRef(false);
   const cloudSyncTimeoutRef = useRef(null);
   const latestSnapshotStateRef = useRef(null);
+  const authUserIdRef = useRef(null);
+  const isGuestModeRef = useRef(isGuestMode);
+  const pendingGuestDataMigrationRef = useRef(false);
   const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
   const postSignOutFeedbackRef = useRef(null);
   const lastHandledNativeAuthCallbackRef = useRef(readLastHandledNativeAuthCallback());
@@ -1131,6 +1397,14 @@ export const HappyProvider = ({ children }) => {
     }
   }, [authUser, reviewAuthUser]);
 
+  useEffect(() => {
+    authUserIdRef.current = authUser?.id || null;
+  }, [authUser?.id]);
+
+  useEffect(() => {
+    isGuestModeRef.current = isGuestMode;
+  }, [isGuestMode]);
+
   const syncResolvedAuthState = (session, user = session?.user ?? null) => {
     const nextUser = user ?? null;
     const nextSession = session
@@ -1139,6 +1413,16 @@ export const HappyProvider = ({ children }) => {
         ...(nextUser ? { user: nextUser } : {})
       }
       : null;
+    const nextUserId = nextUser?.id || null;
+    const shouldPromoteGuestData = Boolean(
+      nextUserId
+      && !authUserIdRef.current
+      && isGuestModeRef.current
+    );
+
+    if (shouldPromoteGuestData) {
+      pendingGuestDataMigrationRef.current = true;
+    }
 
     setAuthSession(nextSession);
     setAuthUser(nextUser);
@@ -1147,6 +1431,7 @@ export const HappyProvider = ({ children }) => {
 
     if (!nextUser) {
       setIsSignupCompletionPending(false);
+      pendingGuestDataMigrationRef.current = false;
     }
 
     return {
@@ -1490,6 +1775,7 @@ export const HappyProvider = ({ children }) => {
       setIsGuestMode(false);
       setIsPasswordRecovery(false);
       setIsSignupCompletionPending(false);
+      pendingGuestDataMigrationRef.current = false;
       localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
       clearSupabaseAuthStorage();
       clearStoredAuthSessionBackup();
@@ -1751,6 +2037,13 @@ export const HappyProvider = ({ children }) => {
         message: '클라우드 기록을 확인하고 있어요.',
         lastSyncedAt: null
       });
+      const guestCreatorIds = getGuestCreatorIdSet();
+      const shouldPromoteGuestData = pendingGuestDataMigrationRef.current === true;
+      const { snapshot: promotedLocalSnapshot } = repairCloudSnapshotForAuthenticatedUser(
+        latestSnapshotStateRef.current,
+        authUser.id,
+        guestCreatorIds
+      );
 
       const { data, error } = await supabase
         .from(CLOUD_SNAPSHOT_TABLE)
@@ -1779,8 +2072,46 @@ export const HappyProvider = ({ children }) => {
       }
 
       if (isRecord(data?.payload)) {
-        applyCloudSnapshot(data.payload);
+        const snapshotResult = shouldPromoteGuestData
+          ? mergeCloudSnapshotsForAuthenticatedUser({
+              cloudSnapshot: data.payload,
+              localSnapshot: promotedLocalSnapshot,
+              authUserId: authUser.id,
+              guestCreatorIds
+            })
+          : repairCloudSnapshotForAuthenticatedUser(data.payload, authUser.id, guestCreatorIds);
+        const nextSnapshot = snapshotResult.snapshot;
+        const shouldPersistSnapshot = shouldPromoteGuestData || snapshotResult.didRepairOwnership;
+
+        applyCloudSnapshot(nextSnapshot);
         hasBootstrappedCloudRef.current = true;
+
+        if (shouldPersistSnapshot) {
+          const { error: persistError } = await supabase
+            .from(CLOUD_SNAPSHOT_TABLE)
+            .upsert({
+              user_id: authUser.id,
+              payload: nextSnapshot
+            }, {
+              onConflict: 'user_id'
+            });
+
+          if (!isMounted) {
+            return;
+          }
+
+          if (persistError) {
+            setCloudSyncStatus({
+              type: 'error',
+              message: '계정 기록은 불러왔지만 로컬 기록을 계정에 저장하지 못했어요.',
+              lastSyncedAt: typeof data.updated_at === 'string' ? data.updated_at : null
+            });
+            setIsCloudSyncing(false);
+            return;
+          }
+        }
+
+        pendingGuestDataMigrationRef.current = false;
         await syncRemoteCatalogItems();
 
         if (!isMounted) {
@@ -1789,14 +2120,22 @@ export const HappyProvider = ({ children }) => {
 
         setCloudSyncStatus({
           type: 'success',
-          message: '클라우드에 저장된 기록을 불러왔어요.',
-          lastSyncedAt: typeof data.updated_at === 'string' ? data.updated_at : new Date().toISOString()
+          message: shouldPromoteGuestData
+            ? '게스트 기록을 계정에 연결하고 클라우드 기록을 불러왔어요.'
+            : shouldPersistSnapshot
+              ? '계정 기록을 정리해서 다시 저장했어요.'
+              : '클라우드에 저장된 기록을 불러왔어요.',
+          lastSyncedAt: shouldPersistSnapshot
+            ? new Date().toISOString()
+            : (typeof data.updated_at === 'string' ? data.updated_at : new Date().toISOString())
         });
         setIsCloudSyncing(false);
         return;
       }
 
-      const payload = createCloudSnapshotPayload(latestSnapshotStateRef.current);
+      const payload = shouldPromoteGuestData
+        ? promotedLocalSnapshot
+        : normalizeCloudSnapshot(latestSnapshotStateRef.current);
 
       const { error: upsertError } = await supabase
         .from(CLOUD_SNAPSHOT_TABLE)
@@ -1821,7 +2160,9 @@ export const HappyProvider = ({ children }) => {
         return;
       }
 
+      applyCloudSnapshot(payload);
       hasBootstrappedCloudRef.current = true;
+      pendingGuestDataMigrationRef.current = false;
       await syncRemoteCatalogItems();
 
       if (!isMounted) {
@@ -1830,7 +2171,9 @@ export const HappyProvider = ({ children }) => {
 
       setCloudSyncStatus({
         type: 'success',
-        message: '로컬 기록을 클라우드에 처음 백업했어요.',
+        message: shouldPromoteGuestData
+          ? '게스트 기록을 계정에 처음 저장했어요.'
+          : '로컬 기록을 클라우드에 처음 백업했어요.',
         lastSyncedAt: new Date().toISOString()
       });
       setIsCloudSyncing(false);
@@ -2550,6 +2893,7 @@ export const HappyProvider = ({ children }) => {
     setIsCloudSyncing(false);
     hasBootstrappedCloudRef.current = false;
     latestSnapshotStateRef.current = null;
+    pendingGuestDataMigrationRef.current = false;
   };
 
   const clearLocalAppStorage = () => {
