@@ -143,7 +143,7 @@ export const openNativeNotificationSettings = async () => {
 
 export const syncNativeReminderNotifications = async (reminders, enabled, globalStreak) => {
   if (!isNativeNotificationPlatform()) {
-    return;
+    return false;
   }
 
   const currentReminderNotificationIds = reminders.map(reminder => createNativeReminderId(reminder.id));
@@ -153,49 +153,55 @@ export const syncNativeReminderNotifications = async (reminders, enabled, global
     ...currentReminderNotificationIds
   ])];
 
-  if (reminderNotificationIdsToCancel.length > 0) {
-    await LocalNotifications.cancel({
-      notifications: reminderNotificationIdsToCancel.map(id => ({ id }))
-    });
-  }
+  try {
+    if (reminderNotificationIdsToCancel.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: reminderNotificationIdsToCancel.map(id => ({ id }))
+      });
+    }
 
-  if (!enabled || reminders.length === 0) {
-    writeStoredNativeReminderNotificationIds([]);
-    return;
-  }
+    if (!enabled || reminders.length === 0) {
+      writeStoredNativeReminderNotificationIds([]);
+      return true;
+    }
 
-  const permission = await checkNativeNotificationPermission();
+    const permission = await checkNativeNotificationPermission();
 
-  if (permission !== 'granted') {
-    writeStoredNativeReminderNotificationIds([]);
-    return;
-  }
+    if (permission !== 'granted') {
+      writeStoredNativeReminderNotificationIds([]);
+      return false;
+    }
 
-  await LocalNotifications.schedule({
-    notifications: reminders.map(reminder => {
-      const { hour, minute } = parseReminderTime(reminder.time);
-      const reminderContent = getReminderNotificationContent(
-        globalStreak,
-        getNextReminderTriggerTime(reminder.time)
-      );
+    await LocalNotifications.schedule({
+      notifications: reminders.map(reminder => {
+        const { hour, minute } = parseReminderTime(reminder.time);
+        const reminderContent = getReminderNotificationContent(
+          globalStreak,
+          getNextReminderTriggerTime(reminder.time)
+        );
 
-      return {
-        id: createNativeReminderId(reminder.id),
-        title: reminderContent.title,
-        body: reminderContent.body,
-        schedule: {
-          on: {
-            hour,
-            minute
+        return {
+          id: createNativeReminderId(reminder.id),
+          title: reminderContent.title,
+          body: reminderContent.body,
+          schedule: {
+            on: {
+              hour,
+              minute
+            },
+            allowWhileIdle: true
           },
-          allowWhileIdle: true
-        },
-        extra: {
-          reminderId: reminder.id
-        }
-      };
-    })
-  });
+          extra: {
+            reminderId: reminder.id
+          }
+        };
+      })
+    });
 
-  writeStoredNativeReminderNotificationIds(currentReminderNotificationIds);
+    writeStoredNativeReminderNotificationIds(currentReminderNotificationIds);
+    return true;
+  } catch {
+    writeStoredNativeReminderNotificationIds([]);
+    return false;
+  }
 };

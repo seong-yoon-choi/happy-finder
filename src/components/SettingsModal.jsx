@@ -273,7 +273,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const reminderMessage = (() => {
     if (isScheduledReminderEnabled && isNativeReminderPlatform) {
       if (needsExactAlarmAccess) {
-        return '알림은 계속 받을 수 있고, 정확한 시각에 더 가깝게 받으려면 알람 및 리마인더 권한을 허용해주세요.';
+        return '정확한 시간에 알림을 받으려면 알람 및 리마인더 권한을 허용해주세요.';
       }
 
       if (notificationPermission === 'granted') {
