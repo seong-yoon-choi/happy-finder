@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import {
   isNativeAndroidNotificationPlatform,
@@ -258,6 +258,8 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
   const [isNotificationOptionsOpen, setIsNotificationOptionsOpen] = useState(false);
   const [notificationSettingsFeedback, setNotificationSettingsFeedback] = useState('');
+  const [reminderEditorScrollRequest, setReminderEditorScrollRequest] = useState(0);
+  const reminderEditorRef = useRef(null);
 
   const reminders = reminderSettings.reminders || [];
   const isNativeReminderPlatform = isNativeNotificationPlatform();
@@ -318,6 +320,24 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     authUser?.email
       && deleteConfirmationEmail.trim().toLowerCase() === authUser.email.toLowerCase()
   );
+
+  useEffect(() => {
+    if (!isTimePickerOpen || reminderEditorScrollRequest === 0 || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const animationFrameId = window.requestAnimationFrame(() => {
+      reminderEditorRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+    };
+  }, [isTimePickerOpen, reminderEditorScrollRequest]);
 
   const resetAccountDangerState = () => {
     setIsDeleteConfirmOpen(false);
@@ -421,6 +441,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     setEditingReminderId('new');
     setPickerTime(parseReminderTime(reminders[reminders.length - 1]?.time || DEFAULT_REMINDER_TIME));
     setIsTimePickerOpen(true);
+    setReminderEditorScrollRequest(prev => prev + 1);
   };
 
   const openEditReminder = reminder => {
@@ -780,7 +801,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
           )}
 
           {isTimePickerOpen && (
-            <div className="settings-time-popover">
+            <div className="settings-time-popover" ref={reminderEditorRef}>
               <div className="settings-time-popover-header">
                 <div>
                   <strong>{timeEditorTitle}</strong>

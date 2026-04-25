@@ -212,12 +212,26 @@ function AppContent() {
   };
 
   const handleNativeBackButton = useEffectEvent(event => {
-    if (event.canGoBack) {
-      window.history.back();
+    if (isExitConfirmOpen) {
+      if (event.canGoBack) {
+        window.history.back();
+        return;
+      }
+
+      setIsExitConfirmOpen(false);
       return;
     }
 
     if (isAuthScreenOpen && !isAuthScreenClosable) {
+      if (isForcedAuthScreen) {
+        setIsExitConfirmOpen(true);
+      }
+
+      return;
+    }
+
+    if (event.canGoBack) {
+      window.history.back();
       return;
     }
 
