@@ -4,7 +4,7 @@
 }
 
 .home-header {
-    padding: calc(env(safe-area-inset-top) + clamp(14px, 3.4vw, 18px)) var(--screen-side-padding) clamp(16px, 4vw, 20px);
+    padding: calc(var(--native-safe-area-top) + clamp(14px, 3.4vw, 18px)) var(--screen-side-padding) clamp(16px, 4vw, 20px);
 }
 
 .home-header h1 {

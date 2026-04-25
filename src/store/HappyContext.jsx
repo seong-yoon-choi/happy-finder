@@ -657,7 +657,7 @@ const getKoreanAuthErrorMessage = (error, fallbackMessage) => {
   }
 
   if (message.includes('invalid login credentials')) {
-    return '이메일 또는 비밀번호가 올바르지 않아요.';
+    return '이메일이 없거나 비밀번호가 맞지 않아요. 가입한 이메일을 다시 확인하거나 비밀번호를 재설정해주세요.';
   }
 
   if (message.includes('email not confirmed')) {
@@ -722,6 +722,8 @@ const getAuthFeedbackFromError = (error, fallbackMessage) => ({
   type: 'error',
   message: getKoreanAuthErrorMessage(error, fallbackMessage)
 });
+
+const isValidEmailFormat = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const isGoogleIdentityUser = (user) => (
   user?.app_metadata?.provider === 'google'
@@ -2968,7 +2970,17 @@ export const HappyProvider = ({ children }) => {
       };
 
       setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
+    if (!isValidEmailFormat(normalizedEmail)) {
+      const nextFeedback = {
+        type: 'error',
+        message: '이메일 형식을 다시 확인해주세요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
     }
 
     if (!normalizedPassword) {
@@ -2978,7 +2990,17 @@ export const HappyProvider = ({ children }) => {
       };
 
       setAuthFeedback(nextFeedback);
-      return { success: false, error: nextFeedback.message };
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
+    }
+
+    if (normalizedPassword.length < 6) {
+      const nextFeedback = {
+        type: 'error',
+        message: '비밀번호는 6자 이상이에요.'
+      };
+
+      setAuthFeedback(nextFeedback);
+      return { success: false, error: nextFeedback.message, reason: 'validation' };
     }
 
     setIsAuthBusy(true);

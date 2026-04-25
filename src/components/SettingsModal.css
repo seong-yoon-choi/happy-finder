@@ -6,7 +6,7 @@
     align-items: flex-start;
     justify-content: center;
     overflow-y: auto;
-    padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+    padding: max(20px, var(--native-safe-area-top)) 20px max(20px, var(--native-safe-area-bottom));
     background: rgba(0, 0, 0, 0.42);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);

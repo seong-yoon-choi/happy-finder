@@ -20,7 +20,7 @@
 
 .pull-refresh-indicator {
     position: absolute;
-    top: calc(env(safe-area-inset-top) + 10px);
+    top: calc(var(--native-safe-area-top) + 10px);
     left: 50%;
     transform: translate(-50%, calc(-120% + var(--pull-refresh-offset, 0px)));
     display: inline-flex;

@@ -314,6 +314,12 @@
 
 .auth-screen-inline-action {
     margin-top: -2px;
+    font-size: 0;
+}
+
+.auth-screen-inline-action::before {
+    content: attr(data-label);
+    font-size: 0.88rem;
 }
 
 .auth-screen-secondary-link {
@@ -393,9 +399,9 @@
     .auth-screen-overlay {
         align-items: center;
         padding:
-            max(40px, calc(env(safe-area-inset-top) + 28px))
+            max(40px, calc(var(--native-safe-area-top) + 28px))
             16px
-            max(14px, calc(env(safe-area-inset-bottom) + 8px));
+            max(14px, calc(var(--native-safe-area-bottom) + 8px));
     }
 
     .auth-screen-panel {

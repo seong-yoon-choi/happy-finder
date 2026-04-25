@@ -35,6 +35,8 @@ const PasswordVisibilityIcon = ({ isVisible = false }) => (
   </svg>
 );
 
+const LOGIN_FAILURES_BEFORE_PASSWORD_RESET = 3;
+
 const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }) => {
   const {
     isSupabaseConfigured,
@@ -62,7 +64,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const [isSignupVerificationConfirmed, setIsSignupVerificationConfirmed] = useState(false);
   const [verificationRequestedEmail, setVerificationRequestedEmail] = useState('');
   const [localFeedback, setLocalFeedback] = useState('');
-  const [shouldShowPasswordResetAction, setShouldShowPasswordResetAction] = useState(false);
+  const [failedLoginAttempts, setFailedLoginAttempts] = useState(0);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
@@ -81,7 +83,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         setIsSignupVerificationConfirmed(false);
         setVerificationRequestedEmail('');
         setLocalFeedback('');
-        setShouldShowPasswordResetAction(false);
+        setFailedLoginAttempts(0);
         setIsPasswordVisible(false);
         setIsConfirmPasswordVisible(false);
         return;
@@ -99,7 +101,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       setIsSignupVerificationConfirmed(false);
       setVerificationRequestedEmail('');
       setLocalFeedback('');
-      setShouldShowPasswordResetAction(false);
+      setFailedLoginAttempts(0);
       setIsPasswordVisible(false);
       setIsConfirmPasswordVisible(false);
     };
@@ -112,6 +114,10 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
   const isSignupMode = mode === 'signup';
   const isResetMode = isResetRequestMode || isResetPasswordMode;
   const shouldLockSignupEmail = isSignupMode && isSignupVerificationRequested;
+  const shouldShowPasswordResetAction = (
+    mode === 'login'
+    && failedLoginAttempts >= LOGIN_FAILURES_BEFORE_PASSWORD_RESET
+  );
 
   const resetFields = () => {
     setEmail('');
@@ -122,7 +128,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     setIsSignupVerificationConfirmed(false);
     setVerificationRequestedEmail('');
     setLocalFeedback('');
-    setShouldShowPasswordResetAction(false);
+    setFailedLoginAttempts(0);
     setIsPasswordVisible(false);
     setIsConfirmPasswordVisible(false);
   };
@@ -247,6 +253,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
         setMode('login');
         setPassword('');
         setConfirmPassword('');
+        setFailedLoginAttempts(0);
       }
 
       return;
@@ -268,7 +275,18 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     }
 
     const result = await signInWithPassword(email, password);
-    setShouldShowPasswordResetAction(result?.reason === 'auth');
+
+    if (result?.success) {
+      setFailedLoginAttempts(0);
+      return;
+    }
+
+    if (result?.reason === 'auth') {
+      setFailedLoginAttempts(prev => prev + 1);
+      return;
+    }
+
+    setFailedLoginAttempts(0);
   };
 
   const handleContinueAsGuest = () => {
@@ -509,10 +527,11 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
             </>
           )}
 
-          {mode === 'login' && shouldShowPasswordResetAction && (
+          {shouldShowPasswordResetAction && (
             <button
               type="button"
               className="auth-screen-inline-action"
+              data-label="로그인이 계속 안 되나요? 비밀번호 재설정하기"
               onClick={() => handleModeChange('reset-request')}
               disabled={isAuthBusy || isAuthLoading || !isSupabaseConfigured}
             >

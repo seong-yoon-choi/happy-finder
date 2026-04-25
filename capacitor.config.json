@@ -11,6 +11,11 @@
         "twitter": false
       },
       "logLevel": 1
+    },
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DEFAULT",
+      "hidden": false
     }
   }
 }

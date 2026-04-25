@@ -8,7 +8,7 @@
     border-radius: 28px 28px 0 0;
     display: flex;
     justify-content: space-around;
-    padding: 12px 0 calc(18px + env(safe-area-inset-bottom)) 0;
+    padding: 12px 0 calc(18px + var(--native-safe-area-bottom)) 0;
     z-index: 100;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
     border-bottom: none;

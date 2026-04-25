@@ -5,7 +5,7 @@
 }
 
 .profile-header {
-    padding: calc(env(safe-area-inset-top) + clamp(14px, 3.4vw, 18px)) var(--screen-side-padding) 0;
+    padding: calc(var(--native-safe-area-top) + clamp(14px, 3.4vw, 18px)) var(--screen-side-padding) 0;
 }
 
 .profile-brand {
