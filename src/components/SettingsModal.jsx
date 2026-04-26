@@ -5,6 +5,12 @@ import {
   isNativeNotificationPlatform,
   openNativeNotificationSettings
 } from '../lib/localNotifications';
+import {
+  DEFAULT_REMINDER_NOTIFICATION_BODY,
+  DEFAULT_REMINDER_NOTIFICATION_TITLE,
+  REMINDER_NOTIFICATION_BODY_MAX_LENGTH,
+  REMINDER_NOTIFICATION_TITLE_MAX_LENGTH
+} from '../lib/reminderContent';
 import { useHappy } from '../store/HappyContext';
 import { openExternalUrl } from '../lib/externalBrowser';
 import { SUPPORT_PATH, getPasswordResetWebUrl, getPublicWebUrl } from '../lib/routes';
@@ -237,6 +243,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     toggleReminder,
     addReminder,
     updateReminder,
+    updateReminderNotificationContent,
     deleteReminder,
     openExactAlarmSettings,
     authUser,
@@ -262,6 +269,12 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const reminderEditorRef = useRef(null);
 
   const reminders = reminderSettings.reminders || [];
+  const reminderNotificationTitle = typeof reminderSettings.notificationTitle === 'string'
+    ? reminderSettings.notificationTitle
+    : DEFAULT_REMINDER_NOTIFICATION_TITLE;
+  const reminderNotificationBody = typeof reminderSettings.notificationBody === 'string'
+    ? reminderSettings.notificationBody
+    : DEFAULT_REMINDER_NOTIFICATION_BODY;
   const isNativeReminderPlatform = isNativeNotificationPlatform();
   const isNativeAndroidReminderPlatform = isNativeAndroidNotificationPlatform();
   const isScheduledReminderEnabled = reminderSettings.enabled;
@@ -491,6 +504,14 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     if (!result?.success) {
       setNotificationSettingsFeedback(result?.error || '마케팅 수신 설정을 변경하지 못했어요.');
     }
+  };
+
+  const handleReminderNotificationTitleChange = event => {
+    updateReminderNotificationContent({ title: event.target.value });
+  };
+
+  const handleReminderNotificationBodyChange = event => {
+    updateReminderNotificationContent({ body: event.target.value });
   };
 
   const handleOpenExactAlarmSettings = async () => {
@@ -735,6 +756,30 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                 >
                   {isScheduledReminderEnabled ? '켜짐' : '꺼짐'}
                 </button>
+              </div>
+
+              <div className="settings-notification-message-form">
+                <label>
+                  앱 알림 제목
+                  <input
+                    type="text"
+                    value={reminderNotificationTitle}
+                    onChange={handleReminderNotificationTitleChange}
+                    placeholder={DEFAULT_REMINDER_NOTIFICATION_TITLE}
+                    maxLength={REMINDER_NOTIFICATION_TITLE_MAX_LENGTH}
+                  />
+                </label>
+                <label>
+                  앱 알림 내용
+                  <textarea
+                    value={reminderNotificationBody}
+                    onChange={handleReminderNotificationBodyChange}
+                    placeholder={DEFAULT_REMINDER_NOTIFICATION_BODY}
+                    rows="2"
+                    maxLength={REMINDER_NOTIFICATION_BODY_MAX_LENGTH}
+                  />
+                </label>
+                <p>비워두면 기본 문구로 알림을 보내요.</p>
               </div>
             </div>
           )}

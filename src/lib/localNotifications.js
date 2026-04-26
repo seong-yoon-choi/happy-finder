@@ -3,6 +3,8 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { getReminderNotificationContent } from './reminderContent';
 
 const NATIVE_REMINDER_NOTIFICATION_STORAGE_KEY = 'happy_native_reminder_notification_ids';
+const NATIVE_REMINDER_NOTIFICATION_SMALL_ICON = 'ic_stat_happy_clover';
+const NATIVE_REMINDER_NOTIFICATION_ICON_COLOR = '#FFFFFF';
 const AppNotificationSettings = registerPlugin('AppNotificationSettings');
 
 const normalizePermissionState = (value) => {
@@ -141,7 +143,7 @@ export const openNativeNotificationSettings = async () => {
   return true;
 };
 
-export const syncNativeReminderNotifications = async (reminders, enabled, globalStreak) => {
+export const syncNativeReminderNotifications = async (reminders, enabled, globalStreak, notificationContent) => {
   if (!isNativeNotificationPlatform()) {
     return false;
   }
@@ -177,13 +179,16 @@ export const syncNativeReminderNotifications = async (reminders, enabled, global
         const { hour, minute } = parseReminderTime(reminder.time);
         const reminderContent = getReminderNotificationContent(
           globalStreak,
-          getNextReminderTriggerTime(reminder.time)
+          getNextReminderTriggerTime(reminder.time),
+          notificationContent
         );
 
         return {
           id: createNativeReminderId(reminder.id),
           title: reminderContent.title,
           body: reminderContent.body,
+          smallIcon: NATIVE_REMINDER_NOTIFICATION_SMALL_ICON,
+          iconColor: NATIVE_REMINDER_NOTIFICATION_ICON_COLOR,
           schedule: {
             on: {
               hour,

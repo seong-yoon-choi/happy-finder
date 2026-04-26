@@ -16,6 +16,10 @@
       "insetsHandling": "css",
       "style": "DEFAULT",
       "hidden": false
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_happy_clover",
+      "iconColor": "#FFFFFF"
     }
   }
 }
