@@ -5,7 +5,8 @@ import CategoryTabs from '../components/CategoryTabs';
 import CreateHappinessModal from '../components/CreateHappinessModal';
 import GrowthStageAvatar from '../components/GrowthStageAvatar';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
-import { getTreeInfo } from '../utils/progress';
+import useModalBackNavigation from '../hooks/useModalBackNavigation';
+import { TREE_STAGE_MILESTONES, getTreeInfo } from '../utils/progress';
 import { getLocalDateKey } from '../utils/date';
 import './Profile.css';
 
@@ -15,9 +16,94 @@ const HappinessDetailModal = lazy(loadHappinessDetailModal);
 
 const FlameIcon = () => <span className="streak-flame" aria-hidden="true">🔥</span>;
 
+const StageListIcon = () => (
+  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+    <path d="M5 6.5H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M5 10H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M5 13.5H12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <circle cx="3" cy="6.5" r="0.9" fill="currentColor" />
+    <circle cx="3" cy="10" r="0.9" fill="currentColor" />
+    <circle cx="3" cy="13.5" r="0.9" fill="currentColor" />
+  </svg>
+);
+
 const getMillisecondsUntilNextMidnight = (now = new Date()) => {
   const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   return Math.max(nextMidnight.getTime() - now.getTime(), 1000);
+};
+
+const GrowthStageListModal = ({ currentStageId, isOpen, onClose }) => {
+  const requestClose = useModalBackNavigation({
+    isOpen,
+    onClose,
+    historyKey: 'growth-stage-list'
+  });
+
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      className="modal-overlay growth-stage-modal-overlay"
+      data-block-pull-refresh="true"
+      onClick={() => requestClose()}
+    >
+      <div
+        className="glass-panel growth-stage-modal"
+        data-block-pull-refresh="true"
+        onClick={event => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="close-btn growth-stage-modal-close"
+          onClick={() => requestClose()}
+          aria-label="행복 성장 목록 닫기"
+        >
+          &times;
+        </button>
+
+        <div className="growth-stage-modal-header">
+          <h2>행복 성장 목록</h2>
+          <p>행복을 쌓은 개수에 따라 프로필 이미지가 바뀌어요.</p>
+        </div>
+
+        <div className="growth-stage-list">
+          {TREE_STAGE_MILESTONES.map(stage => {
+            const isCurrent = stage.id === currentStageId;
+            const thresholdLabel = `${stage.minStamps.toLocaleString('ko-KR')}개부터`;
+
+            return (
+              <div
+                key={stage.id}
+                className={`growth-stage-item ${isCurrent ? 'current' : ''}`}
+                aria-current={isCurrent ? 'true' : undefined}
+              >
+                <div className="growth-stage-item-avatar">
+                  <GrowthStageAvatar stageId={stage.id} label={stage.title} />
+                </div>
+                <div className="growth-stage-item-copy">
+                  <div className="growth-stage-item-title-row">
+                    <strong>{stage.title}</strong>
+                    {isCurrent && <span>현재</span>}
+                  </div>
+                  <p>{thresholdLabel}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="btn-primary growth-stage-modal-button"
+          onClick={() => requestClose()}
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  );
 };
 
 const Profile = () => {
@@ -35,6 +121,7 @@ const Profile = () => {
   const [selectedStampedCategory, setSelectedStampedCategory] = useState('전체');
   const [selectedCard, setSelectedCard] = useState(null);
   const [showTreeTooltip, setShowTreeTooltip] = useState(false);
+  const [isGrowthStageListOpen, setIsGrowthStageListOpen] = useState(false);
   const [todayKey, setTodayKey] = useState(() => getLocalDateKey());
 
   const stampedItems = getStampedItems();
@@ -97,6 +184,17 @@ const Profile = () => {
         <div className="profile-brand" aria-label="Happy Finder 로고">Happy Finder</div>
 
         <section className="glass-card profile-overview">
+          <button
+            type="button"
+            className="profile-stage-list-trigger"
+            onClick={() => setIsGrowthStageListOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={isGrowthStageListOpen}
+          >
+            <StageListIcon />
+            <span>목록 보기</span>
+          </button>
+
           <div className="profile-overview-top">
             <div className="profile-tree-section" onClick={toggleTreeTooltip}>
               <div className="profile-avatar tree-avatar clickable-avatar">
@@ -255,6 +353,14 @@ const Profile = () => {
         <CreateHappinessModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+        />
+      )}
+
+      {isGrowthStageListOpen && (
+        <GrowthStageListModal
+          currentStageId={treeInfo.id}
+          isOpen={isGrowthStageListOpen}
+          onClose={() => setIsGrowthStageListOpen(false)}
         />
       )}
 

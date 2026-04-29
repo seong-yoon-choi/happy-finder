@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 const stageThemes = {
   seed: {
@@ -203,8 +203,9 @@ const renderStageArt = (stageId, theme) => {
 
 const GrowthStageAvatar = ({ stageId, label }) => {
   const theme = stageThemes[stageId] || stageThemes.sprout;
-  const gradientId = `growth-stage-${stageId}-gradient`;
-  const glowId = `growth-stage-${stageId}-glow`;
+  const uniqueId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const gradientId = `growth-stage-${stageId}-${uniqueId}-gradient`;
+  const glowId = `growth-stage-${stageId}-${uniqueId}-glow`;
 
   return (
     <svg

@@ -25,6 +25,34 @@
     margin-bottom: clamp(20px, 5vw, 24px);
 }
 
+.profile-stage-list-trigger {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 1px solid rgba(255, 142, 139, 0.34);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--primary-color);
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 5px 16px rgba(255, 142, 139, 0.14);
+}
+
+.profile-stage-list-trigger svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.profile-stage-list-trigger:active {
+    transform: scale(0.98);
+}
+
 .profile-overview-top {
     display: grid;
     grid-template-columns: var(--profile-side-rail) minmax(0, 1fr) var(--profile-side-rail);
@@ -229,6 +257,156 @@
 
 .profile-stamped-categories {
     margin-bottom: 26px;
+}
+
+.growth-stage-modal-overlay {
+    z-index: 2400;
+}
+
+.growth-stage-modal {
+    position: relative;
+    width: min(100%, 420px);
+    max-height: 88vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 24px 18px 18px;
+    background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-lg);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+}
+
+.growth-stage-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-size: 1.5rem;
+}
+
+.growth-stage-modal-header {
+    padding-right: 42px;
+}
+
+.growth-stage-modal-header h2 {
+    margin-bottom: 8px;
+    font-size: 1.45rem;
+    line-height: 1.25;
+    color: var(--text-dark);
+}
+
+.growth-stage-modal-header p {
+    color: var(--text-light);
+    font-size: 0.96rem;
+    line-height: 1.5;
+}
+
+.growth-stage-list {
+    display: grid;
+    gap: 10px;
+}
+
+.growth-stage-item {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.58);
+}
+
+.growth-stage-item.current {
+    border-color: rgba(255, 142, 139, 0.52);
+    background: rgba(255, 142, 139, 0.12);
+    box-shadow: 0 8px 24px rgba(255, 142, 139, 0.12);
+}
+
+.growth-stage-item-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 5px 14px rgba(73, 120, 66, 0.12);
+}
+
+.growth-stage-item-copy {
+    min-width: 0;
+}
+
+.growth-stage-item-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.growth-stage-item-title-row strong {
+    color: var(--text-dark);
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.growth-stage-item-title-row span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 22px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--primary-color);
+    color: var(--white);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.growth-stage-item-copy p {
+    color: var(--text-light);
+    font-size: 0.92rem;
+    line-height: 1.35;
+}
+
+.growth-stage-modal-button {
+    width: 100%;
+}
+
+.dark-theme .profile-stage-list-trigger {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.dark-theme .growth-stage-modal {
+    background: linear-gradient(135deg, #2a2a35 0%, #1e1e28 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .growth-stage-modal-close {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .growth-stage-item {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .growth-stage-item.current {
+    background: rgba(255, 142, 139, 0.18);
+    border-color: rgba(255, 142, 139, 0.44);
+}
+
+.dark-theme .growth-stage-item-avatar {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 @keyframes treeTooltipEnter {
