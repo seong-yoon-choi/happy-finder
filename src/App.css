@@ -15,10 +15,18 @@
     transition: background 0.3s ease, color 0.3s ease;
 }
 
-.settings-trigger-btn {
+.app-top-actions {
     position: absolute;
     top: calc(var(--app-safe-top) - clamp(6px, 1.8vw, 8px));
     right: clamp(14px, 4vw, 18px);
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 2.4vw, 10px);
+    z-index: 1000;
+}
+
+.settings-trigger-btn,
+.support-trigger-btn {
     width: var(--touch-target-md);
     height: var(--touch-target-md);
     border-radius: 50%;
@@ -31,7 +39,6 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 1000;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     -webkit-tap-highlight-color: transparent;
 }
@@ -42,6 +49,17 @@
     color: var(--text-dark);
 }
 
+.support-trigger-label {
+    color: var(--text-dark);
+    font-size: clamp(1.05rem, 4vw, 1.2rem);
+    font-weight: 800;
+    line-height: 1;
+}
+
 .settings-trigger-btn:active {
     transform: scale(0.9) rotate(12deg);
+}
+
+.support-trigger-btn:active {
+    transform: scale(0.9);
 }
