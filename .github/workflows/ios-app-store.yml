@@ -15,7 +15,7 @@ permissions:
 jobs:
   build:
     name: Build iOS IPA
-    runs-on: macos-latest
+    runs-on: macos-26
     env:
       BUNDLE_ID: net.happyfinder.app
       PROJECT_PATH: ios/App/App.xcodeproj
@@ -32,6 +32,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
 
       - name: Setup Node
         uses: actions/setup-node@v4
