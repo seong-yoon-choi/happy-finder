@@ -25,3 +25,6 @@ dist-ssr
 supabase/.temp/
 
 .vercel
+
+# Local Apple signing material
+ios-signing/
