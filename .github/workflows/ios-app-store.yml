@@ -20,8 +20,8 @@ jobs:
       BUNDLE_ID: net.happyfinder.app
       PROJECT_PATH: ios/App/App.xcodeproj
       SCHEME: App
-      ARCHIVE_PATH: ${{ runner.temp }}/HappyFinder.xcarchive
-      EXPORT_PATH: ${{ runner.temp }}/export
+      ARCHIVE_PATH: build/HappyFinder.xcarchive
+      EXPORT_PATH: build/export
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       VITE_AUTH_REDIRECT_URL: ${{ secrets.VITE_AUTH_REDIRECT_URL }}
