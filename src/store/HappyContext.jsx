@@ -30,6 +30,11 @@ import {
   signOutFromNativeGoogle
 } from '../lib/nativeGoogleSignIn';
 import {
+  isNativeAppleSignInConfigured,
+  signInWithNativeApple,
+  signOutFromNativeApple
+} from '../lib/nativeAppleSignIn';
+import {
   createReviewAdminUser,
   isReviewAdminCredentials
 } from '../lib/reviewAdminAccess';
@@ -713,6 +718,10 @@ const getKoreanAuthErrorMessage = (error, fallbackMessage) => {
     return '네트워크 연결을 확인한 뒤 다시 시도해주세요.';
   }
 
+  if (message.includes('cancel') || message.includes('canceled') || message.includes('cancelled') || message.includes('1001')) {
+    return '로그인이 취소됐어요.';
+  }
+
   if (message.includes('provider is not enabled') || message.includes('unsupported provider')) {
     return '이 소셜 로그인이 아직 활성화되지 않았어요. Supabase에서 provider 설정을 먼저 켜주세요.';
   }
@@ -739,6 +748,12 @@ const isGoogleIdentityUser = (user) => (
   user?.app_metadata?.provider === 'google'
   || user?.app_metadata?.providers?.includes?.('google')
   || user?.identities?.some?.(identity => identity?.provider === 'google')
+);
+
+const isAppleIdentityUser = (user) => (
+  user?.app_metadata?.provider === 'apple'
+  || user?.app_metadata?.providers?.includes?.('apple')
+  || user?.identities?.some?.(identity => identity?.provider === 'apple')
 );
 
 const shouldResetAuthSession = (error) => {
@@ -843,6 +858,10 @@ const getAuthUserDisplayName = (user, profileNickname = '') => {
 const getAuthProviderLabel = (provider) => {
   if (provider === 'google') {
     return 'Google';
+  }
+
+  if (provider === 'apple') {
+    return 'Apple';
   }
 
   return '소셜 로그인';
@@ -3600,6 +3619,45 @@ export const HappyProvider = ({ children }) => {
       }
     }
 
+    if (provider === 'apple' && Capacitor.isNativePlatform() && isNativeAppleSignInConfigured()) {
+      try {
+        const loginResult = await signInWithNativeApple();
+        const idToken = typeof loginResult?.result?.idToken === 'string'
+          ? loginResult.result.idToken.trim()
+          : '';
+
+        if (!idToken) {
+          throw new Error('Apple ID 토큰을 가져오지 못했어요.');
+        }
+
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: idToken
+        });
+
+        setIsAuthBusy(false);
+
+        if (error) {
+          const nextFeedback = getAuthFeedbackFromError(error, 'Apple 로그인으로 연결하지 못했어요.');
+          setAuthFeedback(nextFeedback);
+          return { success: false, error: nextFeedback.message };
+        }
+
+        if (data.session?.user) {
+          syncResolvedAuthState(data.session, data.user ?? data.session.user);
+          setIsGuestMode(false);
+          localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+        }
+
+        return { success: true };
+      } catch (error) {
+        setIsAuthBusy(false);
+        const nextFeedback = getAuthFeedbackFromError(error, 'Apple 로그인으로 연결하지 못했어요.');
+        setAuthFeedback(nextFeedback);
+        return { success: false, error: nextFeedback.message };
+      }
+    }
+
     const redirectTo = getAppRedirectUrl(APP_PATH);
     const isNativePlatform = Capacitor.isNativePlatform();
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -3648,6 +3706,7 @@ export const HappyProvider = ({ children }) => {
     }
 
     const shouldLogoutNativeGoogle = isGoogleIdentityUser(authUser);
+    const shouldLogoutNativeApple = isAppleIdentityUser(authUser);
     setIsSignupCompletionPending(false);
     setIsAuthBusy(true);
     setAuthFeedback(defaultAuthFeedback);
@@ -3664,6 +3723,13 @@ export const HappyProvider = ({ children }) => {
             // Ignore native provider logout failures.
           }
         }
+        if (shouldLogoutNativeApple) {
+          try {
+            await signOutFromNativeApple();
+          } catch {
+            // Ignore native provider logout failures.
+          }
+        }
         setIsAuthBusy(false);
         return { success: true };
       }
@@ -3673,6 +3739,13 @@ export const HappyProvider = ({ children }) => {
       if (shouldLogoutNativeGoogle) {
         try {
           await signOutFromNativeGoogle();
+        } catch {
+          // Ignore native provider logout failures.
+        }
+      }
+      if (shouldLogoutNativeApple) {
+        try {
+          await signOutFromNativeApple();
         } catch {
           // Ignore native provider logout failures.
         }
@@ -3693,6 +3766,13 @@ export const HappyProvider = ({ children }) => {
     if (shouldLogoutNativeGoogle) {
       try {
         await signOutFromNativeGoogle();
+      } catch {
+        // Ignore native provider logout failures.
+      }
+    }
+    if (shouldLogoutNativeApple) {
+      try {
+        await signOutFromNativeApple();
       } catch {
         // Ignore native provider logout failures.
       }

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { useHappy } from '../store/HappyContext';
-import { GoogleIcon } from './AuthProviderIcons';
+import { AppleIcon, GoogleIcon } from './AuthProviderIcons';
 import './AuthScreen.css';
 
 const socialButtons = [
+  { provider: 'apple', label: 'Apple로 계속하기', Icon: AppleIcon },
   { provider: 'google', label: 'Google로 계속하기', Icon: GoogleIcon }
 ];
 

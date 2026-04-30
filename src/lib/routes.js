@@ -152,16 +152,17 @@ export const getAppRedirectUrl = (pathname = APP_PATH) => {
       ? '/'
       : normalizedRequestedPath
   );
+
+  const callbackBaseUrl = getNativeAuthCallbackBaseUrl();
+
+  if (isNativeRuntime() && callbackBaseUrl) {
+    return callbackBaseUrl.toString();
+  }
+
   const isHttpOrigin = window.location.origin.startsWith('http');
 
   if (isHttpOrigin) {
     return `${window.location.origin}${normalizedTargetPath}`;
-  }
-
-  const callbackBaseUrl = getNativeAuthCallbackBaseUrl();
-
-  if (callbackBaseUrl) {
-    return callbackBaseUrl.toString();
   }
 
   return `${window.location.origin}${normalizedTargetPath}`;

@@ -6,10 +6,12 @@ import NavBar from './components/NavBar';
 import AuthScreen from './components/AuthScreen';
 import CelebrationModal from './components/CelebrationModal';
 import ExitConfirmModal from './components/ExitConfirmModal';
+import AppUpdateModal from './components/AppUpdateModal';
 import LazyLoadBoundary from './components/LazyLoadBoundary';
 import PullToRefreshShell from './components/PullToRefreshShell';
 import Home from './views/Home';
 import Profile from './views/Profile';
+import { getAvailableAppUpdate } from './lib/appVersionPolicy';
 import { openExternalUrl } from './lib/externalBrowser';
 import LandingPage from './views/LandingPage';
 import {
@@ -113,6 +115,8 @@ function AppContent() {
   const [isAgreementModalRequested, setIsAgreementModalRequested] = useState(false);
   const [dismissedAgreementUserId, setDismissedAgreementUserId] = useState(null);
   const [isNicknameModalRequested, setIsNicknameModalRequested] = useState(false);
+  const [appUpdatePrompt, setAppUpdatePrompt] = useState(null);
+  const [isAppUpdateDismissed, setIsAppUpdateDismissed] = useState(false);
 
   const {
     activeCelebration,
@@ -162,9 +166,11 @@ function AppContent() {
     || (isNicknameModalRequested && !needsAgreementSetup)
   );
   const isNicknameModalClosable = !needsNicknameSetup;
+  const isAppUpdatePromptOpen = Boolean(appUpdatePrompt && !isAppUpdateDismissed);
   const isPullToRefreshEnabled = (
     !isSettingsOpen
     && !isExitConfirmOpen
+    && !isAppUpdatePromptOpen
     && !isAuthScreenOpen
     && !isAgreementModalOpen
     && !isNicknameModalOpen
@@ -215,6 +221,14 @@ function AppContent() {
   };
 
   const handleNativeBackButton = useEffectEvent(event => {
+    if (isAppUpdatePromptOpen) {
+      if (!appUpdatePrompt?.isForced) {
+        setIsAppUpdateDismissed(true);
+      }
+
+      return;
+    }
+
     if (isExitConfirmOpen) {
       if (event.canGoBack) {
         window.history.back();
@@ -272,6 +286,23 @@ function AppContent() {
     };
   }, []);
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    getAvailableAppUpdate().then(nextUpdatePrompt => {
+      if (isCancelled || !nextUpdatePrompt) {
+        return;
+      }
+
+      setAppUpdatePrompt(nextUpdatePrompt);
+      setIsAppUpdateDismissed(false);
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const handlePullRefresh = () => {
     preserveAppViewForRefresh(currentView);
     window.location.reload();
@@ -290,6 +321,22 @@ function AppContent() {
     }
 
     await openExternalUrl(supportUrl);
+  };
+
+  const handleCloseAppUpdatePrompt = () => {
+    if (appUpdatePrompt?.isForced) {
+      return;
+    }
+
+    setIsAppUpdateDismissed(true);
+  };
+
+  const handleUpdateApp = async () => {
+    if (!appUpdatePrompt?.storeUrl) {
+      return;
+    }
+
+    await openExternalUrl(appUpdatePrompt.storeUrl);
   };
 
   return (
@@ -331,6 +378,14 @@ function AppContent() {
         isOpen={isExitConfirmOpen}
         onClose={() => setIsExitConfirmOpen(false)}
         onConfirm={handleConfirmExit}
+      />
+      <AppUpdateModal
+        isOpen={isAppUpdatePromptOpen}
+        isForced={appUpdatePrompt?.isForced}
+        title={appUpdatePrompt?.title}
+        message={appUpdatePrompt?.message}
+        onClose={handleCloseAppUpdatePrompt}
+        onUpdate={handleUpdateApp}
       />
 
       {isSettingsOpen && (
