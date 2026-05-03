@@ -16,6 +16,12 @@ import {
 import './Garden.css';
 
 const flowerIds = Object.keys(FLOWER_CATALOG);
+const MIN_ZOOM_SCALE = 0.05;
+const MAX_ZOOM_SCALE = 1;
+
+const getZoomScale = zoomLevel => (
+  MIN_ZOOM_SCALE + ((MAX_ZOOM_SCALE - MIN_ZOOM_SCALE) * (zoomLevel / 100))
+);
 
 const rewardLabel = reward => [
   reward.seeds ? `씨앗 ${reward.seeds}` : '',
@@ -85,7 +91,6 @@ const Garden = () => {
     totalStamps,
     gardenState,
     getTodayGardenMissionStats,
-    updateGardenName,
     claimGardenMission,
     buyGardenSeed,
     plantGardenSeed,
@@ -95,7 +100,8 @@ const Garden = () => {
   const viewportRef = useRef(null);
   const dragStateRef = useRef(null);
   const [activePanel, setActivePanel] = useState('missions');
-  const [zoom, setZoom] = useState(0.58);
+  const [zoomLevel, setZoomLevel] = useState(56);
+  const zoom = getZoomScale(zoomLevel);
   const [pan, setPan] = useState({ x: -680, y: -610 });
   const [seedPrompt, setSeedPrompt] = useState(null);
   const [plantingFlowerId, setPlantingFlowerId] = useState(null);
@@ -242,32 +248,23 @@ const Garden = () => {
 
   return (
     <div className="view-container garden-view">
-      <header className="garden-header">
-        <label className="garden-name-field">
-          <span>정원 이름</span>
-          <input
-            value={gardenState.name}
-            onChange={event => updateGardenName(event.target.value)}
-            maxLength={20}
-          />
-        </label>
+      <section className="garden-map-card">
         <div className="garden-resource-bar" aria-label="정원 자원">
           <span>씨앗 {gardenState.resources.seeds}</span>
           <span>물 {gardenState.resources.water}</span>
           <span>햇빛 {gardenState.resources.sunlight}</span>
         </div>
-      </header>
 
-      <section className="garden-map-card">
         <div className="garden-map-toolbar">
-          <button type="button" onClick={() => setZoom(value => Math.max(0.42, value - 0.08))}>-</button>
-          <span>{Math.round(zoom * 100)}%</span>
-          <button type="button" onClick={() => setZoom(value => Math.min(1.25, value + 0.08))}>+</button>
+          <button type="button" onClick={() => setZoomLevel(value => Math.max(0, value - 10))}>-</button>
+          <span>{zoomLevel}</span>
+          <button type="button" onClick={() => setZoomLevel(value => Math.min(100, value + 10))}>+</button>
         </div>
 
         <div
           ref={viewportRef}
           className={`garden-viewport ${plantingFlowerId ? 'planting' : ''}`}
+          data-block-pull-refresh="true"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}

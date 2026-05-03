@@ -172,7 +172,8 @@ function AppContent() {
   const isNicknameModalClosable = !needsNicknameSetup;
   const isAppUpdatePromptOpen = Boolean(appUpdatePrompt && !isAppUpdateDismissed);
   const isPullToRefreshEnabled = (
-    !isSettingsOpen
+    currentView !== 'garden'
+    && !isSettingsOpen
     && !isExitConfirmOpen
     && !isAppUpdatePromptOpen
     && !isAuthScreenOpen
