@@ -8,15 +8,23 @@ const NavBar = ({ currentView, onViewChange }) => {
                 className={`nav-item ${currentView === 'home' ? 'active' : ''}`}
                 onClick={() => onViewChange('home')}
             >
-                <div className="nav-icon">🏠</div>
+                <div className="nav-icon">찾기</div>
                 <span>홈</span>
+            </button>
+
+            <button
+                className={`nav-item ${currentView === 'garden' ? 'active' : ''}`}
+                onClick={() => onViewChange('garden')}
+            >
+                <div className="nav-icon">정원</div>
+                <span>정원</span>
             </button>
 
             <button
                 className={`nav-item ${currentView === 'profile' ? 'active' : ''}`}
                 onClick={() => onViewChange('profile')}
             >
-                <div className="nav-icon">👤</div>
+                <div className="nav-icon">기록</div>
                 <span>프로필</span>
             </button>
         </nav>

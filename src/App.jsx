@@ -10,6 +10,7 @@ import AppUpdateModal from './components/AppUpdateModal';
 import LazyLoadBoundary from './components/LazyLoadBoundary';
 import PullToRefreshShell from './components/PullToRefreshShell';
 import Home from './views/Home';
+import Garden from './views/Garden';
 import Profile from './views/Profile';
 import { getAvailableAppUpdate } from './lib/appVersionPolicy';
 import { openExternalUrl } from './lib/externalBrowser';
@@ -55,7 +56,7 @@ const consumePreservedAppView = () => {
   const preservedView = window.sessionStorage.getItem(PULL_TO_REFRESH_VIEW_STORAGE_KEY);
   window.sessionStorage.removeItem(PULL_TO_REFRESH_VIEW_STORAGE_KEY);
 
-  return preservedView === 'profile' ? 'profile' : 'home';
+  return ['home', 'garden', 'profile'].includes(preservedView) ? preservedView : 'home';
 };
 
 const preserveAppViewForRefresh = view => {
@@ -63,7 +64,10 @@ const preserveAppViewForRefresh = view => {
     return;
   }
 
-  window.sessionStorage.setItem(PULL_TO_REFRESH_VIEW_STORAGE_KEY, view === 'profile' ? 'profile' : 'home');
+  window.sessionStorage.setItem(
+    PULL_TO_REFRESH_VIEW_STORAGE_KEY,
+    ['home', 'garden', 'profile'].includes(view) ? view : 'home'
+  );
 };
 
 const resolveRuntimePath = rawPathname => {
@@ -367,6 +371,7 @@ function AppContent() {
         </div>
 
         {currentView === 'home' && <Home />}
+        {currentView === 'garden' && <Garden />}
         {currentView === 'profile' && <Profile />}
 
         <NavBar currentView={currentView} onViewChange={setCurrentView} />

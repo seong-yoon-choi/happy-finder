@@ -5,6 +5,13 @@ import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import {
+  FLOWER_CATALOG,
+  GARDEN_MISSIONS,
+  GARDEN_STORAGE_KEY,
+  getGardenPlantStatus,
+  normalizeGardenState
+} from '../utils/garden';
+import {
   DEFAULT_REMINDER_NOTIFICATION_BODY,
   DEFAULT_REMINDER_NOTIFICATION_TITLE,
   REMINDER_NOTIFICATION_BODY_MAX_LENGTH,
@@ -101,6 +108,7 @@ const APP_STORAGE_KEYS = [
   'happy_stamps',
   'happy_favorites',
   'happy_memos',
+  GARDEN_STORAGE_KEY,
   'happy_theme',
   'happy_streak',
   'happy_reminder'
@@ -1359,6 +1367,10 @@ export const HappyProvider = ({ children }) => {
     return isRecord(savedMemos) ? savedMemos : {};
   });
 
+  const [gardenState, setGardenState] = useState(() => {
+    return normalizeGardenState(readStoredJson(GARDEN_STORAGE_KEY, null));
+  });
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return Boolean(readStoredJson('happy_theme', false));
   });
@@ -2298,6 +2310,25 @@ export const HappyProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('happy_memos', JSON.stringify(userMemos));
   }, [userMemos]);
+
+  useEffect(() => {
+    localStorage.setItem(GARDEN_STORAGE_KEY, JSON.stringify(gardenState));
+  }, [gardenState]);
+
+  useEffect(() => {
+    setGardenState(prev => {
+      const activePlants = prev.plants.filter(plant => getGardenPlantStatus(plant) !== 'expired');
+
+      if (activePlants.length === prev.plants.length) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        plants: activePlants
+      };
+    });
+  }, [reminderDayKey]);
 
   useEffect(() => {
     localStorage.setItem('happy_theme', JSON.stringify(isDarkMode));
@@ -4129,6 +4160,213 @@ export const HappyProvider = ({ children }) => {
     return permission;
   };
 
+  const getTodayGardenMissionStats = () => {
+    const todayKey = getLocalDateKey();
+    const todayStamps = Object.values(userStamps).filter(stampData => (
+      isRecord(stampData) && getLocalDateKey(stampData.lastStampedDate) === todayKey
+    )).length;
+    const todayMemos = Object.values(userMemos).reduce((sum, memos) => {
+      if (!Array.isArray(memos)) {
+        return sum;
+      }
+
+      return sum + memos.filter(memo => (
+        getLocalDateKey(memo?.createdAt || memo?.updatedAt) === todayKey
+      )).length;
+    }, 0);
+
+    return {
+      todayKey,
+      todayStamps,
+      todayMemos
+    };
+  };
+
+  const updateGardenName = (name) => {
+    const nextName = typeof name === 'string' && name.trim()
+      ? name.trim().slice(0, 20)
+      : '나의 행복 정원';
+
+    setGardenState(prev => ({
+      ...prev,
+      name: nextName
+    }));
+  };
+
+  const claimGardenMission = (missionId) => {
+    const mission = GARDEN_MISSIONS.find(candidate => candidate.id === missionId);
+
+    if (!mission) {
+      return { success: false, code: 'MISSION_NOT_FOUND' };
+    }
+
+    const stats = getTodayGardenMissionStats();
+    const claimedToday = Array.isArray(gardenState.claimedMissions[stats.todayKey])
+      ? gardenState.claimedMissions[stats.todayKey]
+      : [];
+
+    if (claimedToday.includes(missionId)) {
+      return { success: false, code: 'ALREADY_CLAIMED' };
+    }
+
+    if (!mission.isComplete(stats)) {
+      return { success: false, code: 'MISSION_INCOMPLETE' };
+    }
+
+    setGardenState(prev => {
+      const prevClaimedToday = Array.isArray(prev.claimedMissions[stats.todayKey])
+        ? prev.claimedMissions[stats.todayKey]
+        : [];
+
+      if (prevClaimedToday.includes(missionId)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        resources: {
+          seeds: prev.resources.seeds + (mission.reward.seeds || 0),
+          water: prev.resources.water + (mission.reward.water || 0),
+          sunlight: prev.resources.sunlight + (mission.reward.sunlight || 0)
+        },
+        claimedMissions: {
+          ...prev.claimedMissions,
+          [stats.todayKey]: [...prevClaimedToday, missionId]
+        }
+      };
+    });
+
+    return { success: true };
+  };
+
+  const buyGardenSeed = (flowerId) => {
+    const flower = FLOWER_CATALOG[flowerId];
+
+    if (!flower) {
+      return { success: false, code: 'FLOWER_NOT_FOUND' };
+    }
+
+    if (gardenState.resources.seeds < flower.price) {
+      return { success: false, code: 'NOT_ENOUGH_SEEDS' };
+    }
+
+    setGardenState(prev => {
+      if (prev.resources.seeds < flower.price) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        resources: {
+          ...prev.resources,
+          seeds: prev.resources.seeds - flower.price
+        },
+        inventorySeeds: {
+          ...prev.inventorySeeds,
+          [flowerId]: (prev.inventorySeeds[flowerId] || 0) + 1
+        }
+      };
+    });
+
+    return { success: true };
+  };
+
+  const plantGardenSeed = ({ flowerId, tileX, tileY }) => {
+    const flower = FLOWER_CATALOG[flowerId];
+
+    if (!flower) {
+      return { success: false, code: 'FLOWER_NOT_FOUND' };
+    }
+
+    if ((gardenState.inventorySeeds[flowerId] || 0) <= 0) {
+      return { success: false, code: 'NO_SEED_IN_INVENTORY' };
+    }
+
+    if (gardenState.plants.some(plant => plant.tileX === tileX && plant.tileY === tileY)) {
+      return { success: false, code: 'TILE_OCCUPIED' };
+    }
+
+    const todayKey = getLocalDateKey();
+    const nextPlant = {
+      id: `garden_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      type: flowerId,
+      tileX,
+      tileY,
+      growth: 0,
+      plantedAt: todayKey,
+      lastCaredAt: todayKey
+    };
+
+    setGardenState(prev => {
+      if ((prev.inventorySeeds[flowerId] || 0) <= 0) {
+        return prev;
+      }
+
+      if (prev.plants.some(plant => plant.tileX === tileX && plant.tileY === tileY)) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        inventorySeeds: {
+          ...prev.inventorySeeds,
+          [flowerId]: prev.inventorySeeds[flowerId] - 1
+        },
+        plants: [...prev.plants, nextPlant]
+      };
+    });
+
+    return { success: true, plant: nextPlant };
+  };
+
+  const careGardenPlant = (plantId, careType) => {
+    if (careType !== 'water' && careType !== 'sunlight') {
+      return { success: false, code: 'INVALID_CARE_TYPE' };
+    }
+
+    if ((gardenState.resources[careType] || 0) <= 0) {
+      return { success: false, code: 'NOT_ENOUGH_RESOURCE' };
+    }
+
+    const todayKey = getLocalDateKey();
+    let didCare = false;
+
+    setGardenState(prev => {
+      if ((prev.resources[careType] || 0) <= 0) {
+        return prev;
+      }
+
+      const nextPlants = prev.plants.map(plant => {
+        if (plant.id !== plantId) {
+          return plant;
+        }
+
+        didCare = true;
+
+        return {
+          ...plant,
+          growth: careType === 'sunlight' ? plant.growth + 1 : plant.growth,
+          lastCaredAt: todayKey
+        };
+      });
+
+      if (!didCare) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        resources: {
+          ...prev.resources,
+          [careType]: prev.resources[careType] - 1
+        },
+        plants: nextPlants
+      };
+    });
+
+    return didCare ? { success: true } : { success: false, code: 'PLANT_NOT_FOUND' };
+  };
+
   const toggleReminder = async (enabled) => {
     let currentPermission = notificationPermission;
 
@@ -4224,6 +4462,13 @@ export const HappyProvider = ({ children }) => {
       updateAuthNickname,
       marketingConsent,
       updateMarketingConsent,
+      gardenState,
+      getTodayGardenMissionStats,
+      updateGardenName,
+      claimGardenMission,
+      buyGardenSeed,
+      plantGardenSeed,
+      careGardenPlant,
       globalStreak,
       reminderSettings,
       notificationPermission,
