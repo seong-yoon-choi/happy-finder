@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import GrowthStageAvatar from '../components/GrowthStageAvatar';
 import { useHappy } from '../store/HappyContext';
 import { getTreeInfo } from '../utils/progress';
@@ -16,6 +16,8 @@ import {
 import './Garden.css';
 
 const flowerIds = Object.keys(FLOWER_CATALOG);
+const DEFAULT_ZOOM_LEVEL = 56;
+const DEFAULT_PAN = { x: -680, y: -610 };
 const MIN_ZOOM_SCALE = 0.05;
 const MAX_ZOOM_SCALE = 1;
 
@@ -99,10 +101,10 @@ const Garden = () => {
 
   const viewportRef = useRef(null);
   const dragStateRef = useRef(null);
-  const [activePanel, setActivePanel] = useState('missions');
-  const [zoomLevel, setZoomLevel] = useState(56);
+  const [activePanel, setActivePanel] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM_LEVEL);
   const zoom = getZoomScale(zoomLevel);
-  const [pan, setPan] = useState({ x: -680, y: -610 });
+  const [pan, setPan] = useState(() => ({ ...DEFAULT_PAN }));
   const [seedPrompt, setSeedPrompt] = useState(null);
   const [plantingFlowerId, setPlantingFlowerId] = useState(null);
   const [selectedTile, setSelectedTile] = useState(null);
@@ -120,6 +122,54 @@ const Garden = () => {
   const selectedPlant = gardenState.plants.find(plant => plant.id === selectedPlantId) || null;
   const centerTreeInfo = getTreeInfo(totalStamps);
   const worldSize = GARDEN_SIZE_TILES * GARDEN_TILE_SIZE;
+  const missionProgress = useMemo(() => {
+    const total = GARDEN_MISSIONS.length;
+    const done = GARDEN_MISSIONS.filter(mission => mission.isComplete(stats)).length;
+    return { total, done };
+  }, [stats]);
+
+  useEffect(() => {
+    if (!feedback) {
+      return undefined;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setFeedback('');
+    }, 3400);
+
+    return () => window.clearTimeout(timerId);
+  }, [feedback]);
+
+  useEffect(() => {
+    const handleKeyDown = event => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      if (seedPrompt) {
+        setSeedPrompt(null);
+        return;
+      }
+
+      if (selectedPlantId) {
+        setSelectedPlantId(null);
+        return;
+      }
+
+      if (activePanel) {
+        setActivePanel(null);
+        return;
+      }
+
+      if (plantingFlowerId) {
+        setPlantingFlowerId(null);
+        setSelectedTile(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [seedPrompt, selectedPlantId, activePanel, plantingFlowerId]);
 
   const handlePointerDown = event => {
     if (event.button !== undefined && event.button !== 0) {
@@ -212,7 +262,7 @@ const Garden = () => {
     setSeedPrompt(null);
     setSelectedTile(null);
     setFeedback('씨앗을 심을 위치를 선택해주세요.');
-    setActivePanel('inventory');
+    setActivePanel(null);
   };
 
   const handlePlantSelectedTile = () => {
@@ -249,17 +299,69 @@ const Garden = () => {
   return (
     <div className="view-container garden-view">
       <section className="garden-map-card">
-        <div className="garden-resource-bar" aria-label="정원 자원">
-          <span>씨앗 {gardenState.resources.seeds}</span>
-          <span>물 {gardenState.resources.water}</span>
-          <span>햇빛 {gardenState.resources.sunlight}</span>
+        <div className="garden-floating-intro" aria-live="polite">
+          <div className="garden-floating-intro-titles">
+            <span className="garden-floating-intro-badge">내 정원</span>
+            <span className="garden-floating-intro-mission">
+              오늘 미션 {missionProgress.done}/{missionProgress.total}
+            </span>
+          </div>
+          <p className="garden-floating-intro-hint">맵을 드래그해 돌아보고, 가운데 나무는 행복 스탬프로 자라요.</p>
         </div>
 
-        <div className="garden-map-toolbar">
-          <button type="button" onClick={() => setZoomLevel(value => Math.max(0, value - 10))}>-</button>
-          <span>{zoomLevel}</span>
-          <button type="button" onClick={() => setZoomLevel(value => Math.min(100, value + 10))}>+</button>
+        <div className="garden-resource-bar" aria-label="정원 자원">
+          <span className="garden-resource-chip garden-resource-chip--seed">
+            <span className="garden-resource-icon" aria-hidden="true">🌱</span>
+            씨앗 <strong>{gardenState.resources.seeds}</strong>
+          </span>
+          <span className="garden-resource-chip garden-resource-chip--water">
+            <span className="garden-resource-icon" aria-hidden="true">💧</span>
+            물 <strong>{gardenState.resources.water}</strong>
+          </span>
+          <span className="garden-resource-chip garden-resource-chip--sun">
+            <span className="garden-resource-icon" aria-hidden="true">☀️</span>
+            햇빛 <strong>{gardenState.resources.sunlight}</strong>
+          </span>
         </div>
+
+        <div className="garden-map-toolbar" role="toolbar" aria-label="정원 보기 조절">
+          <button
+            type="button"
+            aria-label="화면 축소"
+            onClick={() => setZoomLevel(value => Math.max(0, value - 10))}
+          >
+            −
+          </button>
+          <span className="garden-zoom-label" title="가까울수록 숫자가 커요">
+            {Math.round(zoomLevel)}%
+          </span>
+          <button
+            type="button"
+            aria-label="화면 확대"
+            onClick={() => setZoomLevel(value => Math.min(100, value + 10))}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="garden-toolbar-recenter"
+            aria-label="시야를 정원 중앙으로 맞추기"
+            onClick={() => {
+              setPan({ ...DEFAULT_PAN });
+              setZoomLevel(DEFAULT_ZOOM_LEVEL);
+              setFeedback('정원 중앙으로 맞췄어요.');
+            }}
+          >
+            중앙
+          </button>
+        </div>
+
+        {plantingFlowerId && (
+          <div className="garden-planting-hint" role="status">
+            <span className="garden-planting-hint-icon" aria-hidden="true">👆</span>
+            <span>갈색 길 위 빈 칸을 탭해 심을 자리를 골라 주세요.</span>
+          </div>
+        )}
 
         <div
           ref={viewportRef}
@@ -348,78 +450,126 @@ const Garden = () => {
         )}
       </section>
 
-      {feedback && <div className="garden-feedback">{feedback}</div>}
+      {feedback ? (
+        <div
+          className={`garden-feedback-toast ${plantingFlowerId ? 'garden-feedback-toast--above-planting' : ''}`}
+          role="status"
+        >
+          {feedback}
+        </div>
+      ) : null}
 
-      <div className="garden-panel-tabs">
-        <button className={activePanel === 'missions' ? 'active' : ''} onClick={() => setActivePanel('missions')}>미션</button>
-        <button className={activePanel === 'shop' ? 'active' : ''} onClick={() => setActivePanel('shop')}>꽃 상점</button>
-        <button className={activePanel === 'inventory' ? 'active' : ''} onClick={() => setActivePanel('inventory')}>보관함</button>
-      </div>
+      <nav className="garden-actions-bar" aria-label="정원 빠른 메뉴">
+        <button
+          type="button"
+          className="garden-action-tile"
+          onClick={() => setActivePanel('missions')}
+          aria-current={activePanel === 'missions' ? 'true' : undefined}
+        >
+          <span className="garden-action-tile-icon" aria-hidden="true">✦</span>
+          <span className="garden-action-tile-label">미션</span>
+        </button>
+        <button
+          type="button"
+          className="garden-action-tile"
+          onClick={() => setActivePanel('shop')}
+          aria-current={activePanel === 'shop' ? 'true' : undefined}
+        >
+          <span className="garden-action-tile-icon" aria-hidden="true">🏪</span>
+          <span className="garden-action-tile-label">꽃 상점</span>
+        </button>
+        <button
+          type="button"
+          className="garden-action-tile"
+          onClick={() => setActivePanel('inventory')}
+          aria-current={activePanel === 'inventory' ? 'true' : undefined}
+        >
+          <span className="garden-action-tile-icon" aria-hidden="true">🧺</span>
+          <span className="garden-action-tile-label">보관함</span>
+        </button>
+      </nav>
 
-      {activePanel === 'missions' && (
-        <section className="garden-panel">
-          {GARDEN_MISSIONS.map(mission => {
-            const isComplete = mission.isComplete(stats);
-            const isClaimed = claimedToday.includes(mission.id);
+      {activePanel && (
+        <div className="garden-modal-backdrop garden-modal-backdrop--sheet" onClick={() => setActivePanel(null)}>
+          <section
+            className="garden-panel-modal garden-panel-modal--sheet"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="garden-sheet-handle" aria-hidden />
+            <button className="garden-modal-close" type="button" onClick={() => setActivePanel(null)}>&times;</button>
+            <h2>
+              {activePanel === 'missions' && '미션'}
+              {activePanel === 'shop' && '꽃 상점'}
+              {activePanel === 'inventory' && '보관함'}
+            </h2>
 
-            return (
-              <article key={mission.id} className="garden-list-item">
-                <div>
-                  <strong>{mission.title}</strong>
-                  <p>{mission.description}</p>
-                  <span>보상: {rewardLabel(mission.reward)}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleClaimMission(mission.id)}
-                  disabled={!isComplete || isClaimed}
-                >
-                  {isClaimed ? '완료' : '받기'}
-                </button>
-              </article>
-            );
-          })}
-        </section>
-      )}
+            {activePanel === 'missions' && (
+              <div className="garden-panel">
+                {GARDEN_MISSIONS.map(mission => {
+                  const isComplete = mission.isComplete(stats);
+                  const isClaimed = claimedToday.includes(mission.id);
 
-      {activePanel === 'shop' && (
-        <section className="garden-panel">
-          {flowerIds.map(flowerId => {
-            const flower = FLOWER_CATALOG[flowerId];
+                  return (
+                    <article key={mission.id} className="garden-list-item">
+                      <div>
+                        <strong>{mission.title}</strong>
+                        <p>{mission.description}</p>
+                        <span>보상: {rewardLabel(mission.reward)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleClaimMission(mission.id)}
+                        disabled={!isComplete || isClaimed}
+                      >
+                        {isClaimed ? '완료' : '받기'}
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
 
-            return (
-              <article key={flower.id} className="garden-list-item flower-shop-item">
-                <FlowerSprite flower={flower} stage="꽃" status="healthy" />
-                <div>
-                  <strong>{flower.seedName}</strong>
-                  <p>{flower.meaning}</p>
-                  <span>씨앗 {flower.price}개</span>
-                </div>
-                <button type="button" onClick={() => handleBuySeed(flower.id)}>구매</button>
-              </article>
-            );
-          })}
-        </section>
-      )}
+            {activePanel === 'shop' && (
+              <div className="garden-panel">
+                {flowerIds.map(flowerId => {
+                  const flower = FLOWER_CATALOG[flowerId];
 
-      {activePanel === 'inventory' && (
-        <section className="garden-panel">
-          {flowerIds.map(flowerId => {
-            const flower = FLOWER_CATALOG[flowerId];
-            const count = gardenState.inventorySeeds[flowerId] || 0;
+                  return (
+                    <article key={flower.id} className="garden-list-item flower-shop-item">
+                      <FlowerSprite flower={flower} stage="꽃" status="healthy" />
+                      <div>
+                        <strong>{flower.seedName}</strong>
+                        <p>{flower.meaning}</p>
+                        <span>씨앗 {flower.price}개</span>
+                      </div>
+                      <button type="button" onClick={() => handleBuySeed(flower.id)}>구매</button>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
 
-            return (
-              <article key={flower.id} className="garden-list-item flower-shop-item">
-                <FlowerSprite flower={flower} stage="씨앗" status="healthy" />
-                <div>
-                  <strong>{flower.seedName}</strong>
-                  <p>보유 {count}개</p>
-                </div>
-                <button type="button" disabled={count <= 0} onClick={() => setSeedPrompt(flower.id)}>심기</button>
-              </article>
-            );
-          })}
-        </section>
+            {activePanel === 'inventory' && (
+              <div className="garden-panel">
+                {flowerIds.map(flowerId => {
+                  const flower = FLOWER_CATALOG[flowerId];
+                  const count = gardenState.inventorySeeds[flowerId] || 0;
+
+                  return (
+                    <article key={flower.id} className="garden-list-item flower-shop-item">
+                      <FlowerSprite flower={flower} stage="씨앗" status="healthy" />
+                      <div>
+                        <strong>{flower.seedName}</strong>
+                        <p>보유 {count}개</p>
+                      </div>
+                      <button type="button" disabled={count <= 0} onClick={() => setSeedPrompt(flower.id)}>심기</button>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
       )}
 
       {selectedPlant && (

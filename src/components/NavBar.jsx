@@ -8,7 +8,7 @@ const NavBar = ({ currentView, onViewChange }) => {
                 className={`nav-item ${currentView === 'home' ? 'active' : ''}`}
                 onClick={() => onViewChange('home')}
             >
-                <div className="nav-icon" aria-hidden="true">⌂</div>
+                <div className="nav-icon" aria-hidden="true">🏠</div>
                 <span>홈</span>
             </button>
 
@@ -24,7 +24,7 @@ const NavBar = ({ currentView, onViewChange }) => {
                 className={`nav-item ${currentView === 'profile' ? 'active' : ''}`}
                 onClick={() => onViewChange('profile')}
             >
-                <div className="nav-icon" aria-hidden="true">☻</div>
+                <div className="nav-icon" aria-hidden="true">👤</div>
                 <span>프로필</span>
             </button>
         </nav>
