@@ -5,13 +5,6 @@ import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
 import {
-  FLOWER_CATALOG,
-  GARDEN_MISSIONS,
-  GARDEN_STORAGE_KEY,
-  getGardenPlantStatus,
-  normalizeGardenState
-} from '../utils/garden';
-import {
   DEFAULT_REMINDER_NOTIFICATION_BODY,
   DEFAULT_REMINDER_NOTIFICATION_TITLE,
   REMINDER_NOTIFICATION_BODY_MAX_LENGTH,
@@ -30,6 +23,11 @@ import {
   syncNativeReminderNotifications
 } from '../lib/localNotifications';
 import { supabase, isSupabaseConfigured, supabaseAuthStorageKey } from '../lib/supabase';
+import {
+  deleteMemoStoredImages,
+  isNativeMemoImageAvailable,
+  uploadLocalMemoImageToCloud
+} from '../lib/memoImages';
 import { openExternalUrl } from '../lib/externalBrowser';
 import {
   isNativeGoogleSignInConfigured,
@@ -108,7 +106,6 @@ const APP_STORAGE_KEYS = [
   'happy_stamps',
   'happy_favorites',
   'happy_memos',
-  GARDEN_STORAGE_KEY,
   'happy_theme',
   'happy_streak',
   'happy_reminder'
@@ -590,12 +587,37 @@ const getTotalStampCount = (stamps) => Object.values(stamps).reduce((sum, data) 
   return sum + getStampCountFromData(data);
 }, 0);
 
+const normalizeMemoImages = images => {
+  if (!Array.isArray(images)) {
+    return [];
+  }
+
+  return images
+    .filter(image => isRecord(image) && typeof image.path === 'string' && image.path.trim())
+    .map(image => ({
+      id: typeof image.id === 'string' && image.id.trim()
+        ? image.id
+        : `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      storageType: image.storageType === 'cloud' ? 'cloud' : 'local',
+      path: image.path.trim(),
+      contentType: typeof image.contentType === 'string' && image.contentType.trim()
+        ? image.contentType.trim()
+        : 'image/jpeg',
+      size: Number.isFinite(image.size) ? image.size : null,
+      resolution: typeof image.resolution === 'string' ? image.resolution : null,
+      createdAt: typeof image.createdAt === 'string' ? image.createdAt : new Date().toISOString(),
+      migratedAt: typeof image.migratedAt === 'string' ? image.migratedAt : undefined
+    }));
+};
+
 const normalizeMemo = (memo) => {
   const createdAt = typeof memo?.createdAt === 'string' ? memo.createdAt : new Date().toISOString();
   const updatedAt = typeof memo?.updatedAt === 'string' ? memo.updatedAt : createdAt;
 
   return {
     ...memo,
+    content: typeof memo?.content === 'string' ? memo.content : '',
+    images: normalizeMemoImages(memo?.images),
     createdAt,
     updatedAt
   };
@@ -1367,10 +1389,6 @@ export const HappyProvider = ({ children }) => {
     return isRecord(savedMemos) ? savedMemos : {};
   });
 
-  const [gardenState, setGardenState] = useState(() => {
-    return normalizeGardenState(readStoredJson(GARDEN_STORAGE_KEY, null));
-  });
-
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return Boolean(readStoredJson('happy_theme', false));
   });
@@ -1423,6 +1441,7 @@ export const HappyProvider = ({ children }) => {
   const [cloudSyncStatus, setCloudSyncStatus] = useState(defaultCloudSyncStatus);
   const hasBootstrappedCloudRef = useRef(false);
   const isApplyingCloudSnapshotRef = useRef(false);
+  const isMigratingMemoImagesRef = useRef(false);
   const cloudSyncTimeoutRef = useRef(null);
   const latestSnapshotStateRef = useRef(null);
   const authUserIdRef = useRef(null);
@@ -2312,25 +2331,6 @@ export const HappyProvider = ({ children }) => {
   }, [userMemos]);
 
   useEffect(() => {
-    localStorage.setItem(GARDEN_STORAGE_KEY, JSON.stringify(gardenState));
-  }, [gardenState]);
-
-  useEffect(() => {
-    setGardenState(prev => {
-      const activePlants = prev.plants.filter(plant => getGardenPlantStatus(plant) !== 'expired');
-
-      if (activePlants.length === prev.plants.length) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        plants: activePlants
-      };
-    });
-  }, [reminderDayKey]);
-
-  useEffect(() => {
     localStorage.setItem('happy_theme', JSON.stringify(isDarkMode));
     if (isDarkMode) {
       document.body.classList.add('dark-theme');
@@ -2350,6 +2350,115 @@ export const HappyProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem(MARKETING_CONSENT_STORAGE_KEY, JSON.stringify(marketingConsent));
   }, [marketingConsent]);
+
+  useEffect(() => {
+    if (
+      !supabase
+      || !authUser?.id
+      || !isNativeMemoImageAvailable()
+      || isMigratingMemoImagesRef.current
+    ) {
+      return undefined;
+    }
+
+    const localImageJobs = [];
+
+    Object.entries(userMemos).forEach(([itemId, memos]) => {
+      if (!Array.isArray(memos)) {
+        return;
+      }
+
+      memos.map(normalizeMemo).forEach(memo => {
+        memo.images
+          .filter(image => image.storageType === 'local')
+          .forEach(image => {
+            localImageJobs.push({
+              itemId,
+              memoId: memo.id,
+              image
+            });
+          });
+      });
+    });
+
+    if (localImageJobs.length === 0) {
+      return undefined;
+    }
+
+    let isCancelled = false;
+    isMigratingMemoImagesRef.current = true;
+
+    const migrateLocalImages = async () => {
+      const migratedImageMap = new Map();
+
+      for (const job of localImageJobs) {
+        try {
+          const migratedImage = await uploadLocalMemoImageToCloud({
+            image: job.image,
+            supabase,
+            authUserId: authUser.id,
+            itemId: job.itemId,
+            memoId: job.memoId
+          });
+
+          if (migratedImage) {
+            migratedImageMap.set(`${job.itemId}:${job.memoId}:${job.image.id}`, migratedImage);
+          }
+        } catch {
+          // Keep the local image reference if cloud upload is not available yet.
+        }
+      }
+
+      if (isCancelled || migratedImageMap.size === 0) {
+        return;
+      }
+
+      setUserMemos(prev => {
+        const nextMemoMap = {};
+        let didChange = false;
+
+        Object.entries(prev).forEach(([itemId, memos]) => {
+          if (!Array.isArray(memos)) {
+            return;
+          }
+
+          nextMemoMap[itemId] = memos.map(memo => {
+            const normalizedMemo = normalizeMemo(memo);
+            let didMemoChange = false;
+            const nextImages = normalizedMemo.images.map(image => {
+              const migratedImage = migratedImageMap.get(`${itemId}:${normalizedMemo.id}:${image.id}`);
+
+              if (!migratedImage) {
+                return image;
+              }
+
+              didChange = true;
+              didMemoChange = true;
+              return migratedImage;
+            });
+
+            return didMemoChange
+              ? {
+                ...normalizedMemo,
+                images: nextImages,
+                updatedAt: new Date().toISOString()
+              }
+              : normalizedMemo;
+          });
+        });
+
+        return didChange ? nextMemoMap : prev;
+      });
+    };
+
+    void migrateLocalImages().finally(() => {
+      isMigratingMemoImagesRef.current = false;
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [authUser?.id, userMemos]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id || !hasBootstrappedCloudRef.current || isApplyingCloudSnapshotRef.current) {
@@ -2811,6 +2920,14 @@ export const HappyProvider = ({ children }) => {
       }
     }
 
+    const memoImagesForCleanup = Array.isArray(userMemos[itemId])
+      ? userMemos[itemId].flatMap(memo => normalizeMemo(memo).images)
+      : [];
+
+    if (memoImagesForCleanup.length > 0) {
+      void deleteMemoStoredImages({ images: memoImagesForCleanup, supabase });
+    }
+
     setItems(prev => prev.filter(item => item.id !== itemId));
 
     setUserStamps(prev => {
@@ -2879,17 +2996,29 @@ export const HappyProvider = ({ children }) => {
     return Array.isArray(savedMemos) ? savedMemos.map(normalizeMemo) : [];
   };
 
-  const addMemo = (itemId, content) => {
-    const trimmedContent = content.trim();
+  const cleanupMemoImages = images => {
+    const normalizedImages = normalizeMemoImages(images);
 
-    if (!trimmedContent) {
+    if (normalizedImages.length === 0) {
+      return;
+    }
+
+    void deleteMemoStoredImages({ images: normalizedImages, supabase });
+  };
+
+  const addMemo = (itemId, content, images = [], options = {}) => {
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    const normalizedImages = normalizeMemoImages(images);
+
+    if (!trimmedContent && normalizedImages.length === 0) {
       return null;
     }
 
     const nowIso = new Date().toISOString();
     const nextMemo = {
-      id: `m_${Date.now()}`,
+      id: typeof options.id === 'string' && options.id.trim() ? options.id.trim() : `m_${Date.now()}`,
       content: trimmedContent,
+      images: normalizedImages,
       createdAt: nowIso,
       updatedAt: nowIso
     };
@@ -2906,10 +3035,12 @@ export const HappyProvider = ({ children }) => {
     return nextMemo;
   };
 
-  const updateMemo = (itemId, memoId, content) => {
-    const trimmedContent = content.trim();
+  const updateMemo = (itemId, memoId, content, images = null) => {
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    const hasNextImages = Array.isArray(images);
+    const normalizedImages = hasNextImages ? normalizeMemoImages(images) : null;
 
-    if (!trimmedContent) {
+    if (!trimmedContent && (!hasNextImages || normalizedImages.length === 0)) {
       return false;
     }
 
@@ -2924,10 +3055,16 @@ export const HappyProvider = ({ children }) => {
         }
 
         didUpdate = true;
+        const nextImages = hasNextImages ? normalizedImages : memo.images;
+        const nextImageIds = new Set(normalizeMemoImages(nextImages).map(image => image.id));
+        const removedImages = normalizeMemoImages(memo.images).filter(image => !nextImageIds.has(image.id));
+
+        cleanupMemoImages(removedImages);
 
         return {
           ...memo,
           content: trimmedContent,
+          images: nextImages,
           updatedAt: new Date().toISOString()
         };
       });
@@ -2950,6 +3087,7 @@ export const HappyProvider = ({ children }) => {
 
     setUserMemos(prev => {
       const currentMemos = Array.isArray(prev[itemId]) ? prev[itemId].map(normalizeMemo) : [];
+      const deletedMemo = currentMemos.find(memo => memo.id === memoId);
       const nextMemos = currentMemos.filter(memo => memo.id !== memoId);
 
       if (nextMemos.length === currentMemos.length) {
@@ -2957,6 +3095,7 @@ export const HappyProvider = ({ children }) => {
       }
 
       didDelete = true;
+      cleanupMemoImages(deletedMemo?.images);
 
       if (nextMemos.length === 0) {
         const next = { ...prev };
@@ -4160,213 +4299,6 @@ export const HappyProvider = ({ children }) => {
     return permission;
   };
 
-  const getTodayGardenMissionStats = () => {
-    const todayKey = getLocalDateKey();
-    const todayStamps = Object.values(userStamps).filter(stampData => (
-      isRecord(stampData) && getLocalDateKey(stampData.lastStampedDate) === todayKey
-    )).length;
-    const todayMemos = Object.values(userMemos).reduce((sum, memos) => {
-      if (!Array.isArray(memos)) {
-        return sum;
-      }
-
-      return sum + memos.filter(memo => (
-        getLocalDateKey(memo?.createdAt || memo?.updatedAt) === todayKey
-      )).length;
-    }, 0);
-
-    return {
-      todayKey,
-      todayStamps,
-      todayMemos
-    };
-  };
-
-  const updateGardenName = (name) => {
-    const nextName = typeof name === 'string' && name.trim()
-      ? name.trim().slice(0, 20)
-      : '나의 행복 정원';
-
-    setGardenState(prev => ({
-      ...prev,
-      name: nextName
-    }));
-  };
-
-  const claimGardenMission = (missionId) => {
-    const mission = GARDEN_MISSIONS.find(candidate => candidate.id === missionId);
-
-    if (!mission) {
-      return { success: false, code: 'MISSION_NOT_FOUND' };
-    }
-
-    const stats = getTodayGardenMissionStats();
-    const claimedToday = Array.isArray(gardenState.claimedMissions[stats.todayKey])
-      ? gardenState.claimedMissions[stats.todayKey]
-      : [];
-
-    if (claimedToday.includes(missionId)) {
-      return { success: false, code: 'ALREADY_CLAIMED' };
-    }
-
-    if (!mission.isComplete(stats)) {
-      return { success: false, code: 'MISSION_INCOMPLETE' };
-    }
-
-    setGardenState(prev => {
-      const prevClaimedToday = Array.isArray(prev.claimedMissions[stats.todayKey])
-        ? prev.claimedMissions[stats.todayKey]
-        : [];
-
-      if (prevClaimedToday.includes(missionId)) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        resources: {
-          seeds: prev.resources.seeds + (mission.reward.seeds || 0),
-          water: prev.resources.water + (mission.reward.water || 0),
-          sunlight: prev.resources.sunlight + (mission.reward.sunlight || 0)
-        },
-        claimedMissions: {
-          ...prev.claimedMissions,
-          [stats.todayKey]: [...prevClaimedToday, missionId]
-        }
-      };
-    });
-
-    return { success: true };
-  };
-
-  const buyGardenSeed = (flowerId) => {
-    const flower = FLOWER_CATALOG[flowerId];
-
-    if (!flower) {
-      return { success: false, code: 'FLOWER_NOT_FOUND' };
-    }
-
-    if (gardenState.resources.seeds < flower.price) {
-      return { success: false, code: 'NOT_ENOUGH_SEEDS' };
-    }
-
-    setGardenState(prev => {
-      if (prev.resources.seeds < flower.price) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        resources: {
-          ...prev.resources,
-          seeds: prev.resources.seeds - flower.price
-        },
-        inventorySeeds: {
-          ...prev.inventorySeeds,
-          [flowerId]: (prev.inventorySeeds[flowerId] || 0) + 1
-        }
-      };
-    });
-
-    return { success: true };
-  };
-
-  const plantGardenSeed = ({ flowerId, tileX, tileY }) => {
-    const flower = FLOWER_CATALOG[flowerId];
-
-    if (!flower) {
-      return { success: false, code: 'FLOWER_NOT_FOUND' };
-    }
-
-    if ((gardenState.inventorySeeds[flowerId] || 0) <= 0) {
-      return { success: false, code: 'NO_SEED_IN_INVENTORY' };
-    }
-
-    if (gardenState.plants.some(plant => plant.tileX === tileX && plant.tileY === tileY)) {
-      return { success: false, code: 'TILE_OCCUPIED' };
-    }
-
-    const todayKey = getLocalDateKey();
-    const nextPlant = {
-      id: `garden_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      type: flowerId,
-      tileX,
-      tileY,
-      growth: 0,
-      plantedAt: todayKey,
-      lastCaredAt: todayKey
-    };
-
-    setGardenState(prev => {
-      if ((prev.inventorySeeds[flowerId] || 0) <= 0) {
-        return prev;
-      }
-
-      if (prev.plants.some(plant => plant.tileX === tileX && plant.tileY === tileY)) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        inventorySeeds: {
-          ...prev.inventorySeeds,
-          [flowerId]: prev.inventorySeeds[flowerId] - 1
-        },
-        plants: [...prev.plants, nextPlant]
-      };
-    });
-
-    return { success: true, plant: nextPlant };
-  };
-
-  const careGardenPlant = (plantId, careType) => {
-    if (careType !== 'water' && careType !== 'sunlight') {
-      return { success: false, code: 'INVALID_CARE_TYPE' };
-    }
-
-    if ((gardenState.resources[careType] || 0) <= 0) {
-      return { success: false, code: 'NOT_ENOUGH_RESOURCE' };
-    }
-
-    const todayKey = getLocalDateKey();
-    let didCare = false;
-
-    setGardenState(prev => {
-      if ((prev.resources[careType] || 0) <= 0) {
-        return prev;
-      }
-
-      const nextPlants = prev.plants.map(plant => {
-        if (plant.id !== plantId) {
-          return plant;
-        }
-
-        didCare = true;
-
-        return {
-          ...plant,
-          growth: careType === 'sunlight' ? plant.growth + 1 : plant.growth,
-          lastCaredAt: todayKey
-        };
-      });
-
-      if (!didCare) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        resources: {
-          ...prev.resources,
-          [careType]: prev.resources[careType] - 1
-        },
-        plants: nextPlants
-      };
-    });
-
-    return didCare ? { success: true } : { success: false, code: 'PLANT_NOT_FOUND' };
-  };
-
   const toggleReminder = async (enabled) => {
     let currentPermission = notificationPermission;
 
@@ -4462,13 +4394,6 @@ export const HappyProvider = ({ children }) => {
       updateAuthNickname,
       marketingConsent,
       updateMarketingConsent,
-      gardenState,
-      getTodayGardenMissionStats,
-      updateGardenName,
-      claimGardenMission,
-      buyGardenSeed,
-      plantGardenSeed,
-      careGardenPlant,
       globalStreak,
       reminderSettings,
       notificationPermission,

@@ -7,6 +7,17 @@ import {
   OTHER_REPORT_REASON_CODE,
   REPORT_REASON_OPTIONS
 } from '../lib/happinessItemReports';
+import {
+  chooseMemoPhoto,
+  deleteMemoStoredImages,
+  getMemoImageSrc,
+  isNativeMemoImageAvailable,
+  MEMO_IMAGE_MAX_COUNT,
+  persistMemoImage,
+  saveMemoImageToGallery,
+  takeMemoPhoto
+} from '../lib/memoImages';
+import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
 import { getLocalDateKey } from '../utils/date';
 import './HappinessDetailModal.css';
@@ -128,6 +139,106 @@ const getReportSuccessMessage = duplicate => {
   return '신고가 접수되었어요. 검토 후 조치할게요.';
 };
 
+const createDraftMemoId = () => `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const getMemoImageErrorMessage = code => {
+  switch (code) {
+    case 'CAMERA_PERMISSION_DENIED':
+      return '카메라 권한이 필요해요. 휴대폰 설정에서 권한을 허용해주세요.';
+    case 'PHOTO_PERMISSION_DENIED':
+      return '사진 접근 권한이 필요해요. 휴대폰 설정에서 권한을 허용해주세요.';
+    case 'PHOTO_PICK_CANCELLED':
+    case 'OS-PLUG-CAMR-0006':
+      return '';
+    case 'IMAGE_LIMIT_REACHED':
+      return `사진은 메모 하나에 최대 ${MEMO_IMAGE_MAX_COUNT}장까지 첨부할 수 있어요.`;
+    case 'SAVE_TO_GALLERY_FAILED':
+    case 'accessDenied':
+      return '휴대폰에 저장하지 못했어요. 사진 저장 권한을 확인해주세요.';
+    default:
+      return '사진을 처리하지 못했어요. 잠시 후 다시 시도해주세요.';
+  }
+};
+
+const MemoImageThumb = ({ image, onRemove, onOpen }) => {
+  const [src, setSrc] = useState('');
+  const imageId = image.id;
+  const imagePath = image.path;
+  const imageStorageType = image.storageType;
+  const imageContentType = image.contentType;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadImage = async () => {
+      const nextSrc = await getMemoImageSrc({
+        image: {
+          id: imageId,
+          path: imagePath,
+          storageType: imageStorageType,
+          contentType: imageContentType
+        },
+        supabase
+      });
+
+      if (!isMounted) {
+        return;
+      }
+
+      setSrc(nextSrc);
+    };
+
+    void loadImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [imageContentType, imageId, imagePath, imageStorageType]);
+
+  return (
+    <div className="detail-memo-image-thumb">
+      <button
+        type="button"
+        className="detail-memo-image-open"
+        onClick={() => onOpen?.(image, src)}
+        disabled={!src}
+        aria-label="첨부 사진 크게 보기"
+      >
+        {src ? <img src={src} alt="" loading="lazy" /> : <span />}
+      </button>
+      {onRemove && (
+        <button
+          type="button"
+          className="detail-memo-image-remove"
+          onClick={() => onRemove(image)}
+          aria-label="첨부 사진 삭제"
+        >
+          &times;
+        </button>
+      )}
+    </div>
+  );
+};
+
+const MemoImageStrip = ({ images = [], onRemove, onOpen }) => {
+  if (images.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="detail-memo-image-strip">
+      {images.map(image => (
+        <MemoImageThumb
+          key={image.id}
+          image={image}
+          onRemove={onRemove}
+          onOpen={onOpen}
+        />
+      ))}
+    </div>
+  );
+};
+
 const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const {
     items,
@@ -143,7 +254,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     updateMemo,
     deleteMemo,
     authUser,
-    authUserNickname
+    authUserNickname,
+    isReviewAuthUser
   } = useHappy();
 
   const [progress, setProgress] = useState(0);
@@ -152,8 +264,18 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showMemoComposer, setShowMemoComposer] = useState(false);
   const [memoText, setMemoText] = useState('');
+  const [memoImages, setMemoImages] = useState([]);
+  const [draftMemoId, setDraftMemoId] = useState(() => createDraftMemoId());
   const [editingMemoId, setEditingMemoId] = useState(null);
   const [editingMemoText, setEditingMemoText] = useState('');
+  const [editingMemoImages, setEditingMemoImages] = useState([]);
+  const [memoImageFeedback, setMemoImageFeedback] = useState('');
+  const [memoImageBusyTarget, setMemoImageBusyTarget] = useState('');
+  const [activeMemoImage, setActiveMemoImage] = useState(null);
+  const [gallerySaveState, setGallerySaveState] = useState({
+    isSaving: false,
+    message: ''
+  });
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [visibilityError, setVisibilityError] = useState('');
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -200,6 +322,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const alreadyStampedCount = stampData ? (typeof stampData === 'number' ? stampData : stampData.count) : 0;
   const isOwner = currentItem ? isItemOwnedByCurrentUser(currentItem.id) : false;
   const itemMemos = currentItem ? getItemMemos(currentItem.id) : [];
+  const isMemoImageEnabled = isNativeMemoImageAvailable();
+  const memoCloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
   const canReportItem = Boolean(currentItem?.isCloudBacked === true);
   const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
   const shouldCheckReportStatus = Boolean(isOpen && canReportItem && reportStatusKey);
@@ -238,6 +362,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
         addStamp(item.id);
         setShowSuccess(true);
         setMemoText('');
+        setMemoImages([]);
+        setDraftMemoId(createDraftMemoId());
       });
 
       memoRevealTimeoutRef.current = window.setTimeout(() => {
@@ -279,7 +405,126 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     }
   };
 
+  const cleanupImages = images => {
+    if (!Array.isArray(images) || images.length === 0) {
+      return;
+    }
+
+    void deleteMemoStoredImages({ images, supabase });
+  };
+
+  const getEditingOriginalImages = () => (
+    itemMemos.find(memo => memo.id === editingMemoId)?.images || []
+  );
+
+  const cleanupUncommittedEditingImages = () => {
+    if (!editingMemoId || editingMemoImages.length === 0) {
+      return;
+    }
+
+    const originalImageIds = new Set(getEditingOriginalImages().map(image => image.id));
+    const uncommittedImages = editingMemoImages.filter(image => !originalImageIds.has(image.id));
+    cleanupImages(uncommittedImages);
+  };
+
+  const openMemoImage = (image, src) => {
+    if (!image) {
+      return;
+    }
+
+    setActiveMemoImage({ image, src: src || '' });
+    setGallerySaveState({
+      isSaving: false,
+      message: ''
+    });
+  };
+
+  const handleAttachMemoImage = async (target, source) => {
+    if (!isMemoImageEnabled || !currentItem) {
+      return;
+    }
+
+    const currentImages = target === 'edit' ? editingMemoImages : memoImages;
+
+    if (currentImages.length >= MEMO_IMAGE_MAX_COUNT) {
+      setMemoImageFeedback(getMemoImageErrorMessage('IMAGE_LIMIT_REACHED'));
+      return;
+    }
+
+    const busyKey = `${target}:${source}`;
+    setMemoImageBusyTarget(busyKey);
+    setMemoImageFeedback('');
+
+    const pickResult = source === 'camera'
+      ? await takeMemoPhoto()
+      : await chooseMemoPhoto();
+
+    if (!pickResult.success) {
+      setMemoImageBusyTarget('');
+      setMemoImageFeedback(getMemoImageErrorMessage(pickResult.code));
+      return;
+    }
+
+    const memoId = target === 'edit'
+      ? editingMemoId
+      : draftMemoId;
+
+    try {
+      const persistedImage = await persistMemoImage({
+        supabase,
+        authUserId: memoCloudAuthUserId,
+        itemId: currentItem.id,
+        memoId,
+        mediaResult: pickResult.photo
+      });
+
+      if (target === 'edit') {
+        setEditingMemoImages(prev => [...prev, persistedImage]);
+      } else {
+        setMemoImages(prev => [...prev, persistedImage]);
+      }
+    } catch {
+      setMemoImageFeedback(getMemoImageErrorMessage('PERSIST_FAILED'));
+    } finally {
+      setMemoImageBusyTarget('');
+    }
+  };
+
+  const handleRemoveDraftImage = image => {
+    setMemoImages(prev => prev.filter(candidate => candidate.id !== image.id));
+    cleanupImages([image]);
+  };
+
+  const handleRemoveEditingImage = image => {
+    setEditingMemoImages(prev => prev.filter(candidate => candidate.id !== image.id));
+  };
+
+  const handleSaveActiveImageToGallery = async () => {
+    if (!activeMemoImage?.image || gallerySaveState.isSaving) {
+      return;
+    }
+
+    setGallerySaveState({
+      isSaving: true,
+      message: ''
+    });
+
+    const result = await saveMemoImageToGallery({
+      image: activeMemoImage.image,
+      supabase
+    });
+
+    setGallerySaveState({
+      isSaving: false,
+      message: result.success
+        ? '휴대폰 사진첩에 저장했어요.'
+        : getMemoImageErrorMessage(result.code)
+    });
+  };
+
   const resetModalState = () => {
+    cleanupImages(memoImages);
+    cleanupUncommittedEditingImages();
     setProgress(0);
     setIsPressing(false);
     setShowSuccess(false);
@@ -288,8 +533,18 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     setVisibilityError('');
     setShowMemoComposer(false);
     setMemoText('');
+    setMemoImages([]);
+    setDraftMemoId(createDraftMemoId());
     setEditingMemoId(null);
     setEditingMemoText('');
+    setEditingMemoImages([]);
+    setMemoImageFeedback('');
+    setMemoImageBusyTarget('');
+    setActiveMemoImage(null);
+    setGallerySaveState({
+      isSaving: false,
+      message: ''
+    });
     setIsReportDialogOpen(false);
     setSelectedReportReasons([]);
     setReportOtherReason('');
@@ -353,6 +608,12 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     historyKey: 'detail-delete-confirm'
   });
 
+  const requestCloseMemoImageViewer = useModalBackNavigation({
+    isOpen: isOpen && Boolean(activeMemoImage),
+    onClose: () => setActiveMemoImage(null),
+    historyKey: 'memo-image-viewer'
+  });
+
   const handleDeleteConfirm = async () => {
     if (confirmDialog?.type === 'item') {
       if (isDeletingItem) {
@@ -385,28 +646,37 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   };
 
   const handleSaveMemo = () => {
-    const savedMemo = addMemo(item.id, memoText);
+    const savedMemo = addMemo(item.id, memoText, memoImages, { id: draftMemoId });
 
     if (!savedMemo) {
       return;
     }
 
     setMemoText('');
+    setMemoImages([]);
+    setDraftMemoId(createDraftMemoId());
+    setMemoImageFeedback('');
     setShowMemoComposer(false);
   };
 
   const handleStartMemoEdit = memo => {
+    cleanupUncommittedEditingImages();
     setEditingMemoId(memo.id);
     setEditingMemoText(memo.content);
+    setEditingMemoImages(Array.isArray(memo.images) ? memo.images : []);
+    setMemoImageFeedback('');
   };
 
   const handleCancelMemoEdit = () => {
+    cleanupUncommittedEditingImages();
     setEditingMemoId(null);
     setEditingMemoText('');
+    setEditingMemoImages([]);
+    setMemoImageFeedback('');
   };
 
   const handleSaveMemoEdit = memoId => {
-    const didUpdate = updateMemo(item.id, memoId, editingMemoText);
+    const didUpdate = updateMemo(item.id, memoId, editingMemoText, editingMemoImages);
 
     if (!didUpdate) {
       return;
@@ -420,8 +690,12 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   };
 
   const openMemoComposer = () => {
+    cleanupUncommittedEditingImages();
     setEditingMemoId(null);
     setEditingMemoText('');
+    setEditingMemoImages([]);
+    setMemoImageFeedback('');
+    setDraftMemoId(createDraftMemoId());
     setShowMemoComposer(true);
   };
 
@@ -788,12 +1062,40 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                     rows={3}
                     maxLength={200}
                   />
+                  {isMemoImageEnabled && (
+                    <div className="detail-memo-photo-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleAttachMemoImage('compose', 'camera')}
+                        disabled={Boolean(memoImageBusyTarget)}
+                      >
+                        {memoImageBusyTarget === 'compose:camera' ? '촬영 중...' : '카메라'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAttachMemoImage('compose', 'gallery')}
+                        disabled={Boolean(memoImageBusyTarget)}
+                      >
+                        {memoImageBusyTarget === 'compose:gallery' ? '선택 중...' : '앨범'}
+                      </button>
+                    </div>
+                  )}
+                  <MemoImageStrip
+                    images={memoImages}
+                    onRemove={handleRemoveDraftImage}
+                    onOpen={openMemoImage}
+                  />
+                  {memoImageFeedback && <p className="detail-memo-image-feedback">{memoImageFeedback}</p>}
                   <div className="detail-memo-actions">
                     <button
                       type="button"
                       className="detail-memo-skip"
                       onClick={() => {
+                        cleanupImages(memoImages);
                         setMemoText('');
+                        setMemoImages([]);
+                        setDraftMemoId(createDraftMemoId());
+                        setMemoImageFeedback('');
                         setShowMemoComposer(false);
                       }}
                     >
@@ -803,6 +1105,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                       type="button"
                       className="btn-primary detail-memo-save"
                       onClick={handleSaveMemo}
+                      disabled={!memoText.trim() && memoImages.length === 0}
                     >
                       메모 저장하기
                     </button>
@@ -844,6 +1147,30 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                             rows={3}
                             maxLength={200}
                           />
+                          {isMemoImageEnabled && (
+                            <div className="detail-memo-photo-actions">
+                              <button
+                                type="button"
+                                onClick={() => handleAttachMemoImage('edit', 'camera')}
+                                disabled={Boolean(memoImageBusyTarget)}
+                              >
+                                {memoImageBusyTarget === 'edit:camera' ? '촬영 중...' : '카메라'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAttachMemoImage('edit', 'gallery')}
+                                disabled={Boolean(memoImageBusyTarget)}
+                              >
+                                {memoImageBusyTarget === 'edit:gallery' ? '선택 중...' : '앨범'}
+                              </button>
+                            </div>
+                          )}
+                          <MemoImageStrip
+                            images={editingMemoImages}
+                            onRemove={handleRemoveEditingImage}
+                            onOpen={openMemoImage}
+                          />
+                          {memoImageFeedback && <p className="detail-memo-image-feedback">{memoImageFeedback}</p>}
                           <div className="detail-memo-actions">
                             <button
                               type="button"
@@ -856,13 +1183,20 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                               type="button"
                               className="btn-primary detail-memo-save"
                               onClick={() => handleSaveMemoEdit(memo.id)}
+                              disabled={!editingMemoText.trim() && editingMemoImages.length === 0}
                             >
                               수정 저장
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <p>{memo.content}</p>
+                        <>
+                          {memo.content && <p>{memo.content}</p>}
+                          <MemoImageStrip
+                            images={memo.images}
+                            onOpen={openMemoImage}
+                          />
+                        </>
                       )}
                     </div>
                   ))}
@@ -872,6 +1206,44 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
           )}
         </div>
       </div>
+
+      {activeMemoImage && (
+        <div
+          className="memo-image-viewer-overlay"
+          onClick={event => {
+            event.stopPropagation();
+            requestCloseMemoImageViewer();
+          }}
+        >
+          <div
+            className="memo-image-viewer"
+            onClick={event => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="memo-image-viewer-close"
+              onClick={() => requestCloseMemoImageViewer()}
+              aria-label="사진 닫기"
+            >
+              &times;
+            </button>
+            {activeMemoImage.src && <img src={activeMemoImage.src} alt="" />}
+            <div className="memo-image-viewer-actions">
+              <button
+                type="button"
+                className="btn-primary memo-image-save-btn"
+                onClick={handleSaveActiveImageToGallery}
+                disabled={gallerySaveState.isSaving}
+              >
+                {gallerySaveState.isSaving ? '저장 중...' : '휴대폰에 저장'}
+              </button>
+              {gallerySaveState.message && (
+                <p className="memo-image-save-feedback">{gallerySaveState.message}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmDialog && (
         <div

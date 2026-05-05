@@ -13,14 +13,6 @@ const NavBar = ({ currentView, onViewChange }) => {
             </button>
 
             <button
-                className={`nav-item ${currentView === 'garden' ? 'active' : ''}`}
-                onClick={() => onViewChange('garden')}
-            >
-                <div className="nav-icon" aria-hidden="true">✿</div>
-                <span>정원</span>
-            </button>
-
-            <button
                 className={`nav-item ${currentView === 'profile' ? 'active' : ''}`}
                 onClick={() => onViewChange('profile')}
             >

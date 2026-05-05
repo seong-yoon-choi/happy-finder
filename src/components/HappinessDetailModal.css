@@ -451,6 +451,96 @@
     background: rgba(255, 255, 255, 0.06);
 }
 
+.detail-memo-photo-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.detail-memo-photo-actions button {
+    min-height: 42px;
+    border: 1px solid rgba(255, 142, 139, 0.25);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.74);
+    color: var(--text-dark);
+    font-size: var(--font-body-sm);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.dark-theme .detail-memo-photo-actions button {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.detail-memo-photo-actions button:disabled {
+    opacity: 0.58;
+    cursor: default;
+}
+
+.detail-memo-image-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.detail-memo-image-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.62);
+    border: 1px solid var(--glass-border);
+}
+
+.detail-memo-image-open {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.detail-memo-image-open:disabled {
+    cursor: default;
+}
+
+.detail-memo-image-open img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.detail-memo-image-open span {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 142, 139, 0.12));
+}
+
+.detail-memo-image-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(20, 24, 28, 0.62);
+    color: white;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.detail-memo-image-feedback {
+    margin: 0;
+    color: var(--danger);
+    font-size: var(--font-body-sm);
+    line-height: 1.45;
+}
+
 .detail-memo-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -601,6 +691,75 @@
 .detail-memo-item p {
     color: var(--text-dark);
     line-height: 1.55;
+}
+
+.memo-image-viewer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2300;
+    padding: 18px;
+    background: rgba(15, 18, 22, 0.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.memo-image-viewer {
+    width: min(100%, 420px);
+    max-height: 88dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+}
+
+.memo-image-viewer img {
+    width: 100%;
+    max-height: 68dvh;
+    object-fit: contain;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.memo-image-viewer-close {
+    position: absolute;
+    top: -12px;
+    right: -8px;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-dark);
+    font-size: 1.45rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+.memo-image-viewer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.memo-image-save-btn {
+    min-height: 46px;
+    border-radius: 18px;
+}
+
+.memo-image-save-btn:disabled,
+.detail-memo-save:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.memo-image-save-feedback {
+    margin: 0;
+    text-align: center;
+    color: white;
+    font-size: var(--font-body-sm);
+    line-height: 1.45;
 }
 
 .delete-confirm-overlay {
