@@ -26,8 +26,8 @@
     margin: 0 var(--screen-side-padding) clamp(14px, 3.6vw, 18px);
     padding: clamp(8px, 2.4vw, 10px);
     display: grid;
-    grid-template-columns: 48px minmax(0, 1fr) 48px;
-    gap: clamp(8px, 2.4vw, 10px);
+    grid-template-columns: minmax(0, 1fr) 70px 48px;
+    gap: 8px;
     align-items: center;
     border: 1px solid var(--glass-border);
     border-radius: 22px;
@@ -40,8 +40,9 @@
     background: rgba(255, 255, 255, 0.07);
 }
 
-.home-tool-icon,
-.home-tool-category {
+.home-tool-search,
+.home-tool-tag,
+.home-tool-add {
     min-height: 48px;
     border: 1px solid rgba(255, 142, 139, 0.18);
     border-radius: 16px;
@@ -54,31 +55,67 @@
     font-weight: 800;
 }
 
-.dark-theme .home-tool-icon,
-.dark-theme .home-tool-category {
+.dark-theme .home-tool-search,
+.dark-theme .home-tool-tag {
     background: rgba(255, 255, 255, 0.08);
 }
 
-.home-tool-icon:disabled,
-.home-tool-category:disabled {
+.home-tool-search:disabled,
+.home-tool-tag:disabled {
     opacity: 1;
     cursor: default;
 }
 
-.home-tool-icon svg {
-    width: 22px;
-    height: 22px;
+.home-tool-search {
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 clamp(14px, 3.4vw, 16px);
+    color: var(--text-light);
 }
 
-.home-tool-category {
-    gap: 8px;
-    font-size: var(--font-body-md);
-}
-
-.home-tool-category svg {
+.home-tool-search svg {
     width: 20px;
     height: 20px;
     flex: 0 0 auto;
+}
+
+.home-tool-search span {
+    min-width: 0;
+    color: var(--text-light);
+    font-size: var(--font-body-md);
+    font-weight: 700;
+}
+
+.home-tool-tag {
+    gap: 5px;
+    font-size: var(--font-body-md);
+    padding: 0 10px;
+}
+
+.home-tool-tag svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
+.home-tool-add {
+    border: 0;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    box-shadow: 0 10px 20px rgba(255, 142, 139, 0.28);
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.home-tool-add svg {
+    width: 23px;
+    height: 23px;
+    flex: 0 0 auto;
+}
+
+.home-tool-add:active {
+    transform: scale(0.96);
+    box-shadow: 0 6px 14px rgba(255, 142, 139, 0.24);
 }
 
 .feed-container {

@@ -94,15 +94,16 @@ const Home = () => {
       <div className="home-tools" aria-label="행복 목록 도구">
         <button
           type="button"
-          className="home-tool-icon"
+          className="home-tool-search"
           disabled
           aria-label="검색"
         >
           <SearchIcon />
+          <span>검색</span>
         </button>
         <button
           type="button"
-          className="home-tool-category"
+          className="home-tool-tag"
           disabled
           aria-label="태그 선택"
         >
@@ -111,7 +112,7 @@ const Home = () => {
         </button>
         <button
           type="button"
-          className="home-tool-icon"
+          className="home-tool-add"
           aria-label="행복 추가"
           onClick={() => setIsCreateModalOpen(true)}
         >
