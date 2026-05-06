@@ -836,21 +836,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
                       onOpen={openMemoImage}
                     />
                     {memoImageFeedback && <p className="detail-memo-image-feedback">{memoImageFeedback}</p>}
-                    <div className="detail-memo-actions">
-                      <button
-                        type="button"
-                        className="detail-memo-skip"
-                        onClick={() => {
-                          cleanupImages(memoImages);
-                          setMemoText('');
-                          setMemoImages([]);
-                          setDraftMemoId(createDraftMemoId());
-                          setMemoImageFeedback('');
-                          setShowMemoComposer(false);
-                        }}
-                      >
-                        닫기
-                      </button>
+                    <div className="detail-memo-actions detail-memo-actions-compose">
                       <button
                         type="button"
                         className="btn-primary detail-memo-save"

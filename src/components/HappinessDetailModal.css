@@ -431,6 +431,10 @@
     gap: clamp(8px, 2.4vw, 10px);
 }
 
+.detail-memo-actions-compose {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .detail-memo-skip,
 .detail-memo-save {
     min-height: clamp(44px, 10vw, 48px);

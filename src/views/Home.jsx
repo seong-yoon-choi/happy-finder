@@ -1,4 +1,5 @@
 import React, { lazy, useCallback, useMemo, useState } from 'react';
+import CreateHappinessModal from '../components/CreateHappinessModal';
 import HappinessCard from '../components/HappinessCard';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { useHappy } from '../store/HappyContext';
@@ -6,6 +7,38 @@ import './Home.css';
 
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
+
+const SearchIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path
+      d="M10.8 18.1C14.8317 18.1 18.1 14.8317 18.1 10.8C18.1 6.76832 14.8317 3.5 10.8 3.5C6.76832 3.5 3.5 6.76832 3.5 10.8C3.5 14.8317 6.76832 18.1 10.8 18.1Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M16.1 16.1L20.5 20.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const CategoryIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path d="M5 7H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M10 17H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path d="M12 5V19" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+    <path d="M5 12H19" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+  </svg>
+);
 
 const getSessionShuffleRank = (itemId, seed) => {
   const source = `${seed}:${itemId}`;
@@ -22,6 +55,7 @@ const getSessionShuffleRank = (itemId, seed) => {
 const Home = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [shouldOpenRecord, setShouldOpenRecord] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sessionShuffleSeed] = useState(() => `${Date.now()}-${Math.random()}`);
   const { items, authUserNickname } = useHappy();
 
@@ -56,6 +90,34 @@ const Home = () => {
         <h1>Happy Finder</h1>
         <p>오늘 {viewerPossessiveLabel} 행복은 무엇인가요?</p>
       </header>
+
+      <div className="home-tools" aria-label="행복 목록 도구">
+        <button
+          type="button"
+          className="home-tool-icon"
+          disabled
+          aria-label="검색"
+        >
+          <SearchIcon />
+        </button>
+        <button
+          type="button"
+          className="home-tool-category"
+          disabled
+          aria-label="태그 선택"
+        >
+          <CategoryIcon />
+          <span>태그</span>
+        </button>
+        <button
+          type="button"
+          className="home-tool-icon"
+          aria-label="행복 추가"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
+          <PlusIcon />
+        </button>
+      </div>
 
       <div className="feed-container">
         {currentItems.length > 0 ? (
@@ -92,6 +154,13 @@ const Home = () => {
             autoOpenMemoComposer={shouldOpenRecord}
           />
         </LazyLoadBoundary>
+      )}
+
+      {isCreateModalOpen && (
+        <CreateHappinessModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+        />
       )}
     </div>
   );
