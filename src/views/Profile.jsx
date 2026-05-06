@@ -25,11 +25,6 @@ const Profile = () => {
   const profileTitle = authUserNickname ? `${authUserNickname} 님의 행복 프로필` : '나의 행복 프로필';
 
   const handleCardClick = useCallback(item => {
-    setShouldOpenRecord(false);
-    setSelectedCard(item);
-  }, []);
-
-  const handleCardRecord = useCallback(item => {
     setShouldOpenRecord(true);
     setSelectedCard(item);
   }, []);
@@ -49,11 +44,11 @@ const Profile = () => {
         <section className="glass-card profile-overview">
           <div className="profile-overview-simple">
             <h2>{profileTitle}</h2>
-            <p>내 행복과 직접 만든 행복을 모아 관리해요.</p>
+            <p>즐겨찾기와 직접 만든 행복을 모아 관리해요.</p>
 
-            <div className="profile-summary-chips" aria-label="내 행복 요약">
+            <div className="profile-summary-chips" aria-label="즐겨찾기 요약">
               <div className="profile-summary-chip">
-                <span>내 행복</span>
+                <span>즐겨찾기</span>
                 <strong>{favoriteItems.length}</strong>
               </div>
               <div className="profile-summary-chip">
@@ -67,23 +62,31 @@ const Profile = () => {
             className="btn-primary create-btn"
             onClick={() => setIsModalOpen(true)}
           >
-            + 내 행복 만들기
+            + 나만의 행복 만들기
           </button>
         </section>
       </header>
 
       <div className="profile-tabs">
         <button
-          className={`tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
+          type="button"
+          className={`profile-tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
           onClick={() => setActiveTab('favorites')}
+          aria-pressed={activeTab === 'favorites'}
         >
-          내 행복 ({favoriteItems.length})
+          <span className="profile-tab-icon" aria-hidden="true">♥</span>
+          <span className="profile-tab-label">즐겨찾기</span>
+          <strong>{favoriteItems.length}</strong>
         </button>
         <button
-          className={`tab-btn ${activeTab === 'myItems' ? 'active' : ''}`}
+          type="button"
+          className={`profile-tab-btn ${activeTab === 'myItems' ? 'active' : ''}`}
           onClick={() => setActiveTab('myItems')}
+          aria-pressed={activeTab === 'myItems'}
         >
-          만든 행복 ({myItems.length})
+          <span className="profile-tab-icon" aria-hidden="true">＋</span>
+          <span className="profile-tab-label">만든 행복</span>
+          <strong>{myItems.length}</strong>
         </button>
       </div>
 
@@ -94,14 +97,13 @@ const Profile = () => {
               key={item.id}
               item={item}
               onClick={handleCardClick}
-              onRecord={handleCardRecord}
             />
           ))
         ) : (
           <div className="empty-state">
             {activeTab === 'favorites' ? (
               <>
-                내 행복으로 추가한 항목이 없어요.
+                즐겨찾기에 추가한 항목이 없어요.
                 <br />
                 마음에 드는 행복을 하트로 저장해보세요.
               </>
@@ -109,7 +111,7 @@ const Profile = () => {
               <>
                 직접 만든 행복이 없어요.
                 <br />
-                + 버튼으로 내 행복을 만들어보세요.
+                + 버튼으로 나만의 행복을 만들어보세요.
               </>
             )}
           </div>

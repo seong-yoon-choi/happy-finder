@@ -516,16 +516,6 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
     setConfirmDialog({ type: 'memo', memoId });
   };
 
-  const openMemoComposer = () => {
-    cleanupUncommittedEditingImages();
-    setEditingMemoId(null);
-    setEditingMemoText('');
-    setEditingMemoImages([]);
-    setMemoImageFeedback('');
-    setDraftMemoId(createDraftMemoId());
-    setShowMemoComposer(true);
-  };
-
   const handleVisibilityChange = async nextVisibility => {
     if (isUpdatingVisibility) {
       return;
@@ -746,7 +736,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
             type="button"
             className={`detail-icon-btn detail-favorite-trigger ${isFavorited ? 'active' : ''}`}
             onClick={() => toggleFavorite(currentItem.id)}
-            aria-label={isFavorited ? '내 행복에서 제거' : '내 행복에 추가'}
+            aria-label={isFavorited ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
             aria-pressed={isFavorited}
           >
             <FavoriteIcon isActive={isFavorited} />
@@ -757,7 +747,6 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
         <div className="detail-header">
           <div className="badges-container">
             {currentItem.isCustom && isOwner && <span className="custom-badge">MY</span>}
-            {currentItem.isCustom && currentItem.isPublic && <span className="public-badge">공개</span>}
           </div>
         </div>
 
@@ -767,18 +756,6 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
         {reportFeedback.message && (
           <div className={`detail-inline-feedback ${reportFeedback.type === 'error' ? 'error' : 'success'}`}>
             {reportFeedback.message}
-          </div>
-        )}
-
-        {!showMemoComposer && (
-          <div className="detail-record-actions">
-            <button
-              type="button"
-              className="btn-primary detail-record-btn"
-              onClick={openMemoComposer}
-            >
-              기록하기
-            </button>
           </div>
         )}
 
@@ -814,22 +791,22 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
 
         {((canDelete && currentItem.isCustom && isOwner) || showMemoComposer || itemMemos.length > 0) && (
           <div className="detail-record-section">
-          {canDelete && currentItem.isCustom && isOwner && (
-            <button
-              type="button"
-              className="detail-delete-btn"
-              onClick={openDeleteConfirm}
-            >
-              이 행복 삭제하기
-            </button>
-          )}
+            {canDelete && currentItem.isCustom && isOwner && (
+              <button
+                type="button"
+                className="detail-delete-btn"
+                onClick={openDeleteConfirm}
+              >
+                이 행복 삭제하기
+              </button>
+            )}
 
-          {(showMemoComposer || itemMemos.length > 0) && (
-            <div className="detail-memo-section">
-              <div className="detail-memo-header">
-                <h3>행복 기록</h3>
-                <span>한 줄이어도 좋고 길게 써도 좋아요</span>
-              </div>
+            {(showMemoComposer || itemMemos.length > 0) && (
+              <div className="detail-memo-section">
+                <div className="detail-memo-header">
+                  <h3>행복 기록</h3>
+                  <span>한 줄이어도 좋고 길게 써도 좋아요</span>
+                </div>
 
               {showMemoComposer && (
                 <div className="detail-memo-compose">

@@ -105,8 +105,7 @@
     min-width: 0;
 }
 
-.detail-header .custom-badge,
-.detail-header .public-badge {
+.detail-header .custom-badge {
     padding: 4px 9px;
     border-radius: 18px;
     font-size: 0.74rem;
@@ -115,21 +114,8 @@
     white-space: nowrap;
 }
 
-.detail-header .public-badge {
-    display: none;
-}
-
 .custom-badge {
     background: var(--secondary-color);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 700;
-}
-
-.public-badge {
-    background: #2f9e85;
     color: white;
     padding: 4px 10px;
     border-radius: 20px;
@@ -246,17 +232,6 @@
     margin: 0;
     font-size: var(--font-body-sm);
     color: var(--danger);
-}
-
-.detail-record-actions {
-    padding: 0 20px 20px;
-}
-
-.detail-record-btn {
-    width: 100%;
-    min-height: 48px;
-    border-radius: clamp(24px, 6vw, 30px);
-    font-size: var(--font-body-lg);
 }
 
 .detail-record-section {
@@ -485,8 +460,7 @@
         padding: 16px 122px 0 20px;
     }
 
-    .detail-header .custom-badge,
-    .detail-header .public-badge {
+    .detail-header .custom-badge {
         padding: 3px 8px;
         font-size: 0.7rem;
     }

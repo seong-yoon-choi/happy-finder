@@ -30,15 +30,6 @@
     font-weight: 600;
 }
 
-.public-badge {
-    background: #2f9e85;
-    color: white;
-    padding: var(--pill-padding-y) var(--pill-padding-x);
-    border-radius: clamp(16px, 4vw, 20px);
-    font-size: var(--font-body-sm);
-    font-weight: 600;
-}
-
 .card-title {
     font-size: clamp(1.2rem, 3.8vw, 1.4rem);
     line-height: 1.25;
@@ -72,56 +63,8 @@
     transform: scale(0.98);
 }
 
-.card-action-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    margin-top: 4px;
-}
-
-.card-record-btn,
-.card-my-happy-btn {
-    min-height: 42px;
-    border-radius: 999px;
-    font-size: var(--font-body-md);
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.card-record-btn {
-    border: 0;
-    background: var(--primary-color);
-    color: var(--white);
-    padding: 0 18px;
-}
-
-.card-my-happy-btn {
-    width: 42px;
-    border: 1px solid rgba(255, 142, 139, 0.3);
-    background: rgba(255, 255, 255, 0.78);
-    color: var(--primary-color);
-    font-size: 1.45rem;
-    line-height: 1;
-}
-
-.card-my-happy-btn.active {
-    background: rgba(255, 142, 139, 0.16);
-    border-color: rgba(255, 142, 139, 0.48);
-    color: var(--secondary-color);
-}
-
-.dark-theme .card-my-happy-btn {
-    background: rgba(255, 255, 255, 0.08);
-}
-
 @media (max-width: 420px) {
     .card-top-row {
         gap: 10px;
-    }
-
-    .card-record-btn,
-    .card-my-happy-btn {
-        min-height: 40px;
     }
 }

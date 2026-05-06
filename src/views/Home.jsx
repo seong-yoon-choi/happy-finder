@@ -43,11 +43,6 @@ const Home = () => {
   }, [items, sessionShuffleSeed]);
 
   const handleCardClick = useCallback(item => {
-    setShouldOpenRecord(false);
-    setSelectedCard(item);
-  }, []);
-
-  const handleCardRecord = useCallback(item => {
     setShouldOpenRecord(true);
     setSelectedCard(item);
   }, []);
@@ -66,7 +61,7 @@ const Home = () => {
             type="button"
             className="home-create-button"
             onClick={() => setIsCreateModalOpen(true)}
-            aria-label="내 행복 만들기"
+            aria-label="나만의 행복 만들기"
           >
             +
           </button>
@@ -81,7 +76,6 @@ const Home = () => {
               key={item.id}
               item={item}
               onClick={handleCardClick}
-              onRecord={handleCardRecord}
             />
           ))
         ) : (
