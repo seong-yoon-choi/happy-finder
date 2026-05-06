@@ -21,8 +21,8 @@
     min-width: 0;
 }
 
-.category-badge {
-    background: var(--primary-color);
+.custom-badge {
+    background: var(--secondary-color);
     color: white;
     padding: var(--pill-padding-y) var(--pill-padding-x);
     border-radius: clamp(16px, 4vw, 20px);
@@ -30,8 +30,8 @@
     font-weight: 600;
 }
 
-.custom-badge {
-    background: var(--secondary-color);
+.public-badge {
+    background: #2f9e85;
     color: white;
     padding: var(--pill-padding-y) var(--pill-padding-x);
     border-radius: clamp(16px, 4vw, 20px);
@@ -72,37 +72,47 @@
     transform: scale(0.98);
 }
 
-.card-corner-stats {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    flex-shrink: 0;
-    gap: clamp(6px, 2vw, 8px);
+.card-action-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
 }
 
-.card-corner-stat {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: var(--pill-padding-y) clamp(7px, 2vw, 8px);
+.card-record-btn,
+.card-my-happy-btn {
+    min-height: 42px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(8px);
-    font-size: var(--font-body-sm);
-    font-weight: 600;
+    font-size: var(--font-body-md);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.card-record-btn {
+    border: 0;
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 0 18px;
+}
+
+.card-my-happy-btn {
+    width: 42px;
+    border: 1px solid rgba(255, 142, 139, 0.3);
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--primary-color);
+    font-size: 1.45rem;
     line-height: 1;
 }
 
-.card-corner-stat.stamps {
-    color: var(--primary-color);
+.card-my-happy-btn.active {
+    background: rgba(255, 142, 139, 0.16);
+    border-color: rgba(255, 142, 139, 0.48);
+    color: var(--secondary-color);
 }
 
-.card-corner-stat.memos {
-    color: var(--text-light);
-}
-
-.dark-theme .card-corner-stat {
-    background: rgba(17, 24, 39, 0.48);
+.dark-theme .card-my-happy-btn {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 420px) {
@@ -110,12 +120,8 @@
         gap: 10px;
     }
 
-    .card-corner-stats {
-        gap: 6px;
-    }
-
-    .card-corner-stat {
-        padding: 4px 7px;
-        font-size: 0.75rem;
+    .card-record-btn,
+    .card-my-happy-btn {
+        min-height: 40px;
     }
 }

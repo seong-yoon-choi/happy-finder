@@ -3,7 +3,7 @@ import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { useHappy } from '../store/HappyContext';
 import './CreateHappinessModal.css';
 
-const CATEGORY_OPTIONS = ['소확행', '기분전환', '제대로'];
+const DEFAULT_CUSTOM_CATEGORY = '소확행';
 const VISIBILITY_OPTIONS = [
   { value: 'private', label: '나만보기' },
   { value: 'public', label: '공개하기' }
@@ -13,7 +13,6 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   const { addCustomItem, authUser } = useHappy();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState(CATEGORY_OPTIONS[0]);
   const [visibility, setVisibility] = useState(VISIBILITY_OPTIONS[0].value);
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +20,6 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setCategory(CATEGORY_OPTIONS[0]);
     setVisibility(VISIBILITY_OPTIONS[0].value);
     setSubmitError('');
     setIsSubmitting(false);
@@ -50,7 +48,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
 
     setSubmitError('');
     setIsSubmitting(true);
-    const result = await addCustomItem(trimmedTitle, trimmedDescription, category, visibility);
+    const result = await addCustomItem(trimmedTitle, trimmedDescription, DEFAULT_CUSTOM_CATEGORY, visibility);
     setIsSubmitting(false);
 
     if (!result?.success) {
@@ -124,22 +122,6 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
                 maxLength={100}
                 required
               />
-            </div>
-
-            <div className="form-group">
-              <label>카테고리</label>
-              <div className="category-pills">
-                {CATEGORY_OPTIONS.map(option => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={`category-pill ${category === option ? 'active' : ''}`}
-                    onClick={() => setCategory(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <div className="form-group">

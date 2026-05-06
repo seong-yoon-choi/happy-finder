@@ -1,6 +1,5 @@
-import React, { startTransition, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
-import confetti from 'canvas-confetti';
 import {
   createHappinessItemReport,
   hasExistingHappinessItemReport,
@@ -19,7 +18,6 @@ import {
 } from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
-import { getLocalDateKey } from '../utils/date';
 import './HappinessDetailModal.css';
 
 const memoDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -29,66 +27,6 @@ const memoDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   hour: '2-digit',
   minute: '2-digit'
 });
-
-const CONFETTI_BURSTS = [
-  {
-    delay: 0,
-    particleCount: 18,
-    spread: 56,
-    startVelocity: 30,
-    ticks: 42,
-    scalar: 0.92,
-    origin: { x: 0.2, y: 0.18 }
-  },
-  {
-    delay: 0,
-    particleCount: 18,
-    spread: 56,
-    startVelocity: 30,
-    ticks: 42,
-    scalar: 0.92,
-    origin: { x: 0.8, y: 0.18 }
-  },
-  {
-    delay: 120,
-    particleCount: 24,
-    spread: 78,
-    startVelocity: 24,
-    ticks: 46,
-    scalar: 0.86,
-    origin: { x: 0.5, y: 0.14 }
-  }
-];
-
-const clearCelebrationTimeouts = timeoutIdsRef => {
-  timeoutIdsRef.current.forEach(timeoutId => {
-    window.clearTimeout(timeoutId);
-  });
-  timeoutIdsRef.current = [];
-};
-
-const fireCelebration = timeoutIdsRef => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  clearCelebrationTimeouts(timeoutIdsRef);
-
-  CONFETTI_BURSTS.forEach(({ delay, ...burstOptions }) => {
-    const timeoutId = window.setTimeout(() => {
-      confetti({
-        ...burstOptions,
-        gravity: 1.04,
-        decay: 0.93,
-        drift: 0,
-        zIndex: 3400,
-        disableForReducedMotion: true
-      });
-    }, delay);
-
-    timeoutIdsRef.current.push(timeoutId);
-  });
-};
 
 const ReportIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
@@ -239,12 +177,10 @@ const MemoImageStrip = ({ images = [], onRemove, onOpen }) => {
   );
 };
 
-const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
+const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOpenMemoComposer = false }) => {
   const {
     items,
-    userStamps,
     userFavorites,
-    addStamp,
     toggleFavorite,
     deleteCustomItem,
     updateCustomItemVisibility,
@@ -254,15 +190,11 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     updateMemo,
     deleteMemo,
     authUser,
-    authUserNickname,
     isReviewAuthUser
   } = useHappy();
 
-  const [progress, setProgress] = useState(0);
-  const [isPressing, setIsPressing] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
-  const [showMemoComposer, setShowMemoComposer] = useState(false);
+  const [showMemoComposer, setShowMemoComposer] = useState(autoOpenMemoComposer);
   const [memoText, setMemoText] = useState('');
   const [memoImages, setMemoImages] = useState([]);
   const [draftMemoId, setDraftMemoId] = useState(() => createDraftMemoId());
@@ -294,32 +226,9 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const [deleteFeedback, setDeleteFeedback] = useState('');
   const [isDeletingItem, setIsDeletingItem] = useState(false);
 
-  const requestRef = useRef();
-  const startTimeRef = useRef();
-  const celebrationTimeoutsRef = useRef([]);
-  const completionFrameRef = useRef(null);
-  const memoRevealTimeoutRef = useRef(null);
-  const duration = 1500;
-
-  useEffect(() => {
-    return () => {
-      cancelAnimationFrame(requestRef.current);
-      if (completionFrameRef.current) {
-        cancelAnimationFrame(completionFrameRef.current);
-      }
-      if (memoRevealTimeoutRef.current) {
-        window.clearTimeout(memoRevealTimeoutRef.current);
-      }
-      clearCelebrationTimeouts(celebrationTimeoutsRef);
-      confetti.reset?.();
-    };
-  }, []);
-
   const currentItem = item ? items.find(existingItem => existingItem.id === item.id) || item : null;
   const currentItemId = currentItem?.id ?? '';
   const reportStatusKey = authUser?.id && currentItemId ? `${authUser.id}:${currentItemId}` : '';
-  const stampData = currentItem ? userStamps[currentItem.id] : null;
-  const alreadyStampedCount = stampData ? (typeof stampData === 'number' ? stampData : stampData.count) : 0;
   const isOwner = currentItem ? isItemOwnedByCurrentUser(currentItem.id) : false;
   const itemMemos = currentItem ? getItemMemos(currentItem.id) : [];
   const isMemoImageEnabled = isNativeMemoImageAvailable();
@@ -332,78 +241,11 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const isCheckingReportStatus = shouldCheckReportStatus && (!hasReportStatusForCurrentItem || reportStatus.isLoading);
   const isReportTriggerDisabled = isCheckingReportStatus || hasReportedCurrentItem;
 
-  const todayKey = getLocalDateKey();
-  const alreadyStampedToday = stampData && getLocalDateKey(stampData.lastStampedDate) === todayKey;
-
-  const animate = time => {
-    if (!startTimeRef.current) {
-      startTimeRef.current = time;
+  useEffect(() => {
+    if (isOpen && autoOpenMemoComposer) {
+      setShowMemoComposer(true);
     }
-
-    const elapsed = time - startTimeRef.current;
-    const newProgress = Math.min((elapsed / duration) * 100, 100);
-
-    setProgress(newProgress);
-
-    if (newProgress < 100) {
-      requestRef.current = requestAnimationFrame(animate);
-      return;
-    }
-
-    setIsPressing(false);
-    fireCelebration(celebrationTimeoutsRef);
-
-    if (completionFrameRef.current) {
-      cancelAnimationFrame(completionFrameRef.current);
-    }
-
-    completionFrameRef.current = requestAnimationFrame(() => {
-      startTransition(() => {
-        addStamp(item.id);
-        setShowSuccess(true);
-        setMemoText('');
-        setMemoImages([]);
-        setDraftMemoId(createDraftMemoId());
-      });
-
-      memoRevealTimeoutRef.current = window.setTimeout(() => {
-        startTransition(() => {
-          setShowMemoComposer(true);
-        });
-      }, 140);
-
-      completionFrameRef.current = null;
-    });
-  };
-
-  const handlePressStart = event => {
-    if (event.cancelable) {
-      event.preventDefault();
-    }
-
-    if (alreadyStampedToday) {
-      return;
-    }
-
-    setIsPressing(true);
-    setShowSuccess(false);
-    startTimeRef.current = performance.now();
-    requestRef.current = requestAnimationFrame(animate);
-  };
-
-  const handlePressEnd = () => {
-    if (alreadyStampedToday) {
-      return;
-    }
-
-    setIsPressing(false);
-    cancelAnimationFrame(requestRef.current);
-    startTimeRef.current = null;
-
-    if (progress < 100) {
-      setProgress(0);
-    }
-  };
+  }, [autoOpenMemoComposer, currentItemId, isOpen]);
 
   const cleanupImages = images => {
     if (!Array.isArray(images) || images.length === 0) {
@@ -525,9 +367,6 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
   const resetModalState = () => {
     cleanupImages(memoImages);
     cleanupUncommittedEditingImages();
-    setProgress(0);
-    setIsPressing(false);
-    setShowSuccess(false);
     setConfirmDialog(null);
     setIsUpdatingVisibility(false);
     setVisibilityError('');
@@ -560,18 +399,6 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
     });
     setDeleteFeedback('');
     setIsDeletingItem(false);
-    startTimeRef.current = null;
-    cancelAnimationFrame(requestRef.current);
-    if (completionFrameRef.current) {
-      cancelAnimationFrame(completionFrameRef.current);
-      completionFrameRef.current = null;
-    }
-    if (memoRevealTimeoutRef.current) {
-      window.clearTimeout(memoRevealTimeoutRef.current);
-      memoRevealTimeoutRef.current = null;
-    }
-    clearCelebrationTimeouts(celebrationTimeoutsRef);
-    confetti.reset?.();
   };
 
   const handleClose = () => {
@@ -919,33 +746,18 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
             type="button"
             className={`detail-icon-btn detail-favorite-trigger ${isFavorited ? 'active' : ''}`}
             onClick={() => toggleFavorite(currentItem.id)}
-            aria-label="利먭꺼李얘린 ?좉?"
+            aria-label={isFavorited ? '내 행복에서 제거' : '내 행복에 추가'}
+            aria-pressed={isFavorited}
           >
             <FavoriteIcon isActive={isFavorited} />
-          </button>
-          <button
-            type="button"
-            className="detail-icon-btn detail-memo-trigger"
-            onClick={openMemoComposer}
-            aria-label="메모 작성"
-          >
-            ✏️
           </button>
           <button className="close-btn detail-close" onClick={() => requestClose()}>&times;</button>
         </div>
 
         <div className="detail-header">
           <div className="badges-container">
-            <span className="category-badge">{currentItem.category}</span>
             {currentItem.isCustom && isOwner && <span className="custom-badge">MY</span>}
             {currentItem.isCustom && currentItem.isPublic && <span className="public-badge">공개</span>}
-            <button
-              className={`favorite-btn ${userFavorites[currentItem.id] ? 'active' : ''}`}
-              onClick={() => toggleFavorite(currentItem.id)}
-              aria-label="즐겨찾기 토글"
-            >
-              {userFavorites[currentItem.id] ? '★' : '☆'}
-            </button>
           </div>
         </div>
 
@@ -955,6 +767,18 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
         {reportFeedback.message && (
           <div className={`detail-inline-feedback ${reportFeedback.type === 'error' ? 'error' : 'success'}`}>
             {reportFeedback.message}
+          </div>
+        )}
+
+        {!showMemoComposer && (
+          <div className="detail-record-actions">
+            <button
+              type="button"
+              className="btn-primary detail-record-btn"
+              onClick={openMemoComposer}
+            >
+              기록하기
+            </button>
           </div>
         )}
 
@@ -988,54 +812,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
           </div>
         )}
 
-        <div className="detail-stamp-section">
-          <div className="stamp-count large">
-            {alreadyStampedCount > 0 ? (
-              <span className="active-stamps">
-                {authUserNickname ? `${authUserNickname} 님이 행복을 찾은 횟수` : '내가 행복을 찾은 횟수'}: <strong>{alreadyStampedCount}</strong>번
-              </span>
-            ) : (
-              null
-            )}
-          </div>
-
-          {showSuccess && (
-            <div className="success-message slide-down">
-              🎉!!행복해져라!!🎉
-            </div>
-          )}
-
-          {!alreadyStampedToday && (
-            <div className="stamp-guidance">아래 버튼을 길게 눌러 행복해져 보세요!</div>
-          )}
-
-          <button
-            className={`btn-primary stamp-btn-large long-press-btn ${alreadyStampedToday ? 'disabled' : ''} ${isPressing ? 'pressing' : ''}`}
-            onMouseDown={handlePressStart}
-            onMouseUp={handlePressEnd}
-            onMouseLeave={handlePressEnd}
-            onTouchStart={handlePressStart}
-            onTouchEnd={handlePressEnd}
-            disabled={alreadyStampedToday}
-          >
-            <div
-              className="progress-fill"
-              style={{
-                width: `${alreadyStampedToday ? 100 : progress}%`,
-                transition: isPressing ? 'none' : 'width 0.2s ease-out'
-              }}
-            />
-            <span className="btn-content">
-              {showSuccess
-                ? '오늘은 다른 행복을 찾아보세요 😊'
-                : alreadyStampedToday
-                  ? '오늘은 다른 행복을 찾아보세요 😊'
-                  : isPressing
-                    ? `${Math.round(progress)}%`
-                    : '행복'}
-            </span>
-          </button>
-
+        {((canDelete && currentItem.isCustom && isOwner) || showMemoComposer || itemMemos.length > 0) && (
+          <div className="detail-record-section">
           {canDelete && currentItem.isCustom && isOwner && (
             <button
               type="button"
@@ -1049,8 +827,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
           {(showMemoComposer || itemMemos.length > 0) && (
             <div className="detail-memo-section">
               <div className="detail-memo-header">
-                <h3>행복 메모</h3>
-                <span>날짜와 시간이 함께 기록돼요</span>
+                <h3>행복 기록</h3>
+                <span>한 줄이어도 좋고 길게 써도 좋아요</span>
               </div>
 
               {showMemoComposer && (
@@ -1058,9 +836,9 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                   <textarea
                     value={memoText}
                     onChange={event => setMemoText(event.target.value)}
-                    placeholder="지금 느낀 행복을 짧게 적어보세요"
+                    placeholder="오늘 어떤 순간을 남기고 싶나요?"
                     rows={3}
-                    maxLength={200}
+                    maxLength={500}
                   />
                   {isMemoImageEnabled && (
                     <div className="detail-memo-photo-actions">
@@ -1099,7 +877,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                         setShowMemoComposer(false);
                       }}
                     >
-                      이번에는 넘기기
+                      닫기
                     </button>
                     <button
                       type="button"
@@ -1107,7 +885,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                       onClick={handleSaveMemo}
                       disabled={!memoText.trim() && memoImages.length === 0}
                     >
-                      메모 저장하기
+                      기록 저장하기
                     </button>
                   </div>
                 </div>
@@ -1145,7 +923,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                             value={editingMemoText}
                             onChange={event => setEditingMemoText(event.target.value)}
                             rows={3}
-                            maxLength={200}
+                            maxLength={500}
                           />
                           {isMemoImageEnabled && (
                             <div className="detail-memo-photo-actions">
@@ -1185,7 +963,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
                               onClick={() => handleSaveMemoEdit(memo.id)}
                               disabled={!editingMemoText.trim() && editingMemoImages.length === 0}
                             >
-                              수정 저장
+                              기록 수정
                             </button>
                           </div>
                         </div>
@@ -1204,7 +982,8 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false }) => {
               )}
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
 
       {activeMemoImage && (

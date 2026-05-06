@@ -2,40 +2,54 @@ import React, { memo } from 'react';
 import { useHappy } from '../store/HappyContext';
 import './HappinessCard.css';
 
-const HappinessCard = ({ item, onClick }) => {
-  const { getItemStats, getItemMemos, isItemOwnedByCurrentUser } = useHappy();
-  const { myCount } = getItemStats(item.id);
-  const memoCount = getItemMemos(item.id).length;
-  const hasCardMeta = myCount > 0 || memoCount > 0;
+const HappinessCard = ({ item, onClick, onRecord }) => {
+  const { userFavorites, toggleFavorite, isItemOwnedByCurrentUser } = useHappy();
   const isOwner = isItemOwnedByCurrentUser(item.id);
+  const isMyHappy = Boolean(userFavorites[item.id]);
+
+  const handleRecordClick = event => {
+    event.stopPropagation();
+    if (onRecord) {
+      onRecord(item);
+      return;
+    }
+
+    onClick(item);
+  };
+
+  const handleMyHappyClick = event => {
+    event.stopPropagation();
+    toggleFavorite(item.id);
+  };
 
   return (
     <div className="glass-card happiness-card compact" onClick={() => onClick(item)}>
       <div className="card-top-row">
         <div className="card-header">
-          <span className="category-badge">{item.category}</span>
           {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
+          {item.isCustom && item.isPublic && <span className="public-badge">공개</span>}
         </div>
-
-        {hasCardMeta && (
-          <div className="card-corner-stats">
-            {myCount > 0 && (
-              <div className="card-corner-stat stamps" aria-label={`행복 기록 ${myCount}번`}>
-                <span aria-hidden="true">❤️</span>
-                <span>{myCount}</span>
-              </div>
-            )}
-            {memoCount > 0 && (
-              <div className="card-corner-stat memos" aria-label={`메모 ${memoCount}개`}>
-                <span aria-hidden="true">✏️</span>
-                <span>{memoCount}</span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
       <h3 className="card-title">{item.title}</h3>
       <p className="card-desc-short">{item.description}</p>
+      <div className="card-action-row">
+        <button
+          type="button"
+          className="card-record-btn"
+          onClick={handleRecordClick}
+        >
+          기록하기
+        </button>
+        <button
+          type="button"
+          className={`card-my-happy-btn ${isMyHappy ? 'active' : ''}`}
+          onClick={handleMyHappyClick}
+          aria-label={isMyHappy ? '내 행복에서 제거' : '내 행복에 추가'}
+          aria-pressed={isMyHappy}
+        >
+          {isMyHappy ? '♥' : '♡'}
+        </button>
+      </div>
     </div>
   );
 };

@@ -1,11 +1,10 @@
 import React, { lazy, useCallback, useMemo, useState } from 'react';
-import CategoryTabs from '../components/CategoryTabs';
+import CreateHappinessModal from '../components/CreateHappinessModal';
 import HappinessCard from '../components/HappinessCard';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { useHappy } from '../store/HappyContext';
 import './Home.css';
 
-const homeCategories = ['랜덤행복', '소확행', '기분전환', '제대로'];
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
 
@@ -22,19 +21,16 @@ const getSessionShuffleRank = (itemId, seed) => {
 };
 
 const Home = () => {
-  const [selectedCategory, setSelectedCategory] = useState('랜덤행복');
   const [selectedCard, setSelectedCard] = useState(null);
+  const [shouldOpenRecord, setShouldOpenRecord] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sessionShuffleSeed] = useState(() => `${Date.now()}-${Math.random()}`);
   const { items, authUserNickname } = useHappy();
 
   const viewerPossessiveLabel = authUserNickname ? `${authUserNickname} 님의` : '나의';
 
   const currentItems = useMemo(() => {
-    const sourceItems = selectedCategory === '랜덤행복'
-      ? items
-      : items.filter(item => item.category === selectedCategory);
-
-    return [...sourceItems].sort((leftItem, rightItem) => {
+    return [...items].sort((leftItem, rightItem) => {
       const rankDiff = getSessionShuffleRank(leftItem.id, sessionShuffleSeed)
         - getSessionShuffleRank(rightItem.id, sessionShuffleSeed);
 
@@ -44,28 +40,39 @@ const Home = () => {
 
       return leftItem.id.localeCompare(rightItem.id);
     });
-  }, [items, selectedCategory, sessionShuffleSeed]);
+  }, [items, sessionShuffleSeed]);
 
   const handleCardClick = useCallback(item => {
+    setShouldOpenRecord(false);
+    setSelectedCard(item);
+  }, []);
+
+  const handleCardRecord = useCallback(item => {
+    setShouldOpenRecord(true);
     setSelectedCard(item);
   }, []);
 
   const handleCloseDetailModal = useCallback(() => {
     setSelectedCard(null);
+    setShouldOpenRecord(false);
   }, []);
 
   return (
     <div className="view-container home-view">
       <header className="home-header">
-        <h1>Happy Finder</h1>
+        <div className="home-title-row">
+          <h1>Happy Finder</h1>
+          <button
+            type="button"
+            className="home-create-button"
+            onClick={() => setIsCreateModalOpen(true)}
+            aria-label="내 행복 만들기"
+          >
+            +
+          </button>
+        </div>
         <p>오늘 {viewerPossessiveLabel} 행복은 무엇인가요?</p>
       </header>
-
-      <CategoryTabs
-        selected={selectedCategory}
-        onSelect={setSelectedCategory}
-        categories={homeCategories}
-      />
 
       <div className="feed-container">
         {currentItems.length > 0 ? (
@@ -74,15 +81,23 @@ const Home = () => {
               key={item.id}
               item={item}
               onClick={handleCardClick}
+              onRecord={handleCardRecord}
             />
           ))
         ) : (
           <div className="empty-state">
             <div className="empty-icon">🍀</div>
-            <p>아직 이 카테고리에는 행복이 없어요.<br />직접 행복을 만들어볼까요?</p>
+            <p>아직 행복이 없어요.<br />직접 행복을 만들어볼까요?</p>
           </div>
         )}
       </div>
+
+      {isCreateModalOpen && (
+        <CreateHappinessModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+        />
+      )}
 
       {selectedCard && (
         <LazyLoadBoundary
@@ -91,7 +106,7 @@ const Home = () => {
           errorTitle="행복 상세 화면을 열지 못했어요."
           errorMessage="잠시 후 다시 시도해주세요."
           onDismiss={handleCloseDetailModal}
-          resetKey={selectedCard.id}
+          resetKey={`${selectedCard.id}-${shouldOpenRecord ? 'record' : 'detail'}`}
         >
           <HappinessDetailModal
             item={selectedCard}
@@ -99,6 +114,7 @@ const Home = () => {
             onClose={handleCloseDetailModal}
             showOwnerInsights={false}
             canDelete={false}
+            autoOpenMemoComposer={shouldOpenRecord}
           />
         </LazyLoadBoundary>
       )}
