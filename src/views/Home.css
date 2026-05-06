@@ -7,41 +7,12 @@
     padding: calc(var(--native-safe-area-top) + clamp(14px, 3.4vw, 18px)) var(--screen-side-padding) clamp(16px, 4vw, 20px);
 }
 
-.home-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-}
-
 .home-header h1 {
     font-size: var(--font-title-xl);
     letter-spacing: -0.5px;
     color: var(--primary-color);
     line-height: 1.08;
     margin-bottom: 8px;
-}
-
-.home-create-button {
-    width: clamp(42px, 11vw, 48px);
-    height: clamp(42px, 11vw, 48px);
-    border: 0;
-    border-radius: 50%;
-    background: var(--primary-color);
-    color: var(--white);
-    font-size: clamp(1.75rem, 5vw, 2rem);
-    font-weight: 500;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 10px 24px rgba(255, 107, 107, 0.22);
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.home-create-button:active {
-    transform: scale(0.96);
 }
 
 .home-header p {

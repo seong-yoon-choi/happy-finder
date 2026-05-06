@@ -803,70 +803,65 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
 
             {(showMemoComposer || itemMemos.length > 0) && (
               <div className="detail-memo-section">
-                <div className="detail-memo-header">
-                  <h3>행복 기록</h3>
-                  <span>한 줄이어도 좋고 길게 써도 좋아요</span>
-                </div>
-
-              {showMemoComposer && (
-                <div className="detail-memo-compose">
-                  <textarea
-                    value={memoText}
-                    onChange={event => setMemoText(event.target.value)}
-                    placeholder="오늘 어떤 순간을 남기고 싶나요?"
-                    rows={3}
-                    maxLength={500}
-                  />
-                  {isMemoImageEnabled && (
-                    <div className="detail-memo-photo-actions">
+                {showMemoComposer && (
+                  <div className="detail-memo-compose">
+                    <textarea
+                      value={memoText}
+                      onChange={event => setMemoText(event.target.value)}
+                      placeholder="오늘 어떤 순간을 남기고 싶나요?"
+                      rows={3}
+                      maxLength={500}
+                    />
+                    {isMemoImageEnabled && (
+                      <div className="detail-memo-photo-actions">
+                        <button
+                          type="button"
+                          onClick={() => handleAttachMemoImage('compose', 'camera')}
+                          disabled={Boolean(memoImageBusyTarget)}
+                        >
+                          {memoImageBusyTarget === 'compose:camera' ? '촬영 중...' : '카메라'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAttachMemoImage('compose', 'gallery')}
+                          disabled={Boolean(memoImageBusyTarget)}
+                        >
+                          {memoImageBusyTarget === 'compose:gallery' ? '선택 중...' : '앨범'}
+                        </button>
+                      </div>
+                    )}
+                    <MemoImageStrip
+                      images={memoImages}
+                      onRemove={handleRemoveDraftImage}
+                      onOpen={openMemoImage}
+                    />
+                    {memoImageFeedback && <p className="detail-memo-image-feedback">{memoImageFeedback}</p>}
+                    <div className="detail-memo-actions">
                       <button
                         type="button"
-                        onClick={() => handleAttachMemoImage('compose', 'camera')}
-                        disabled={Boolean(memoImageBusyTarget)}
+                        className="detail-memo-skip"
+                        onClick={() => {
+                          cleanupImages(memoImages);
+                          setMemoText('');
+                          setMemoImages([]);
+                          setDraftMemoId(createDraftMemoId());
+                          setMemoImageFeedback('');
+                          setShowMemoComposer(false);
+                        }}
                       >
-                        {memoImageBusyTarget === 'compose:camera' ? '촬영 중...' : '카메라'}
+                        닫기
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleAttachMemoImage('compose', 'gallery')}
-                        disabled={Boolean(memoImageBusyTarget)}
+                        className="btn-primary detail-memo-save"
+                        onClick={handleSaveMemo}
+                        disabled={!memoText.trim() && memoImages.length === 0}
                       >
-                        {memoImageBusyTarget === 'compose:gallery' ? '선택 중...' : '앨범'}
+                        기록 저장하기
                       </button>
                     </div>
-                  )}
-                  <MemoImageStrip
-                    images={memoImages}
-                    onRemove={handleRemoveDraftImage}
-                    onOpen={openMemoImage}
-                  />
-                  {memoImageFeedback && <p className="detail-memo-image-feedback">{memoImageFeedback}</p>}
-                  <div className="detail-memo-actions">
-                    <button
-                      type="button"
-                      className="detail-memo-skip"
-                      onClick={() => {
-                        cleanupImages(memoImages);
-                        setMemoText('');
-                        setMemoImages([]);
-                        setDraftMemoId(createDraftMemoId());
-                        setMemoImageFeedback('');
-                        setShowMemoComposer(false);
-                      }}
-                    >
-                      닫기
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-primary detail-memo-save"
-                      onClick={handleSaveMemo}
-                      disabled={!memoText.trim() && memoImages.length === 0}
-                    >
-                      기록 저장하기
-                    </button>
                   </div>
-                </div>
-              )}
+                )}
 
               {itemMemos.length > 0 && (
                 <div className="detail-memo-list">

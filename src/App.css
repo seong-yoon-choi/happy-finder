@@ -49,13 +49,6 @@
     color: var(--text-dark);
 }
 
-.settings-trigger-btn {
-    background: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
 .support-trigger-label {
     color: var(--text-dark);
     font-size: clamp(1.05rem, 4vw, 1.2rem);

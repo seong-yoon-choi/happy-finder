@@ -8,6 +8,17 @@ import './Profile.css';
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
 
+const ProfileFavoriteIcon = ({ isActive = false }) => (
+  <svg viewBox="0 0 24 24" fill={isActive ? 'currentColor' : 'none'} aria-hidden="true" focusable="false">
+    <path
+      d="M12 3.9L14.5 9.06L20.18 9.89L16.07 13.88L17.04 19.5L12 16.8L6.96 19.5L7.93 13.88L3.82 9.89L9.5 9.06L12 3.9Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const Profile = () => {
   const {
     getMyItems,
@@ -74,7 +85,9 @@ const Profile = () => {
           onClick={() => setActiveTab('favorites')}
           aria-pressed={activeTab === 'favorites'}
         >
-          <span className="profile-tab-icon" aria-hidden="true">♥</span>
+          <span className="profile-tab-icon" aria-hidden="true">
+            <ProfileFavoriteIcon isActive={activeTab === 'favorites'} />
+          </span>
           <span className="profile-tab-label">즐겨찾기</span>
           <strong>{favoriteItems.length}</strong>
         </button>

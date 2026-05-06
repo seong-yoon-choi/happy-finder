@@ -316,6 +316,11 @@
     flex-shrink: 0;
 }
 
+.profile-tab-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
 .profile-tab-label {
     min-width: 0;
     white-space: nowrap;

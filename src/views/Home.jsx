@@ -1,5 +1,4 @@
 import React, { lazy, useCallback, useMemo, useState } from 'react';
-import CreateHappinessModal from '../components/CreateHappinessModal';
 import HappinessCard from '../components/HappinessCard';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import { useHappy } from '../store/HappyContext';
@@ -23,7 +22,6 @@ const getSessionShuffleRank = (itemId, seed) => {
 const Home = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [shouldOpenRecord, setShouldOpenRecord] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sessionShuffleSeed] = useState(() => `${Date.now()}-${Math.random()}`);
   const { items, authUserNickname } = useHappy();
 
@@ -55,17 +53,7 @@ const Home = () => {
   return (
     <div className="view-container home-view">
       <header className="home-header">
-        <div className="home-title-row">
-          <h1>Happy Finder</h1>
-          <button
-            type="button"
-            className="home-create-button"
-            onClick={() => setIsCreateModalOpen(true)}
-            aria-label="나만의 행복 만들기"
-          >
-            +
-          </button>
-        </div>
+        <h1>Happy Finder</h1>
         <p>오늘 {viewerPossessiveLabel} 행복은 무엇인가요?</p>
       </header>
 
@@ -85,13 +73,6 @@ const Home = () => {
           </div>
         )}
       </div>
-
-      {isCreateModalOpen && (
-        <CreateHappinessModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-        />
-      )}
 
       {selectedCard && (
         <LazyLoadBoundary
