@@ -108,7 +108,6 @@ const Home = () => {
           aria-label="태그 선택"
         >
           <CategoryIcon />
-          <span>태그</span>
         </button>
         <button
           type="button"

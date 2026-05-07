@@ -26,7 +26,7 @@
     margin: 0 var(--screen-side-padding) clamp(14px, 3.6vw, 18px);
     padding: clamp(8px, 2.4vw, 10px);
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 70px 48px;
+    grid-template-columns: minmax(0, 1fr) 48px 48px;
     gap: 8px;
     align-items: center;
     border: 1px solid var(--glass-border);
@@ -87,14 +87,12 @@
 }
 
 .home-tool-tag {
-    gap: 5px;
-    font-size: var(--font-body-md);
-    padding: 0 10px;
+    padding: 0;
 }
 
 .home-tool-tag svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     flex: 0 0 auto;
 }
 
