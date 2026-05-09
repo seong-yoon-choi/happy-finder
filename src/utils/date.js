@@ -1,5 +1,3 @@
-const DAY_MS = 1000 * 60 * 60 * 24;
-
 const toStartOfLocalDay = (value) => {
   if (!value) {
     return null;
@@ -39,15 +37,4 @@ export const getLocalDateKey = (value = new Date()) => {
   const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
-};
-
-export const getCalendarDayDifference = (fromValue, toValue) => {
-  const fromDate = toStartOfLocalDay(fromValue);
-  const toDate = toStartOfLocalDay(toValue);
-
-  if (!fromDate || !toDate) {
-    return null;
-  }
-
-  return Math.round((toDate.getTime() - fromDate.getTime()) / DAY_MS);
 };

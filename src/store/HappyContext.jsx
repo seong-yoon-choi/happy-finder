@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, useEffect, useEffectEvent, 
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
-import { getCalendarDayDifference, getLocalDateKey } from '../utils/date';
+import { getLocalDateKey } from '../utils/date';
 import {
   DEFAULT_REMINDER_NOTIFICATION_BODY,
   DEFAULT_REMINDER_NOTIFICATION_TITLE,
@@ -11,7 +11,6 @@ import {
   REMINDER_NOTIFICATION_TITLE_MAX_LENGTH,
   getReminderNotificationContent
 } from '../lib/reminderContent';
-import { getTreeInfo } from '../utils/progress';
 import {
   checkNativeExactAlarmPermission,
   checkNativeNotificationPermission,
@@ -583,10 +582,6 @@ const getStampCountFromData = (data) => {
   return data?.count || 0;
 };
 
-const getTotalStampCount = (stamps) => Object.values(stamps).reduce((sum, data) => {
-  return sum + getStampCountFromData(data);
-}, 0);
-
 const normalizeMemoImages = images => {
   if (!Array.isArray(images)) {
     return [];
@@ -668,12 +663,6 @@ const normalizeReminderItem = (value, fallbackId) => {
     }
   );
 };
-
-const createStreakCelebration = (dayCount) => ({
-  icon: '🔥',
-  title: `${dayCount}일째 행복을 찾으셨군요!!`,
-  message: '오늘도 행복한 하루!!'
-});
 
 const initialItemCountMap = initialItems.reduce((acc, item) => {
   acc[item.id] = item.totalEnjoyCount || 0;
@@ -1426,7 +1415,6 @@ export const HappyProvider = ({ children }) => {
   ));
   const pendingReminderEnableRef = useRef(false);
 
-  const [celebrationQueue, setCelebrationQueue] = useState([]);
   const [authSession, setAuthSession] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const [reviewAuthUser, setReviewAuthUser] = useState(() => readStoredReviewAdminAuthUser());
@@ -2698,73 +2686,6 @@ export const HappyProvider = ({ children }) => {
     reminderSettings.reminders
   ]);
 
-  const addStamp = (itemId) => {
-    const today = new Date();
-    const todayKey = getLocalDateKey(today);
-    const currentUserStampCount = getStampCountFromData(userStamps[itemId]);
-    const currentTotalStamps = getTotalStampCount(userStamps);
-    const nextTotalStamps = currentTotalStamps + 1;
-    const previousTreeInfo = getTreeInfo(currentTotalStamps);
-    const nextTreeInfo = getTreeInfo(nextTotalStamps);
-    const celebrations = [];
-
-    setUserStamps(prev => {
-      const current = prev[itemId] || { count: 0, lastStampedDate: null };
-
-      return {
-        ...prev,
-        [itemId]: {
-          count: current.count + 1,
-          lastStampedDate: todayKey
-        }
-      };
-    });
-
-    setItems(prev => prev.map(item => {
-      if (item.id !== itemId) {
-        return item;
-      }
-
-      return {
-        ...item,
-        totalEnjoyCount: Math.max(item.totalEnjoyCount || 0, currentUserStampCount) + 1
-      };
-    }));
-
-    let nextStreak = globalStreak;
-
-    if (getLocalDateKey(globalStreak.lastDate) !== todayKey) {
-      if (!globalStreak.lastDate) {
-        nextStreak = { current: 1, lastDate: todayKey };
-        celebrations.push(createStreakCelebration(1));
-      } else {
-        const diffDays = getCalendarDayDifference(globalStreak.lastDate, today);
-
-        if (diffDays === 1) {
-          nextStreak = { current: globalStreak.current + 1, lastDate: todayKey };
-          celebrations.push(createStreakCelebration(globalStreak.current + 1));
-        } else {
-          nextStreak = { current: 1, lastDate: todayKey };
-          celebrations.push(createStreakCelebration(1));
-        }
-      }
-    }
-
-    setGlobalStreak(nextStreak);
-
-    if (previousTreeInfo.id !== nextTreeInfo.id) {
-      celebrations.push({
-        icon: nextTreeInfo.icon,
-        title: `${nextTreeInfo.title}(으)로 업그레이드됐어요!`,
-        message: `총 ${nextTotalStamps}번의 행복을 찾아서 ${previousTreeInfo.title}에서 한 단계 자랐어요!`
-      });
-    }
-
-    if (celebrations.length > 0) {
-      setCelebrationQueue(prev => [...prev, ...celebrations]);
-    }
-  };
-
   const addCustomItem = async (title, description, category, visibility = 'private') => {
     const isPublic = visibility === 'public';
     const canSyncToCloud = Boolean(supabase && authUser?.id);
@@ -2963,32 +2884,12 @@ export const HappyProvider = ({ children }) => {
     return true;
   };
 
-  const getItemsByCategory = (category) => {
-    return items.filter(item => item.category === category);
-  };
-
   const getMyItems = () => {
     return items.filter(item => isOwnedByCurrentUser(item, authUser));
   };
 
-  const getStampedItems = () => {
-    return items.filter(item => getStampCountFromData(userStamps[item.id]) > 0);
-  };
-
   const getFavoriteItems = () => {
     return items.filter(item => userFavorites[item.id]);
-  };
-
-  const getItemStats = (itemId) => {
-    const myCount = getStampCountFromData(userStamps[itemId]);
-    const matchedItem = items.find(item => item.id === itemId);
-    const totalCount = Math.max(matchedItem?.totalEnjoyCount || 0, myCount);
-
-    return {
-      myCount,
-      totalCount,
-      othersCount: Math.max(totalCount - myCount, 0)
-    };
   };
 
   const getItemMemos = (itemId) => {
@@ -3157,7 +3058,6 @@ export const HappyProvider = ({ children }) => {
     setGlobalStreak({ current: 0, lastDate: null });
     setReminderSettings(defaultReminderSettings);
     setMarketingConsent(false);
-    setCelebrationQueue([]);
     setCloudSyncStatus(defaultCloudSyncStatus);
     setIsCloudSyncing(false);
     hasBootstrappedCloudRef.current = false;
@@ -4326,12 +4226,6 @@ export const HappyProvider = ({ children }) => {
     return currentPermission;
   };
 
-  const dismissCelebration = () => {
-    setCelebrationQueue(prev => prev.slice(1));
-  };
-
-  const totalStamps = getTotalStampCount(userStamps);
-  const activeCelebration = celebrationQueue[0] || null;
   const effectiveAuthUserOnboarding = {
     ...getAuthUserOnboardingState(effectiveAuthUser, isReviewAuthUser ? '' : authProfileNickname),
     hasAcceptedMarketing: isReviewAuthUser
@@ -4342,24 +4236,18 @@ export const HappyProvider = ({ children }) => {
   return (
     <HappyContext.Provider value={{
       items,
-      userStamps,
       userFavorites,
-      addStamp,
       addCustomItem,
       updateCustomItemVisibility,
       deleteCustomItem,
-      getItemsByCategory,
-      getItemStats,
       getItemMemos,
       isItemOwnedByCurrentUser,
       addMemo,
       updateMemo,
       deleteMemo,
       getMyItems,
-      getStampedItems,
       getFavoriteItems,
       toggleFavorite,
-      totalStamps,
       isDarkMode,
       toggleTheme,
       isSupabaseConfigured,
@@ -4405,9 +4293,7 @@ export const HappyProvider = ({ children }) => {
       deleteReminder,
       updateReminderTime,
       requestNotificationPermission,
-      openExactAlarmSettings,
-      activeCelebration,
-      dismissCelebration
+      openExactAlarmSettings
     }}>
       {children}
     </HappyContext.Provider>

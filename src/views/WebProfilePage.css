@@ -15,7 +15,7 @@
   border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 20px 50px rgba(255, 142, 139, 0.16);
+  box-shadow: 0 20px 50px rgba(var(--primary-rgb), 0.16);
 }
 
 .dark-theme .web-profile-page {
@@ -63,7 +63,7 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   color: var(--primary-color);
-  background: rgba(255, 142, 139, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .web-profile-note,
@@ -101,7 +101,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  border: 1px solid rgba(255, 142, 139, 0.18);
+  border: 1px solid rgba(var(--primary-rgb), 0.18);
   background: rgba(255, 255, 255, 0.76);
 }
 
@@ -133,7 +133,7 @@
   gap: 6px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(255, 142, 139, 0.1);
+  background: rgba(var(--primary-rgb), 0.1);
 }
 
 .web-profile-account-box strong {
@@ -152,7 +152,7 @@
 .web-profile-field input {
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid rgba(255, 142, 139, 0.22);
+  border: 1px solid rgba(var(--primary-rgb), 0.22);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.88);
   color: var(--text-dark);
@@ -165,8 +165,8 @@
 
 .web-profile-field input:focus {
   outline: none;
-  border-color: rgba(255, 142, 139, 0.7);
-  box-shadow: 0 0 0 4px rgba(255, 142, 139, 0.14);
+  border-color: rgba(var(--primary-rgb), 0.7);
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.14);
 }
 
 .web-profile-actions {
@@ -198,7 +198,7 @@
 .web-profile-danger-btn {
   border: none;
   color: #ffffff;
-  box-shadow: 0 10px 24px rgba(255, 142, 139, 0.24);
+  box-shadow: 0 10px 24px rgba(var(--primary-rgb), 0.24);
 }
 
 .web-profile-primary-btn {
@@ -216,7 +216,7 @@
 }
 
 .web-profile-secondary-btn {
-  border: 1px solid rgba(255, 142, 139, 0.2);
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
   background: rgba(255, 255, 255, 0.7);
   color: var(--text-dark);
   cursor: pointer;

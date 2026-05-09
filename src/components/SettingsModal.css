@@ -122,7 +122,7 @@
     border-color: transparent;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: #ffffff;
-    box-shadow: 0 8px 20px rgba(255, 142, 139, 0.24);
+    box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.24);
 }
 
 .settings-secondary-btn {
@@ -148,7 +148,7 @@
     flex-direction: column;
     gap: 10px;
     padding: 14px;
-    border: 1px solid rgba(255, 142, 139, 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
     border-radius: 20px;
     background:
         radial-gradient(circle at top left, rgba(255, 255, 255, 0.88), transparent 54%),
@@ -186,7 +186,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 142, 139, 0.24);
+    border: 1px solid rgba(var(--primary-rgb), 0.24);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.8);
     color: var(--text-dark);
@@ -200,12 +200,12 @@
     border-color: transparent;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: #ffffff;
-    box-shadow: 0 10px 20px rgba(255, 142, 139, 0.18);
+    box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.18);
 }
 
 .settings-notification-switch:hover {
     transform: translateY(-1px);
-    border-color: rgba(255, 142, 139, 0.46);
+    border-color: rgba(var(--primary-rgb), 0.46);
 }
 
 .settings-notification-message-form {
@@ -225,7 +225,7 @@
 .settings-notification-message-form input,
 .settings-notification-message-form textarea {
     width: 100%;
-    border: 1px solid rgba(255, 142, 139, 0.22);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.82);
     color: var(--text-dark);
@@ -249,9 +249,9 @@
 
 .settings-notification-message-form input:focus,
 .settings-notification-message-form textarea:focus {
-    border-color: rgba(255, 142, 139, 0.58);
+    border-color: rgba(var(--primary-rgb), 0.58);
     background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 0 0 3px rgba(255, 142, 139, 0.12);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
 }
 
 .settings-notification-message-form p {
@@ -278,7 +278,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border: 1px solid rgba(255, 142, 139, 0.26);
+    border: 1px solid rgba(var(--primary-rgb), 0.26);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.7);
     color: var(--text-dark);
@@ -319,7 +319,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 142, 139, 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.72);
     color: var(--text-light);
@@ -341,12 +341,12 @@
 .settings-reminder-add-btn:hover,
 .settings-time-shell:hover,
 .settings-time-shell.active {
-    border-color: rgba(255, 142, 139, 0.58);
-    box-shadow: 0 10px 22px rgba(255, 142, 139, 0.16);
+    border-color: rgba(var(--primary-rgb), 0.58);
+    box-shadow: 0 10px 22px rgba(var(--primary-rgb), 0.16);
 }
 
 .settings-reminder-icon-btn:hover {
-    border-color: rgba(255, 142, 139, 0.34);
+    border-color: rgba(var(--primary-rgb), 0.34);
 }
 
 .settings-time-shell {
@@ -357,7 +357,7 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 10px;
-    border: 1px solid rgba(255, 142, 139, 0.26);
+    border: 1px solid rgba(var(--primary-rgb), 0.26);
     border-radius: 18px;
     background:
         radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 58%),
@@ -415,7 +415,7 @@
 
 .settings-reminder-empty {
     padding: 14px 16px;
-    border: 1px dashed rgba(255, 142, 139, 0.24);
+    border: 1px dashed rgba(var(--primary-rgb), 0.24);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.46);
     color: var(--text-light);
@@ -426,12 +426,12 @@
 .settings-time-popover {
     margin-top: 2px;
     padding: 16px;
-    border: 1px solid rgba(255, 142, 139, 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
     border-radius: 22px;
     background:
         radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 50%),
         linear-gradient(145deg, rgba(255, 250, 247, 0.98), rgba(255, 238, 226, 0.96));
-    box-shadow: 0 18px 38px rgba(255, 142, 139, 0.16);
+    box-shadow: 0 18px 38px rgba(var(--primary-rgb), 0.16);
     animation: fadeIn 0.18s ease;
 }
 
@@ -492,7 +492,7 @@
 .settings-period-btn.active {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: #ffffff;
-    box-shadow: 0 10px 18px rgba(255, 142, 139, 0.22);
+    box-shadow: 0 10px 18px rgba(var(--primary-rgb), 0.22);
 }
 
 .settings-time-select-grid {
@@ -517,7 +517,7 @@
 .settings-time-field select {
     width: 100%;
     padding: 12px 14px;
-    border: 1px solid rgba(255, 142, 139, 0.2);
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.82);
     color: var(--text-dark);
@@ -537,8 +537,8 @@
 }
 
 .settings-time-field select:focus {
-    border-color: rgba(255, 142, 139, 0.55);
-    box-shadow: 0 0 0 3px rgba(255, 142, 139, 0.15);
+    border-color: rgba(var(--primary-rgb), 0.55);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
 }
 
 .settings-time-actions {
@@ -548,7 +548,7 @@
 }
 
 .settings-time-cancel-btn {
-    border: 1px solid rgba(255, 142, 139, 0.16);
+    border: 1px solid rgba(var(--primary-rgb), 0.16);
     background: rgba(255, 255, 255, 0.72);
     color: var(--text-dark);
 }
@@ -556,7 +556,7 @@
 .settings-time-apply-btn {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: #ffffff;
-    box-shadow: 0 12px 22px rgba(255, 142, 139, 0.22);
+    box-shadow: 0 12px 22px rgba(var(--primary-rgb), 0.22);
 }
 
 .settings-note {
@@ -578,7 +578,7 @@
 }
 
 .settings-feedback.error {
-    background: rgba(255, 142, 139, 0.14);
+    background: rgba(var(--primary-rgb), 0.14);
     color: #b64c45;
 }
 
@@ -618,7 +618,7 @@
     align-items: center;
     justify-content: center;
     align-self: flex-start;
-    border: 1px solid rgba(255, 142, 139, 0.24);
+    border: 1px solid rgba(var(--primary-rgb), 0.24);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.72);
     color: var(--text-dark);
@@ -629,8 +629,8 @@
 .settings-account-toggle:hover,
 .settings-account-toggle.open {
     transform: translateY(-1px);
-    border-color: rgba(255, 142, 139, 0.46);
-    box-shadow: 0 10px 20px rgba(255, 142, 139, 0.14);
+    border-color: rgba(var(--primary-rgb), 0.46);
+    box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.14);
 }
 
 .settings-account-chevron {
@@ -658,7 +658,7 @@
 
 .settings-password-card {
     padding: 14px;
-    border: 1px solid rgba(255, 142, 139, 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
     border-radius: 18px;
     background: rgba(255, 249, 244, 0.84);
 }
@@ -689,7 +689,7 @@
 
 .settings-password-toggle {
     padding: 10px 14px;
-    border: 1px solid rgba(255, 142, 139, 0.22);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.82);
     color: var(--text-dark);
@@ -708,7 +708,7 @@
 .settings-password-input {
     width: 100%;
     padding: 12px 14px;
-    border: 1px solid rgba(255, 142, 139, 0.22);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.9);
     color: var(--text-dark);
@@ -717,8 +717,8 @@
 }
 
 .settings-password-input:focus {
-    border-color: rgba(255, 142, 139, 0.58);
-    box-shadow: 0 0 0 4px rgba(255, 142, 139, 0.12);
+    border-color: rgba(var(--primary-rgb), 0.58);
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
 }
 
 .settings-password-actions {

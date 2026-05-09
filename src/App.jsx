@@ -4,7 +4,6 @@ import { Capacitor } from '@capacitor/core';
 import { HappyProvider, useHappy } from './store/HappyContext';
 import NavBar from './components/NavBar';
 import AuthScreen from './components/AuthScreen';
-import CelebrationModal from './components/CelebrationModal';
 import ExitConfirmModal from './components/ExitConfirmModal';
 import AppUpdateModal from './components/AppUpdateModal';
 import LazyLoadBoundary from './components/LazyLoadBoundary';
@@ -122,8 +121,6 @@ function AppContent() {
   const [isAppUpdateDismissed, setIsAppUpdateDismissed] = useState(false);
 
   const {
-    activeCelebration,
-    dismissCelebration,
     authUser,
     authUserNickname,
     authUserOnboarding,
@@ -177,7 +174,6 @@ function AppContent() {
     && !isAuthScreenOpen
     && !isAgreementModalOpen
     && !isNicknameModalOpen
-    && !activeCelebration
   );
 
   const resetAuthScreenRequest = () => {
@@ -374,9 +370,6 @@ function AppContent() {
 
         <NavBar currentView={currentView} onViewChange={setCurrentView} />
       </PullToRefreshShell>
-      {activeCelebration && (
-        <CelebrationModal celebration={activeCelebration} onClose={dismissCelebration} />
-      )}
       <ExitConfirmModal
         isOpen={isExitConfirmOpen}
         onClose={() => setIsExitConfirmOpen(false)}

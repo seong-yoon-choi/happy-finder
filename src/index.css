@@ -3,19 +3,21 @@
 
 :root {
   /* Brand Colors */
-  --primary-color: #ff8e8b;
-  --secondary-color: #f7b733;
-  --background-start: #ffe5e5;
-  --background-end: #fff0d1;
-  --text-dark: #333333;
-  --text-light: #777777;
+  --primary-color: #5f9f4a;
+  --primary-rgb: 95, 159, 74;
+  --secondary-color: #f2c94c;
+  --secondary-rgb: 242, 201, 76;
+  --background-start: #e8f6c8;
+  --background-end: #fff3b8;
+  --text-dark: #263322;
+  --text-light: #68745e;
   --white: #ffffff;
   --danger: #ff4757;
 
   /* Glassmorphism */
   --glass-bg: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 8px 32px 0 rgba(255, 142, 139, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(var(--primary-rgb), 0.14);
   /* Metrics */
   --border-radius-lg: clamp(20px, 4vw, 24px);
   --border-radius-md: clamp(14px, 3vw, 18px);
@@ -45,12 +47,12 @@
 
 /* Dark Theme Variables */
 .dark-theme {
-  --primary-color: #ff9a9a;
-  /* Slightly brighter for dark mode */
-  --secondary-color: #ffd166;
-  --background-start: #1a1a2e;
-  /* Deep navy/purple */
-  --background-end: #16213e;
+  --primary-color: #93d36b;
+  --primary-rgb: 147, 211, 107;
+  --secondary-color: #f7d66d;
+  --secondary-rgb: 247, 214, 109;
+  --background-start: #102417;
+  --background-end: #2e3217;
   --text-dark: #f0f0f0;
   /* Off-white text */
   --text-light: #b0b0b0;
@@ -144,13 +146,13 @@ p {
   font-size: var(--font-body-md);
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(255, 142, 139, 0.3);
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.28);
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
 }
 
 .btn-primary:active {
   transform: scale(0.95);
-  box-shadow: 0 2px 10px rgba(255, 142, 139, 0.2);
+  box-shadow: 0 2px 10px rgba(var(--primary-rgb), 0.2);
 }
 
 /* Animations */

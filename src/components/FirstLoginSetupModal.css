@@ -127,7 +127,7 @@
 }
 
 .first-login-feedback.error {
-    background: rgba(255, 142, 139, 0.14);
+    background: rgba(var(--primary-rgb), 0.14);
     color: #b64c45;
 }
 

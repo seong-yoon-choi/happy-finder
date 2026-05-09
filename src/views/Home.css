@@ -32,7 +32,7 @@
     border: 1px solid var(--glass-border);
     border-radius: 22px;
     background: rgba(255, 255, 255, 0.74);
-    box-shadow: 0 10px 26px rgba(255, 142, 139, 0.1);
+    box-shadow: 0 10px 26px rgba(var(--primary-rgb), 0.1);
     backdrop-filter: blur(18px);
 }
 
@@ -44,7 +44,7 @@
 .home-tool-tag,
 .home-tool-add {
     min-height: 48px;
-    border: 1px solid rgba(255, 142, 139, 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.82);
     color: var(--text-dark);
@@ -100,7 +100,7 @@
     border: 0;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
-    box-shadow: 0 10px 20px rgba(255, 142, 139, 0.28);
+    box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.28);
     cursor: pointer;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
@@ -113,7 +113,7 @@
 
 .home-tool-add:active {
     transform: scale(0.96);
-    box-shadow: 0 6px 14px rgba(255, 142, 139, 0.24);
+    box-shadow: 0 6px 14px rgba(var(--primary-rgb), 0.24);
 }
 
 .feed-container {

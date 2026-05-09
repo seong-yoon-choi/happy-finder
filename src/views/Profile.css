@@ -33,14 +33,14 @@
     gap: 6px;
     min-height: 34px;
     padding: 7px 12px;
-    border: 1px solid rgba(255, 142, 139, 0.34);
+    border: 1px solid rgba(var(--primary-rgb), 0.34);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.78);
     color: var(--primary-color);
     font-size: 0.88rem;
     font-weight: 700;
     line-height: 1;
-    box-shadow: 0 5px 16px rgba(255, 142, 139, 0.14);
+    box-shadow: 0 5px 16px rgba(var(--primary-rgb), 0.14);
 }
 
 .profile-stage-list-trigger svg {
@@ -272,7 +272,7 @@
     border: 1px solid var(--glass-border);
     border-radius: clamp(20px, 5vw, 24px);
     background: rgba(255, 255, 255, 0.58);
-    box-shadow: 0 8px 24px rgba(255, 142, 139, 0.1);
+    box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.1);
 }
 
 .profile-tab-btn {
@@ -299,8 +299,8 @@
 .profile-tab-btn.active {
     background: var(--white);
     color: var(--primary-color);
-    border-color: rgba(255, 142, 139, 0.3);
-    box-shadow: 0 8px 18px rgba(255, 142, 139, 0.16);
+    border-color: rgba(var(--primary-rgb), 0.3);
+    box-shadow: 0 8px 18px rgba(var(--primary-rgb), 0.16);
 }
 
 .profile-tab-icon {
@@ -310,7 +310,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 142, 139, 0.12);
+    background: rgba(var(--primary-rgb), 0.12);
     color: var(--primary-color);
     line-height: 1;
     flex-shrink: 0;
@@ -336,7 +336,7 @@
     align-items: center;
     justify-content: center;
     padding: 0 8px;
-    background: rgba(255, 142, 139, 0.14);
+    background: rgba(var(--primary-rgb), 0.14);
     color: var(--primary-color);
     font-size: 0.9rem;
     line-height: 1;
@@ -415,9 +415,9 @@
 }
 
 .growth-stage-item.current {
-    border-color: rgba(255, 142, 139, 0.52);
-    background: rgba(255, 142, 139, 0.12);
-    box-shadow: 0 8px 24px rgba(255, 142, 139, 0.12);
+    border-color: rgba(var(--primary-rgb), 0.52);
+    background: rgba(var(--primary-rgb), 0.12);
+    box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.12);
 }
 
 .growth-stage-item-avatar {
@@ -491,8 +491,8 @@
 }
 
 .dark-theme .growth-stage-item.current {
-    background: rgba(255, 142, 139, 0.18);
-    border-color: rgba(255, 142, 139, 0.44);
+    background: rgba(var(--primary-rgb), 0.18);
+    border-color: rgba(var(--primary-rgb), 0.44);
 }
 
 .dark-theme .growth-stage-item-avatar {

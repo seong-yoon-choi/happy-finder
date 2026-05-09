@@ -116,7 +116,7 @@
 .form-group textarea {
     padding: 12px 14px;
     border-radius: 16px;
-    border: 1px solid rgba(255, 142, 139, 0.3);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
     background: rgba(255, 255, 255, 0.82);
     font-size: 1rem;
     color: var(--text-dark);
@@ -133,7 +133,7 @@
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(255, 142, 139, 0.2);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
 }
 
 .form-group textarea {
@@ -149,7 +149,7 @@
 .category-pill {
     flex: 1;
     padding: 10px 0;
-    border: 1px solid rgba(255, 142, 139, 0.3);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
     background: rgba(255, 255, 255, 0.5);
     border-radius: 20px;
     font-size: 0.95rem;

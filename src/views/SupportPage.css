@@ -8,8 +8,8 @@
     isolation: isolate;
     color: var(--text-dark);
     background:
-        radial-gradient(circle at top right, rgba(247, 183, 51, 0.16), transparent 28%),
-        radial-gradient(circle at 12% 84%, rgba(255, 142, 139, 0.16), transparent 30%),
+        radial-gradient(circle at top right, rgba(var(--secondary-rgb), 0.16), transparent 28%),
+        radial-gradient(circle at 12% 84%, rgba(var(--primary-rgb), 0.16), transparent 30%),
         linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
 }
 
@@ -28,7 +28,7 @@
     right: -30px;
     width: 250px;
     height: 250px;
-    background: rgba(247, 183, 51, 0.16);
+    background: rgba(var(--secondary-rgb), 0.16);
 }
 
 .support-page::after {
@@ -36,7 +36,7 @@
     bottom: 120px;
     width: 220px;
     height: 220px;
-    background: rgba(255, 142, 139, 0.16);
+    background: rgba(var(--primary-rgb), 0.16);
 }
 
 .support-page-shell {
@@ -100,7 +100,7 @@
 }
 
 .support-nav-link-btn {
-    border: 1px solid rgba(255, 142, 139, 0.28);
+    border: 1px solid rgba(var(--primary-rgb), 0.28);
     background: rgba(255, 255, 255, 0.74);
     color: var(--text-dark);
     cursor: pointer;
@@ -110,7 +110,7 @@
 .support-nav-link-btn:hover {
     transform: translateY(-1px);
     background: rgba(255, 255, 255, 0.94);
-    border-color: rgba(255, 142, 139, 0.46);
+    border-color: rgba(var(--primary-rgb), 0.46);
     color: var(--primary-color);
     box-shadow: var(--glass-shadow);
 }
@@ -118,9 +118,9 @@
 .support-nav-link-btn.is-authenticated {
     cursor: pointer;
     background: rgba(255, 255, 255, 0.92);
-    border-color: rgba(255, 142, 139, 0.42);
+    border-color: rgba(var(--primary-rgb), 0.42);
     color: var(--primary-color);
-    box-shadow: 0 10px 24px rgba(255, 142, 139, 0.12);
+    box-shadow: 0 10px 24px rgba(var(--primary-rgb), 0.12);
 }
 
 .support-app-button {
@@ -131,12 +131,12 @@
     padding: 0 18px;
     font-weight: 700;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    box-shadow: 0 14px 28px rgba(255, 142, 139, 0.28);
+    box-shadow: 0 14px 28px rgba(var(--primary-rgb), 0.28);
 }
 
 .support-app-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 18px 32px rgba(255, 142, 139, 0.3);
+    box-shadow: 0 18px 32px rgba(var(--primary-rgb), 0.3);
     filter: saturate(1.05);
 }
 
@@ -195,14 +195,14 @@
 
 .support-tab-link:hover {
     transform: translateY(-2px);
-    box-shadow: 0 14px 28px rgba(255, 142, 139, 0.18);
+    box-shadow: 0 14px 28px rgba(var(--primary-rgb), 0.18);
 }
 
 .support-tab-link.is-active {
     border-color: transparent;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: #ffffff;
-    box-shadow: 0 14px 28px rgba(255, 142, 139, 0.24);
+    box-shadow: 0 14px 28px rgba(var(--primary-rgb), 0.24);
 }
 
 .support-kicker {
@@ -234,7 +234,7 @@
         radial-gradient(circle at top right, rgba(255, 255, 255, 0.58), transparent 38%),
         linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 229, 229, 0.82) 58%, rgba(255, 240, 209, 0.82));
     border: 1px solid var(--glass-border);
-    box-shadow: 0 14px 32px rgba(255, 142, 139, 0.16);
+    box-shadow: 0 14px 32px rgba(var(--primary-rgb), 0.16);
 }
 
 .support-side-note::after {
@@ -342,10 +342,10 @@
     gap: 8px;
     min-width: 124px;
     padding: 12px;
-    border: 1px solid rgba(255, 142, 139, 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.84);
-    box-shadow: 0 10px 24px rgba(255, 142, 139, 0.12);
+    box-shadow: 0 10px 24px rgba(var(--primary-rgb), 0.12);
     font-size: 0.92rem;
     font-weight: 700;
     color: var(--text-dark);
@@ -359,7 +359,7 @@
 .support-score-inline select {
     min-height: 44px;
     padding: 9px 12px;
-    border: 1px solid rgba(255, 142, 139, 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.97);
     font-size: 0.98rem;
@@ -414,8 +414,8 @@
 .support-form input:focus,
 .support-form textarea:focus,
 .support-form select:focus {
-    border-color: rgba(255, 142, 139, 0.65);
-    box-shadow: 0 0 0 4px rgba(255, 142, 139, 0.12);
+    border-color: rgba(var(--primary-rgb), 0.65);
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.12);
 }
 
 .support-form textarea {

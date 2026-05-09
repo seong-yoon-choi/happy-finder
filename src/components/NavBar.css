@@ -43,5 +43,5 @@
 
 .nav-item.active .nav-icon {
     transform: translateY(-4px);
-    filter: drop-shadow(0 2px 4px rgba(255, 142, 139, 0.4));
+    filter: drop-shadow(0 2px 4px rgba(var(--primary-rgb), 0.4));
 }

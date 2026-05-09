@@ -39,7 +39,7 @@
     font-size: 2.3rem;
     font-weight: 800;
     line-height: 1;
-    box-shadow: 0 12px 28px rgba(255, 142, 139, 0.28);
+    box-shadow: 0 12px 28px rgba(var(--primary-rgb), 0.28);
 }
 
 .app-update-copy {
@@ -101,5 +101,5 @@
 .app-update-submit {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: #ffffff;
-    box-shadow: 0 8px 22px rgba(255, 142, 139, 0.24);
+    box-shadow: 0 8px 22px rgba(var(--primary-rgb), 0.24);
 }

@@ -10,7 +10,7 @@
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     background:
-        radial-gradient(circle at top, rgba(247, 183, 51, 0.24), transparent 35%),
+        radial-gradient(circle at top, rgba(var(--secondary-rgb), 0.24), transparent 35%),
         linear-gradient(160deg, rgba(255, 245, 232, 0.96), rgba(255, 229, 229, 0.98));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -18,7 +18,7 @@
 
 .dark-theme .auth-screen-overlay {
     background:
-        radial-gradient(circle at top, rgba(247, 183, 51, 0.12), transparent 30%),
+        radial-gradient(circle at top, rgba(var(--secondary-rgb), 0.12), transparent 30%),
         linear-gradient(160deg, rgba(17, 22, 38, 0.96), rgba(22, 33, 62, 0.98));
 }
 
@@ -188,7 +188,7 @@
 .auth-screen-mode-btn.active {
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: #ffffff;
-    box-shadow: 0 8px 18px rgba(255, 142, 139, 0.2);
+    box-shadow: 0 8px 18px rgba(var(--primary-rgb), 0.2);
 }
 
 .auth-screen-label {
@@ -199,7 +199,7 @@
 
 .auth-screen-input {
     width: 100%;
-    border: 1px solid rgba(255, 142, 139, 0.25);
+    border: 1px solid rgba(var(--primary-rgb), 0.25);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.88);
     color: var(--text-dark);
@@ -239,7 +239,7 @@
 
 .auth-screen-code-confirm-btn {
     width: 100%;
-    border: 1px solid rgba(255, 142, 139, 0.28);
+    border: 1px solid rgba(var(--primary-rgb), 0.28);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.72);
     color: var(--primary-color);
@@ -356,7 +356,7 @@
 }
 
 .auth-screen-note {
-    background: rgba(255, 142, 139, 0.12);
+    background: rgba(var(--primary-rgb), 0.12);
     color: #b64c45;
 }
 
@@ -366,7 +366,7 @@
 }
 
 .auth-screen-feedback.error {
-    background: rgba(255, 142, 139, 0.14);
+    background: rgba(var(--primary-rgb), 0.14);
     color: #b64c45;
 }
 
