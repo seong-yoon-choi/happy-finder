@@ -21,7 +21,7 @@
     gap: 18px;
     text-align: center;
     border-radius: 24px;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 240, 209, 0.96));
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(249, 246, 231, 0.96));
 }
 
 .dark-theme .app-update-modal {

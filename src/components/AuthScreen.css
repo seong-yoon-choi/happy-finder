@@ -11,7 +11,7 @@
     -webkit-overflow-scrolling: touch;
     background:
         radial-gradient(circle at top, rgba(var(--secondary-rgb), 0.24), transparent 35%),
-        linear-gradient(160deg, rgba(255, 245, 232, 0.96), rgba(255, 229, 229, 0.98));
+        linear-gradient(160deg, rgba(255, 253, 246, 0.96), rgba(246, 240, 225, 0.98));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
@@ -32,7 +32,7 @@
     gap: 18px;
     overflow-y: auto;
     overscroll-behavior: contain;
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(255, 246, 231, 0.88));
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(247, 245, 231, 0.9));
 }
 
 .dark-theme .auth-screen-panel {

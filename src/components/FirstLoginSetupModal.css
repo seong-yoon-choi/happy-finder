@@ -7,7 +7,7 @@
     justify-content: center;
     padding: 24px;
     background:
-        radial-gradient(circle at top, rgba(255, 194, 102, 0.22), transparent 36%),
+        radial-gradient(circle at top, rgba(var(--secondary-rgb), 0.2), transparent 36%),
         rgba(8, 12, 24, 0.46);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -20,7 +20,7 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(255, 246, 231, 0.92));
+    background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(247, 245, 231, 0.92));
     animation: slideUp 0.25s ease;
 }
 

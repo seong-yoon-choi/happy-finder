@@ -3,21 +3,21 @@
 
 :root {
   /* Brand Colors */
-  --primary-color: #5f9f4a;
-  --primary-rgb: 95, 159, 74;
-  --secondary-color: #f2c94c;
-  --secondary-rgb: 242, 201, 76;
-  --background-start: #e8f6c8;
-  --background-end: #fff3b8;
-  --text-dark: #263322;
-  --text-light: #68745e;
-  --white: #ffffff;
+  --primary-color: #4ca33a;
+  --primary-rgb: 76, 163, 58;
+  --secondary-color: #d6ca61;
+  --secondary-rgb: 214, 202, 97;
+  --background-start: #fffdf6;
+  --background-end: #f5efdf;
+  --text-dark: #17301f;
+  --text-light: #62705e;
+  --white: #fffefa;
   --danger: #ff4757;
 
   /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 8px 32px 0 rgba(var(--primary-rgb), 0.14);
+  --glass-bg: rgba(255, 253, 247, 0.78);
+  --glass-border: rgba(110, 173, 87, 0.24);
+  --glass-shadow: 0 10px 30px 0 rgba(49, 93, 42, 0.08);
   /* Metrics */
   --border-radius-lg: clamp(20px, 4vw, 24px);
   --border-radius-md: clamp(14px, 3vw, 18px);
@@ -47,21 +47,21 @@
 
 /* Dark Theme Variables */
 .dark-theme {
-  --primary-color: #93d36b;
-  --primary-rgb: 147, 211, 107;
-  --secondary-color: #f7d66d;
-  --secondary-rgb: 247, 214, 109;
-  --background-start: #102417;
-  --background-end: #2e3217;
+  --primary-color: #7fd15a;
+  --primary-rgb: 127, 209, 90;
+  --secondary-color: #d8d06a;
+  --secondary-rgb: 216, 208, 106;
+  --background-start: #0f2115;
+  --background-end: #272916;
   --text-dark: #f0f0f0;
   /* Off-white text */
-  --text-light: #b0b0b0;
-  --white: #2d2f41;
+  --text-light: #b9c3b4;
+  --white: #263224;
   /* Surface color serving as "white" container bg */
 
   /* Glassmorphism Dark */
-  --glass-bg: rgba(30, 32, 50, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(24, 35, 26, 0.78);
+  --glass-border: rgba(134, 201, 104, 0.18);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
@@ -82,7 +82,7 @@ select {
 }
 
 body {
-  background: linear-gradient(135deg, var(--background-start), var(--background-end));
+  background: linear-gradient(155deg, var(--background-start) 0%, #fbf7ec 48%, var(--background-end) 100%);
   background-attachment: fixed;
   color: var(--text-dark);
   font-size: clamp(15px, 0.94rem + 0.12vw, 16px);

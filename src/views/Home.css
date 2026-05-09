@@ -29,10 +29,10 @@
     grid-template-columns: minmax(0, 1fr) 48px 48px;
     gap: 8px;
     align-items: center;
-    border: 1px solid var(--glass-border);
+    border: 1px solid rgba(var(--primary-rgb), 0.14);
     border-radius: 22px;
-    background: rgba(255, 255, 255, 0.74);
-    box-shadow: 0 10px 26px rgba(var(--primary-rgb), 0.1);
+    background: rgba(255, 254, 250, 0.86);
+    box-shadow: 0 10px 26px rgba(49, 93, 42, 0.07);
     backdrop-filter: blur(18px);
 }
 
@@ -44,9 +44,9 @@
 .home-tool-tag,
 .home-tool-add {
     min-height: 48px;
-    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.28);
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.78);
     color: var(--text-dark);
     display: flex;
     align-items: center;
@@ -77,6 +77,7 @@
     width: 20px;
     height: 20px;
     flex: 0 0 auto;
+    color: var(--primary-color);
 }
 
 .home-tool-search span {
@@ -88,6 +89,7 @@
 
 .home-tool-tag {
     padding: 0;
+    color: var(--primary-color);
 }
 
 .home-tool-tag svg {
@@ -97,10 +99,10 @@
 }
 
 .home-tool-add {
-    border: 0;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.28);
+    border: 1px solid rgba(var(--primary-rgb), 0.48);
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--primary-color);
+    box-shadow: 0 10px 20px rgba(var(--primary-rgb), 0.12);
     cursor: pointer;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
@@ -113,7 +115,7 @@
 
 .home-tool-add:active {
     transform: scale(0.96);
-    box-shadow: 0 6px 14px rgba(var(--primary-rgb), 0.24);
+    box-shadow: 0 6px 14px rgba(var(--primary-rgb), 0.16);
 }
 
 .feed-container {

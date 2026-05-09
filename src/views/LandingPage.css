@@ -334,7 +334,7 @@
     border: 1px solid var(--glass-border);
     background:
         radial-gradient(circle at top right, rgba(255, 255, 255, 0.58), transparent 38%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 229, 229, 0.82) 58%, rgba(255, 240, 209, 0.82));
+        linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(247, 245, 231, 0.84) 58%, rgba(238, 246, 226, 0.82));
     box-shadow: var(--landing-shadow-strong);
 }
 
