@@ -3901,12 +3901,8 @@ export const HappyProvider = ({ children }) => {
           ...(accessToken ? { access_token: accessToken } : {})
         });
 
-        setIsAuthBusy(false);
-
         if (error) {
-          const nextFeedback = getAuthFeedbackFromError(error, 'Google 로그인으로 연결하지 못했어요.');
-          setAuthFeedback(nextFeedback);
-          return { success: false, error: nextFeedback.message };
+          throw error;
         }
 
         if (data.session?.user) {
@@ -3915,12 +3911,25 @@ export const HappyProvider = ({ children }) => {
           localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
         }
 
+        setIsAuthBusy(false);
         return { success: true };
       } catch (error) {
-        setIsAuthBusy(false);
-        const nextFeedback = getAuthFeedbackFromError(error, 'Google 로그인으로 연결하지 못했어요.');
-        setAuthFeedback(nextFeedback);
-        return { success: false, error: nextFeedback.message };
+        const nativeGoogleMessage = typeof error?.message === 'string' ? error.message.toLowerCase() : '';
+
+        if (
+          nativeGoogleMessage.includes('cancel')
+          || nativeGoogleMessage.includes('canceled')
+          || nativeGoogleMessage.includes('cancelled')
+          || nativeGoogleMessage.includes('1001')
+        ) {
+          setIsAuthBusy(false);
+          const nextFeedback = getAuthFeedbackFromError(error, '로그인이 취소됐어요.');
+          setAuthFeedback(nextFeedback);
+          return { success: false, error: nextFeedback.message };
+        }
+
+        // Fall back to Supabase OAuth below. Native Google can fail on devices
+        // whose Google credential or token setup does not match the release build.
       }
     }
 

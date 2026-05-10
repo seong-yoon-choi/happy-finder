@@ -94,7 +94,6 @@ export const signInWithNativeGoogle = async () => {
   return SocialLogin.login({
     provider: 'google',
     options: {
-      scopes: ['email', 'profile'],
       filterByAuthorizedAccounts: false
     }
   });
