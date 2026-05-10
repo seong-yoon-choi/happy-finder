@@ -105,6 +105,7 @@ const APP_STORAGE_KEYS = [
   'happy_stamps',
   'happy_favorites',
   'happy_memos',
+  'happy_free_records',
   'happy_theme',
   'happy_streak',
   'happy_reminder'
@@ -119,6 +120,7 @@ const CLOUD_SNAPSHOT_TABLE = 'happy_user_snapshots';
 const HAPPINESS_ITEMS_TABLE = 'happiness_items';
 const DELETE_ACCOUNT_FUNCTION_NAME = 'delete-account';
 const DELETE_HAPPINESS_ITEM_FUNCTION_NAME = 'delete-happiness-item';
+const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
 const LEGACY_CATEGORY_MAP = {
   일주일행복: '기분전환',
   한달행복: '제대로'
@@ -618,6 +620,22 @@ const normalizeMemo = (memo) => {
   };
 };
 
+const normalizeFreeRecord = (record) => {
+  const createdAt = typeof record?.createdAt === 'string' ? record.createdAt : new Date().toISOString();
+  const updatedAt = typeof record?.updatedAt === 'string' ? record.updatedAt : createdAt;
+
+  return {
+    ...record,
+    id: typeof record?.id === 'string' && record.id.trim()
+      ? record.id.trim()
+      : `fr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    content: typeof record?.content === 'string' ? record.content : '',
+    images: normalizeMemoImages(record?.images),
+    createdAt,
+    updatedAt
+  };
+};
+
 const getCurrentTimeKey = (value = new Date()) => {
   const hours = String(value.getHours()).padStart(2, '0');
   const minutes = String(value.getMinutes()).padStart(2, '0');
@@ -1055,20 +1073,35 @@ const normalizeMemoMap = (value) => {
   }, {});
 };
 
+const normalizeFreeRecords = (value) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(normalizeFreeRecord)
+    .filter(record => record.content.trim() || record.images.length > 0)
+    .sort((leftRecord, rightRecord) => (
+      getComparableDateValue(rightRecord.updatedAt) - getComparableDateValue(leftRecord.updatedAt)
+    ));
+};
+
 const createCloudSnapshotPayload = ({
   items,
   userStamps,
   userFavorites,
   userMemos,
+  freeRecords,
   isDarkMode,
   globalStreak,
   reminderSettings
 }) => ({
-  version: 2,
+  version: 3,
   items,
   userStamps,
   userFavorites,
   userMemos,
+  freeRecords,
   isDarkMode,
   globalStreak,
   reminderSettings
@@ -1082,6 +1115,7 @@ const normalizeCloudSnapshot = (payload) => {
     userStamps: nextUserStamps,
     userFavorites: isRecord(payload?.userFavorites) ? payload.userFavorites : {},
     userMemos: normalizeMemoMap(payload?.userMemos),
+    freeRecords: normalizeFreeRecords(payload?.freeRecords),
     isDarkMode: Boolean(payload?.isDarkMode),
     globalStreak: normalizeGlobalStreak(payload?.globalStreak),
     reminderSettings: normalizeReminderSettings(payload?.reminderSettings)
@@ -1266,6 +1300,23 @@ const mergeMemoMap = (baseMemoMap = {}, incomingMemoMap = {}) => {
   return mergedMemoMap;
 };
 
+const mergeFreeRecords = (baseRecords = [], incomingRecords = []) => {
+  const mergedRecordMap = new Map();
+
+  [...normalizeFreeRecords(baseRecords), ...normalizeFreeRecords(incomingRecords)]
+    .forEach(record => {
+      const mergeKey = getMemoMergeKey(record);
+      const previousRecord = mergedRecordMap.get(mergeKey);
+
+      if (!previousRecord || getComparableDateValue(record.updatedAt) >= getComparableDateValue(previousRecord.updatedAt)) {
+        mergedRecordMap.set(mergeKey, record);
+      }
+    });
+
+  return Array.from(mergedRecordMap.values())
+    .sort((leftRecord, rightRecord) => getComparableDateValue(rightRecord.updatedAt) - getComparableDateValue(leftRecord.updatedAt));
+};
+
 const mergeGlobalStreak = (baseStreak, incomingStreak) => {
   const normalizedBaseStreak = normalizeGlobalStreak(baseStreak);
   const normalizedIncomingStreak = normalizeGlobalStreak(incomingStreak);
@@ -1340,6 +1391,10 @@ const mergeCloudSnapshotsForAuthenticatedUser = ({
         normalizedCloudSnapshot.userMemos,
         normalizedLocalSnapshot.userMemos
       ),
+      freeRecords: mergeFreeRecords(
+        normalizedCloudSnapshot.freeRecords,
+        normalizedLocalSnapshot.freeRecords
+      ),
       isDarkMode: normalizedCloudSnapshot.isDarkMode,
       globalStreak: mergeGlobalStreak(
         normalizedCloudSnapshot.globalStreak,
@@ -1376,6 +1431,11 @@ export const HappyProvider = ({ children }) => {
   const [userMemos, setUserMemos] = useState(() => {
     const savedMemos = readStoredJson('happy_memos', {});
     return isRecord(savedMemos) ? savedMemos : {};
+  });
+
+  const [freeRecords, setFreeRecords] = useState(() => {
+    const savedFreeRecords = readStoredJson('happy_free_records', []);
+    return normalizeFreeRecords(savedFreeRecords);
   });
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -2043,11 +2103,12 @@ export const HappyProvider = ({ children }) => {
       userStamps,
       userFavorites,
       userMemos,
+      freeRecords,
       isDarkMode,
       globalStreak,
       reminderSettings
     };
-  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   const syncRemoteCatalogItems = useEffectEvent(async () => {
     if (!supabase) {
@@ -2086,6 +2147,7 @@ export const HappyProvider = ({ children }) => {
     setUserStamps(snapshot.userStamps);
     setUserFavorites(snapshot.userFavorites);
     setUserMemos(snapshot.userMemos);
+    setFreeRecords(snapshot.freeRecords);
     setIsDarkMode(snapshot.isDarkMode);
     setGlobalStreak(snapshot.globalStreak);
     setReminderSettings(snapshot.reminderSettings);
@@ -2097,7 +2159,7 @@ export const HappyProvider = ({ children }) => {
     }
 
     isApplyingCloudSnapshotRef.current = false;
-  }, [items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id) {
@@ -2319,6 +2381,10 @@ export const HappyProvider = ({ children }) => {
   }, [userMemos]);
 
   useEffect(() => {
+    localStorage.setItem('happy_free_records', JSON.stringify(freeRecords));
+  }, [freeRecords]);
+
+  useEffect(() => {
     localStorage.setItem('happy_theme', JSON.stringify(isDarkMode));
     if (isDarkMode) {
       document.body.classList.add('dark-theme');
@@ -2367,6 +2433,18 @@ export const HappyProvider = ({ children }) => {
             });
           });
       });
+    });
+
+    freeRecords.map(normalizeFreeRecord).forEach(record => {
+      record.images
+        .filter(image => image.storageType === 'local')
+        .forEach(image => {
+          localImageJobs.push({
+            itemId: FREE_RECORD_IMAGE_ITEM_ID,
+            memoId: record.id,
+            image
+          });
+        });
     });
 
     if (localImageJobs.length === 0) {
@@ -2437,6 +2515,35 @@ export const HappyProvider = ({ children }) => {
 
         return didChange ? nextMemoMap : prev;
       });
+
+      setFreeRecords(prev => {
+        let didChange = false;
+        const nextRecords = prev.map(record => {
+          const normalizedRecord = normalizeFreeRecord(record);
+          let didRecordChange = false;
+          const nextImages = normalizedRecord.images.map(image => {
+            const migratedImage = migratedImageMap.get(`${FREE_RECORD_IMAGE_ITEM_ID}:${normalizedRecord.id}:${image.id}`);
+
+            if (!migratedImage) {
+              return image;
+            }
+
+            didChange = true;
+            didRecordChange = true;
+            return migratedImage;
+          });
+
+          return didRecordChange
+            ? {
+                ...normalizedRecord,
+                images: nextImages,
+                updatedAt: new Date().toISOString()
+              }
+            : normalizedRecord;
+        });
+
+        return didChange ? nextRecords : prev;
+      });
     };
 
     void migrateLocalImages().finally(() => {
@@ -2446,7 +2553,7 @@ export const HappyProvider = ({ children }) => {
     return () => {
       isCancelled = true;
     };
-  }, [authUser?.id, userMemos]);
+  }, [authUser?.id, userMemos, freeRecords]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id || !hasBootstrappedCloudRef.current || isApplyingCloudSnapshotRef.current) {
@@ -2465,6 +2572,7 @@ export const HappyProvider = ({ children }) => {
         userStamps,
         userFavorites,
         userMemos,
+        freeRecords,
         isDarkMode,
         globalStreak,
         reminderSettings
@@ -2503,7 +2611,7 @@ export const HappyProvider = ({ children }) => {
         cloudSyncTimeoutRef.current = null;
       }
     };
-  }, [authUser?.id, items, userStamps, userFavorites, userMemos, isDarkMode, globalStreak, reminderSettings]);
+  }, [authUser?.id, items, userStamps, userFavorites, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!isNativeNotificationPlatform()) {
@@ -3013,6 +3121,132 @@ export const HappyProvider = ({ children }) => {
     return didDelete;
   };
 
+  const getAllRecords = () => {
+    const itemById = new Map(items.map(item => [item.id, item]));
+    const listRecords = Object.entries(userMemos).flatMap(([itemId, memos]) => {
+      if (!Array.isArray(memos)) {
+        return [];
+      }
+
+      const linkedItem = itemById.get(itemId);
+
+      return memos.map(normalizeMemo)
+        .filter(memo => memo.content.trim() || memo.images.length > 0)
+        .map(memo => ({
+          ...memo,
+          recordKey: `list:${itemId}:${memo.id}`,
+          sourceType: 'list',
+          itemId,
+          item: linkedItem || null,
+          itemTitle: linkedItem?.title || '삭제된 행복',
+          itemDescription: linkedItem?.description || ''
+        }));
+    });
+
+    const freeRecordEntries = freeRecords.map(record => {
+      const normalizedRecord = normalizeFreeRecord(record);
+
+      return {
+        ...normalizedRecord,
+        recordKey: `free:${normalizedRecord.id}`,
+        sourceType: 'free',
+        itemId: null,
+        item: null,
+        itemTitle: '자유 기록',
+        itemDescription: ''
+      };
+    });
+
+    return [...listRecords, ...freeRecordEntries]
+      .sort((leftRecord, rightRecord) => (
+        getComparableDateValue(rightRecord.updatedAt) - getComparableDateValue(leftRecord.updatedAt)
+      ));
+  };
+
+  const getFreeRecords = () => freeRecords.map(normalizeFreeRecord);
+
+  const addFreeRecord = (content, images = [], options = {}) => {
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    const normalizedImages = normalizeMemoImages(images);
+
+    if (!trimmedContent && normalizedImages.length === 0) {
+      return null;
+    }
+
+    const nowIso = new Date().toISOString();
+    const nextRecord = {
+      id: typeof options.id === 'string' && options.id.trim() ? options.id.trim() : `fr_${Date.now()}`,
+      content: trimmedContent,
+      images: normalizedImages,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    setFreeRecords(prev => [nextRecord, ...prev.map(normalizeFreeRecord)]);
+
+    return nextRecord;
+  };
+
+  const updateFreeRecord = (recordId, content, images = null) => {
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    const hasNextImages = Array.isArray(images);
+    const normalizedImages = hasNextImages ? normalizeMemoImages(images) : null;
+
+    if (!trimmedContent && (!hasNextImages || normalizedImages.length === 0)) {
+      return false;
+    }
+
+    let didUpdate = false;
+
+    setFreeRecords(prev => {
+      const nextRecords = prev.map(record => {
+        const normalizedRecord = normalizeFreeRecord(record);
+
+        if (normalizedRecord.id !== recordId) {
+          return normalizedRecord;
+        }
+
+        didUpdate = true;
+        const nextImages = hasNextImages ? normalizedImages : normalizedRecord.images;
+        const nextImageIds = new Set(normalizeMemoImages(nextImages).map(image => image.id));
+        const removedImages = normalizeMemoImages(normalizedRecord.images).filter(image => !nextImageIds.has(image.id));
+
+        cleanupMemoImages(removedImages);
+
+        return {
+          ...normalizedRecord,
+          content: trimmedContent,
+          images: nextImages,
+          updatedAt: new Date().toISOString()
+        };
+      });
+
+      return didUpdate ? nextRecords : prev;
+    });
+
+    return didUpdate;
+  };
+
+  const deleteFreeRecord = (recordId) => {
+    let didDelete = false;
+
+    setFreeRecords(prev => {
+      const normalizedRecords = prev.map(normalizeFreeRecord);
+      const deletedRecord = normalizedRecords.find(record => record.id === recordId);
+      const nextRecords = normalizedRecords.filter(record => record.id !== recordId);
+
+      if (nextRecords.length === normalizedRecords.length) {
+        return prev;
+      }
+
+      didDelete = true;
+      cleanupMemoImages(deletedRecord?.images);
+      return nextRecords;
+    });
+
+    return didDelete;
+  };
+
   const isItemOwnedByCurrentUser = (itemId) => {
     const matchedItem = items.find(item => item.id === itemId);
     return isOwnedByCurrentUser(matchedItem, authUser);
@@ -3054,6 +3288,7 @@ export const HappyProvider = ({ children }) => {
     setUserStamps(emptyProgress);
     setUserFavorites({});
     setUserMemos({});
+    setFreeRecords([]);
     setIsDarkMode(false);
     setGlobalStreak({ current: 0, lastDate: null });
     setReminderSettings(defaultReminderSettings);
@@ -4245,6 +4480,11 @@ export const HappyProvider = ({ children }) => {
       addMemo,
       updateMemo,
       deleteMemo,
+      getAllRecords,
+      getFreeRecords,
+      addFreeRecord,
+      updateFreeRecord,
+      deleteFreeRecord,
       getMyItems,
       getFavoriteItems,
       toggleFavorite,

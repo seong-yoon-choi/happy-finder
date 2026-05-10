@@ -32,7 +32,8 @@
     transition: transform 0.2s ease;
 }
 
-.nav-icon-profile {
+.nav-icon-profile,
+.nav-icon-record {
     width: 1.75rem;
     height: 1.75rem;
     display: inline-flex;
@@ -41,7 +42,8 @@
     color: var(--primary-color);
 }
 
-.nav-profile-icon {
+.nav-profile-icon,
+.nav-record-icon {
     width: 100%;
     height: 100%;
     display: block;
