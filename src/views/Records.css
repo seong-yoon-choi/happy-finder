@@ -36,16 +36,17 @@
 .records-write-btn {
     flex: 0 0 auto;
     min-height: 42px;
-    border: 1px solid rgba(var(--primary-rgb), 0.34);
+    border: 1px solid rgba(104, 191, 67, 0.42);
     border-radius: 16px;
-    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.94), rgba(var(--secondary-rgb), 0.92));
+    background: linear-gradient(135deg, #5fbc44 0%, #a9d94f 100%);
     color: #ffffff;
     padding: 0 16px;
     font: inherit;
     font-size: var(--font-body-sm);
     font-weight: 800;
-    box-shadow: 0 10px 22px rgba(var(--primary-rgb), 0.18);
+    box-shadow: 0 12px 24px rgba(95, 188, 68, 0.2);
     cursor: pointer;
+    transform: translateY(6px);
 }
 
 .records-sections {
@@ -260,9 +261,11 @@
 }
 
 .record-section-empty {
+    width: 100%;
     margin: 4px 0 0;
     color: var(--text-light);
     font-size: var(--font-body-md);
+    text-align: center;
 }
 
 .record-view-all-btn {
