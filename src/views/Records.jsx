@@ -455,7 +455,7 @@ const Records = () => {
       </header>
 
       <main className="records-sections">
-        <section className="glass-card records-overview-section records-month-section">
+        <section className="records-overview-section records-month-section">
           <div className="records-month-nav" aria-label="기록 월 선택">
             <button
               type="button"
