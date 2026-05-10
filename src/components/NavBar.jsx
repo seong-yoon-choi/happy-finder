@@ -17,13 +17,6 @@ const HomeIcon = () => (
             strokeLinecap="round"
             strokeLinejoin="round"
         />
-        <path
-            d="M10 19.25V14.25H14V19.25"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
     </svg>
 );
 
