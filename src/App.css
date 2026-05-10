@@ -17,7 +17,7 @@
 
 .app-top-actions {
     position: absolute;
-    top: calc(var(--app-safe-top) - clamp(6px, 1.8vw, 8px));
+    top: calc(var(--app-safe-top) - clamp(12px, 3vw, 14px));
     right: clamp(14px, 4vw, 18px);
     display: flex;
     align-items: center;

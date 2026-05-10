@@ -222,42 +222,6 @@
     border-radius: clamp(24px, 6vw, 30px);
 }
 
-.profile-summary-chips {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(10px, 3vw, 12px);
-}
-
-.profile-summary-chip {
-    min-height: 72px;
-    padding: clamp(12px, 3vw, 14px);
-    border: 1px solid var(--glass-border);
-    border-radius: clamp(16px, 4vw, 18px);
-    background: rgba(255, 255, 255, 0.62);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-}
-
-.dark-theme .profile-summary-chip {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.profile-summary-chip span {
-    font-size: var(--font-body-sm);
-    color: var(--text-light);
-    font-weight: 700;
-}
-
-.profile-summary-chip strong {
-    font-size: clamp(1.45rem, 4.6vw, 1.8rem);
-    color: var(--primary-color);
-    line-height: 1;
-}
-
 .glow-effect {
     animation: pop 2s infinite ease-in-out;
 }

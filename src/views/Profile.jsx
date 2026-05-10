@@ -56,17 +56,6 @@ const Profile = () => {
           <div className="profile-overview-simple">
             <h2>{profileTitle}</h2>
             <p>즐겨찾기와 직접 만든 행복을 모아 관리해요.</p>
-
-            <div className="profile-summary-chips" aria-label="즐겨찾기 요약">
-              <div className="profile-summary-chip">
-                <span>즐겨찾기</span>
-                <strong>{favoriteItems.length}</strong>
-              </div>
-              <div className="profile-summary-chip">
-                <span>만든 행복</span>
-                <strong>{myItems.length}</strong>
-              </div>
-            </div>
           </div>
 
           <button
@@ -118,7 +107,7 @@ const Profile = () => {
               <>
                 즐겨찾기에 추가한 항목이 없어요.
                 <br />
-                마음에 드는 행복을 하트로 저장해보세요.
+                마음에 드는 행복을 저장해보세요.
               </>
             ) : (
               <>

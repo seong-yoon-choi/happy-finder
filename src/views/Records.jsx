@@ -1,5 +1,4 @@
-import React, { lazy, useCallback, useMemo, useState } from 'react';
-import LazyLoadBoundary from '../components/LazyLoadBoundary';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   chooseMemoPhoto,
   deleteMemoStoredImages,
@@ -14,13 +13,10 @@ import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
 import './Records.css';
 
-const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
-const HappinessDetailModal = lazy(loadHappinessDetailModal);
 const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
 const RECORD_PREVIEW_LIMIT = 3;
 
 const recordDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
-  month: 'long',
   day: 'numeric',
   hour: '2-digit',
   minute: '2-digit'
@@ -46,6 +42,45 @@ const getImageErrorMessage = code => {
       return '사진을 처리하지 못했어요. 잠시 후 다시 시도해주세요.';
   }
 };
+
+const getRecordSnippet = content => {
+  const normalizedContent = typeof content === 'string' ? content.trim() : '';
+
+  if (!normalizedContent) {
+    return '사진으로 남긴 기록';
+  }
+
+  return normalizedContent;
+};
+
+const getRecordDate = record => {
+  const date = new Date(record?.createdAt || record?.updatedAt || Date.now());
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+};
+
+const getRecordDateValue = record => getRecordDate(record).getTime();
+
+const getMonthStart = value => {
+  const date = value instanceof Date ? value : new Date(value);
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return new Date(safeDate.getFullYear(), safeDate.getMonth(), 1);
+};
+
+const getMonthKey = date => `${date.getFullYear()}-${date.getMonth()}`;
+
+const getMonthLabel = date => `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+
+const addMonths = (date, amount) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
+
+const isRecordInMonth = (record, monthDate) => {
+  const recordDate = getRecordDate(record);
+  return (
+    recordDate.getFullYear() === monthDate.getFullYear()
+    && recordDate.getMonth() === monthDate.getMonth()
+  );
+};
+
+const formatRecordDateTime = record => recordDateTimeFormatter.format(getRecordDate(record));
 
 const RecordImageThumb = ({ image, onRemove, onOpen }) => {
   const [src, setSrc] = useState('');
@@ -124,24 +159,8 @@ const RecordImageStrip = ({ images = [], onRemove, onOpen }) => {
   );
 };
 
-const getRecordSnippet = content => {
-  const normalizedContent = typeof content === 'string' ? content.trim() : '';
-
-  if (!normalizedContent) {
-    return '사진으로 남긴 기록';
-  }
-
-  return normalizedContent;
-};
-
-const getRecordDateValue = value => {
-  const timestamp = Date.parse(value);
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-};
-
 const Records = () => {
   const {
-    getAllRecords,
     getFreeRecords,
     addFreeRecord,
     updateFreeRecord,
@@ -150,25 +169,18 @@ const Records = () => {
     isReviewAuthUser
   } = useHappy();
 
-  const allRecords = getAllRecords();
   const records = getFreeRecords()
-    .sort((leftRecord, rightRecord) => (
-      getRecordDateValue(rightRecord.updatedAt) - getRecordDateValue(leftRecord.updatedAt)
-    ));
-  const happyMemos = useMemo(
-    () => allRecords.filter(record => record.sourceType === 'list'),
-    [allRecords]
-  );
+    .sort((leftRecord, rightRecord) => getRecordDateValue(rightRecord) - getRecordDateValue(leftRecord));
   const isImageEnabled = isNativeMemoImageAvailable();
   const cloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
 
+  const [selectedMonthDate, setSelectedMonthDate] = useState(() => getMonthStart(new Date()));
   const [draftRecordId, setDraftRecordId] = useState(() => createDraftRecordId());
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [recordText, setRecordText] = useState('');
   const [recordImages, setRecordImages] = useState([]);
   const [editingRecordId, setEditingRecordId] = useState(null);
   const [showAllRecords, setShowAllRecords] = useState(false);
-  const [showAllHappyMemos, setShowAllHappyMemos] = useState(false);
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
   const [activeImage, setActiveImage] = useState(null);
@@ -176,11 +188,17 @@ const Records = () => {
     isSaving: false,
     message: ''
   });
-  const [selectedItem, setSelectedItem] = useState(null);
 
-  const visibleRecords = showAllRecords ? records : records.slice(0, RECORD_PREVIEW_LIMIT);
-  const visibleHappyMemos = showAllHappyMemos ? happyMemos : happyMemos.slice(0, RECORD_PREVIEW_LIMIT);
+  const selectedMonthKey = getMonthKey(selectedMonthDate);
+  const selectedMonthRecords = records.filter(record => isRecordInMonth(record, selectedMonthDate));
+  const visibleRecords = showAllRecords
+    ? selectedMonthRecords
+    : selectedMonthRecords.slice(0, RECORD_PREVIEW_LIMIT);
   const isEditingRecord = Boolean(editingRecordId);
+
+  useEffect(() => {
+    setShowAllRecords(false);
+  }, [selectedMonthKey]);
 
   const cleanupImages = useCallback(images => {
     if (!Array.isArray(images) || images.length === 0) {
@@ -248,6 +266,10 @@ const Records = () => {
     });
   };
 
+  const handleMoveMonth = amount => {
+    setSelectedMonthDate(prev => addMonths(prev, amount));
+  };
+
   const handleAttachImage = async source => {
     if (!isImageEnabled) {
       return;
@@ -311,6 +333,10 @@ const Records = () => {
       return;
     }
 
+    if (!editingRecordId) {
+      setSelectedMonthDate(getMonthStart(new Date()));
+    }
+
     resetComposer({ shouldCleanup: false });
   };
 
@@ -352,7 +378,7 @@ const Records = () => {
         <div className="records-header-row">
           <div>
             <h2>기록</h2>
-            <p>오늘 남긴 글과 행복 리스트에서 적은 메모를 모아요.</p>
+            <p>지금 행복한 감정을 기록해 보세요.</p>
           </div>
           <button type="button" className="records-write-btn" onClick={openCreateComposer}>
             기록 남기기
@@ -361,13 +387,19 @@ const Records = () => {
       </header>
 
       <main className="records-sections">
-        <section className="glass-card records-overview-section">
-          <div className="records-section-head">
-            <div>
-              <span>RECORD</span>
-              <h3>기록</h3>
-            </div>
-            <strong>{records.length}</strong>
+        <section className="glass-card records-overview-section records-month-section">
+          <div className="records-month-nav" aria-label="기록 월 선택">
+            <button type="button" onClick={() => handleMoveMonth(-1)} aria-label="이전 달 기록 보기">
+              &lt;
+            </button>
+            <strong>{getMonthLabel(selectedMonthDate)}</strong>
+            <button type="button" onClick={() => handleMoveMonth(1)} aria-label="다음 달 기록 보기">
+              &gt;
+            </button>
+          </div>
+
+          <div className="records-month-meta">
+            <span>{selectedMonthRecords.length > 0 ? `${selectedMonthRecords.length}개의 기록` : '이 달의 기록 없음'}</span>
           </div>
 
           {visibleRecords.length > 0 ? (
@@ -375,7 +407,7 @@ const Records = () => {
               {visibleRecords.map(record => (
                 <article key={record.id} className="record-preview-row">
                   <div className="record-preview-content">
-                    <time>{recordDateTimeFormatter.format(new Date(record.updatedAt))}</time>
+                    <time>{formatRecordDateTime(record)}</time>
                     <p>{getRecordSnippet(record.content)}</p>
                     {record.images.length > 0 && (
                       <RecordImageStrip images={record.images} onOpen={openImage} />
@@ -389,60 +421,16 @@ const Records = () => {
               ))}
             </div>
           ) : (
-            <p className="record-section-empty">아직 남긴 기록이 없어요.</p>
+            <p className="record-section-empty">이 달에는 아직 남긴 기록이 없어요.</p>
           )}
 
-          {records.length > RECORD_PREVIEW_LIMIT && (
+          {selectedMonthRecords.length > RECORD_PREVIEW_LIMIT && (
             <button
               type="button"
               className="record-view-all-btn"
               onClick={() => setShowAllRecords(prev => !prev)}
             >
               {showAllRecords ? '접기' : '전체 보기'}
-            </button>
-          )}
-        </section>
-
-        <section className="glass-card records-overview-section">
-          <div className="records-section-head">
-            <div>
-              <span>HAPPINESS MEMO</span>
-              <h3>행복 메모</h3>
-            </div>
-            <strong>{happyMemos.length}</strong>
-          </div>
-
-          {visibleHappyMemos.length > 0 ? (
-            <div className="record-preview-list">
-              {visibleHappyMemos.map(memo => (
-                <article key={memo.recordKey} className="record-preview-row happy-memo">
-                  <div className="record-preview-content">
-                    <time>{recordDateTimeFormatter.format(new Date(memo.updatedAt))}</time>
-                    <h4>{memo.itemTitle}</h4>
-                    <p>{getRecordSnippet(memo.content)}</p>
-                    {memo.images.length > 0 && (
-                      <RecordImageStrip images={memo.images} onOpen={openImage} />
-                    )}
-                  </div>
-                  {memo.item && (
-                    <div className="record-preview-actions">
-                      <button type="button" onClick={() => setSelectedItem(memo.item)}>행복 열기</button>
-                    </div>
-                  )}
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="record-section-empty">아직 행복 메모가 없어요.</p>
-          )}
-
-          {happyMemos.length > RECORD_PREVIEW_LIMIT && (
-            <button
-              type="button"
-              className="record-view-all-btn"
-              onClick={() => setShowAllHappyMemos(prev => !prev)}
-            >
-              {showAllHappyMemos ? '접기' : '전체 보기'}
             </button>
           )}
         </section>
@@ -509,25 +497,6 @@ const Records = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {selectedItem && (
-        <LazyLoadBoundary
-          mode="overlay"
-          loadingLabel="행복 상세 화면을 불러오는 중이에요."
-          errorTitle="행복 상세 화면을 열지 못했어요."
-          errorMessage="잠시 후 다시 시도해주세요."
-          onDismiss={() => setSelectedItem(null)}
-          resetKey={`record-detail-${selectedItem.id}`}
-        >
-          <HappinessDetailModal
-            item={selectedItem}
-            isOpen={!!selectedItem}
-            onClose={() => setSelectedItem(null)}
-            canDelete={false}
-            autoOpenMemoComposer={false}
-          />
-        </LazyLoadBoundary>
       )}
 
       {activeImage && (

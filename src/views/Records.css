@@ -58,6 +58,62 @@
     gap: 14px;
 }
 
+.records-month-section {
+    padding-top: clamp(18px, 4.8vw, 22px);
+}
+
+.records-month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.records-month-nav strong {
+    min-width: 132px;
+    text-align: center;
+    color: var(--text-dark);
+    font-size: clamp(1.18rem, 4vw, 1.42rem);
+    line-height: 1.2;
+}
+
+.records-month-nav button {
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(var(--primary-rgb), 0.26);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--primary-color);
+    font: inherit;
+    font-size: 1.18rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.dark-theme .records-month-nav button {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.records-month-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+}
+
+.records-month-meta span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--text-light);
+    font-size: var(--font-body-sm);
+    font-weight: 800;
+}
+
 .records-section-head {
     display: flex;
     align-items: flex-start;
@@ -115,10 +171,6 @@
 .record-preview-row:first-child {
     border-top: none;
     padding-top: 0;
-}
-
-.record-preview-row.happy-memo {
-    border-color: rgba(var(--secondary-rgb), 0.24);
 }
 
 .record-preview-content {
