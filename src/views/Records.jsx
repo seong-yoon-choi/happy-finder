@@ -15,6 +15,7 @@ import './Records.css';
 
 const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
 const RECORD_PREVIEW_LIMIT = 3;
+const RECORD_MIN_MONTH_DATE = new Date(2026, 0, 1);
 
 const recordDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   day: 'numeric',
@@ -71,6 +72,54 @@ const getMonthKey = date => `${date.getFullYear()}-${date.getMonth()}`;
 const getMonthLabel = date => `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
 
 const addMonths = (date, amount) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
+
+const getMonthIndex = date => date.getFullYear() * 12 + date.getMonth();
+
+const getRecordMaxMonthDate = () => {
+  const currentMonthDate = getMonthStart(new Date());
+  return getMonthIndex(currentMonthDate) < getMonthIndex(RECORD_MIN_MONTH_DATE)
+    ? RECORD_MIN_MONTH_DATE
+    : currentMonthDate;
+};
+
+const clampRecordMonthDate = date => {
+  const monthDate = getMonthStart(date);
+  const maxMonthDate = getRecordMaxMonthDate();
+
+  if (getMonthIndex(monthDate) < getMonthIndex(RECORD_MIN_MONTH_DATE)) {
+    return RECORD_MIN_MONTH_DATE;
+  }
+
+  if (getMonthIndex(monthDate) > getMonthIndex(maxMonthDate)) {
+    return maxMonthDate;
+  }
+
+  return monthDate;
+};
+
+const getSelectableYears = maxMonthDate => {
+  const years = [];
+
+  for (let year = RECORD_MIN_MONTH_DATE.getFullYear(); year <= maxMonthDate.getFullYear(); year += 1) {
+    years.push(year);
+  }
+
+  return years;
+};
+
+const getSelectableMonths = (year, maxMonthDate) => {
+  const startMonth = year === RECORD_MIN_MONTH_DATE.getFullYear()
+    ? RECORD_MIN_MONTH_DATE.getMonth()
+    : 0;
+  const endMonth = year === maxMonthDate.getFullYear()
+    ? maxMonthDate.getMonth()
+    : 11;
+
+  return Array.from(
+    { length: Math.max(0, endMonth - startMonth + 1) },
+    (_, index) => startMonth + index
+  );
+};
 
 const isRecordInMonth = (record, monthDate) => {
   const recordDate = getRecordDate(record);
@@ -174,7 +223,9 @@ const Records = () => {
   const isImageEnabled = isNativeMemoImageAvailable();
   const cloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
 
-  const [selectedMonthDate, setSelectedMonthDate] = useState(() => getMonthStart(new Date()));
+  const [selectedMonthDate, setSelectedMonthDate] = useState(() => clampRecordMonthDate(new Date()));
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [monthPickerYear, setMonthPickerYear] = useState(() => clampRecordMonthDate(new Date()).getFullYear());
   const [draftRecordId, setDraftRecordId] = useState(() => createDraftRecordId());
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [recordText, setRecordText] = useState('');
@@ -190,6 +241,11 @@ const Records = () => {
   });
 
   const selectedMonthKey = getMonthKey(selectedMonthDate);
+  const maxMonthDate = getRecordMaxMonthDate();
+  const availableYears = getSelectableYears(maxMonthDate);
+  const availableMonths = getSelectableMonths(monthPickerYear, maxMonthDate);
+  const canMoveToPreviousMonth = getMonthIndex(selectedMonthDate) > getMonthIndex(RECORD_MIN_MONTH_DATE);
+  const canMoveToNextMonth = getMonthIndex(selectedMonthDate) < getMonthIndex(maxMonthDate);
   const selectedMonthRecords = records.filter(record => isRecordInMonth(record, selectedMonthDate));
   const visibleRecords = showAllRecords
     ? selectedMonthRecords
@@ -267,7 +323,19 @@ const Records = () => {
   };
 
   const handleMoveMonth = amount => {
-    setSelectedMonthDate(prev => addMonths(prev, amount));
+    setSelectedMonthDate(prev => clampRecordMonthDate(addMonths(prev, amount)));
+  };
+
+  const openMonthPicker = () => {
+    const clampedSelectedMonth = clampRecordMonthDate(selectedMonthDate);
+    setSelectedMonthDate(clampedSelectedMonth);
+    setMonthPickerYear(clampedSelectedMonth.getFullYear());
+    setIsMonthPickerOpen(true);
+  };
+
+  const handleSelectMonth = (year, month) => {
+    setSelectedMonthDate(clampRecordMonthDate(new Date(year, month, 1)));
+    setIsMonthPickerOpen(false);
   };
 
   const handleAttachImage = async source => {
@@ -389,11 +457,30 @@ const Records = () => {
       <main className="records-sections">
         <section className="glass-card records-overview-section records-month-section">
           <div className="records-month-nav" aria-label="기록 월 선택">
-            <button type="button" onClick={() => handleMoveMonth(-1)} aria-label="이전 달 기록 보기">
+            <button
+              type="button"
+              className="records-month-shift-btn"
+              onClick={() => handleMoveMonth(-1)}
+              disabled={!canMoveToPreviousMonth}
+              aria-label="이전 달 기록 보기"
+            >
               &lt;
             </button>
-            <strong>{getMonthLabel(selectedMonthDate)}</strong>
-            <button type="button" onClick={() => handleMoveMonth(1)} aria-label="다음 달 기록 보기">
+            <button
+              type="button"
+              className="records-month-select-btn"
+              onClick={openMonthPicker}
+              aria-label={`${getMonthLabel(selectedMonthDate)} 선택 변경`}
+            >
+              <strong>{getMonthLabel(selectedMonthDate)}</strong>
+            </button>
+            <button
+              type="button"
+              className="records-month-shift-btn"
+              onClick={() => handleMoveMonth(1)}
+              disabled={!canMoveToNextMonth}
+              aria-label="다음 달 기록 보기"
+            >
               &gt;
             </button>
           </div>
@@ -435,6 +522,66 @@ const Records = () => {
           )}
         </section>
       </main>
+
+      {isMonthPickerOpen && (
+        <div
+          className="record-month-picker-overlay"
+          data-block-pull-refresh="true"
+          onClick={() => setIsMonthPickerOpen(false)}
+        >
+          <div
+            className="record-month-picker-modal"
+            data-block-pull-refresh="true"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="record-month-picker-header">
+              <div>
+                <span>DATE</span>
+                <h3>연도와 월 선택</h3>
+              </div>
+              <button
+                type="button"
+                className="record-month-picker-close"
+                onClick={() => setIsMonthPickerOpen(false)}
+                aria-label="월 선택 닫기"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="record-month-picker-years" aria-label="연도 선택">
+              {availableYears.map(year => (
+                <button
+                  key={year}
+                  type="button"
+                  className={year === monthPickerYear ? 'active' : ''}
+                  onClick={() => setMonthPickerYear(year)}
+                >
+                  {year}년
+                </button>
+              ))}
+            </div>
+
+            <div className="record-month-picker-grid" aria-label={`${monthPickerYear}년 월 선택`}>
+              {availableMonths.map(month => (
+                <button
+                  key={month}
+                  type="button"
+                  className={
+                    selectedMonthDate.getFullYear() === monthPickerYear
+                      && selectedMonthDate.getMonth() === month
+                      ? 'active'
+                      : ''
+                  }
+                  onClick={() => handleSelectMonth(monthPickerYear, month)}
+                >
+                  {month + 1}월
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {isComposerOpen && (
         <div className="record-composer-overlay" data-block-pull-refresh="true" onClick={() => resetComposer()}>

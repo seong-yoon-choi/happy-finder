@@ -69,15 +69,7 @@
     gap: 12px;
 }
 
-.records-month-nav strong {
-    min-width: 132px;
-    text-align: center;
-    color: var(--text-dark);
-    font-size: clamp(1.18rem, 4vw, 1.42rem);
-    line-height: 1.2;
-}
-
-.records-month-nav button {
+.records-month-shift-btn {
     width: 38px;
     height: 38px;
     border: 1px solid rgba(var(--primary-rgb), 0.26);
@@ -91,8 +83,36 @@
     cursor: pointer;
 }
 
-.dark-theme .records-month-nav button {
+.records-month-shift-btn:disabled {
+    opacity: 0.38;
+    cursor: default;
+}
+
+.dark-theme .records-month-shift-btn {
     background: rgba(255, 255, 255, 0.08);
+}
+
+.records-month-select-btn {
+    min-width: 142px;
+    min-height: 38px;
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.66);
+    color: var(--text-dark);
+    padding: 0 16px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.dark-theme .records-month-select-btn {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.records-month-select-btn strong {
+    display: block;
+    text-align: center;
+    font-size: clamp(1.18rem, 4vw, 1.42rem);
+    line-height: 1.2;
 }
 
 .records-month-meta {
@@ -122,7 +142,8 @@
 }
 
 .records-section-head span,
-.record-note-header span {
+.record-note-header span,
+.record-month-picker-header span {
     display: inline-flex;
     align-items: center;
     min-height: 23px;
@@ -248,6 +269,100 @@
     width: 100%;
     min-height: 42px;
     margin-top: 2px;
+    color: var(--primary-color);
+}
+
+.record-month-picker-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2550;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--native-safe-area-top) + 18px) var(--screen-side-padding) calc(var(--native-safe-area-bottom) + 18px);
+    background: rgba(19, 37, 23, 0.34);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.record-month-picker-modal {
+    width: min(100%, 420px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: clamp(18px, 4.6vw, 22px);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
+    border-radius: 22px;
+    background: var(--white);
+    box-shadow: 0 22px 56px rgba(23, 48, 31, 0.18);
+}
+
+.record-month-picker-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.record-month-picker-header h3 {
+    margin-top: 8px;
+    font-size: clamp(1.16rem, 3.7vw, 1.34rem);
+    line-height: 1.24;
+}
+
+.record-month-picker-close {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.74);
+    color: var(--text-dark);
+    font-size: 1.45rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.dark-theme .record-month-picker-close {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.record-month-picker-years,
+.record-month-picker-grid {
+    display: grid;
+    gap: 9px;
+}
+
+.record-month-picker-years {
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+}
+
+.record-month-picker-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.record-month-picker-years button,
+.record-month-picker-grid button {
+    min-height: 42px;
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.68);
+    color: var(--text-dark);
+    font: inherit;
+    font-size: var(--font-body-sm);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.dark-theme .record-month-picker-years button,
+.dark-theme .record-month-picker-grid button {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.record-month-picker-years button.active,
+.record-month-picker-grid button.active {
+    border-color: rgba(var(--primary-rgb), 0.56);
+    background: rgba(var(--primary-rgb), 0.12);
     color: var(--primary-color);
 }
 
