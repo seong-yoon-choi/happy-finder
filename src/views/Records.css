@@ -178,7 +178,7 @@
 .record-preview-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 .record-preview-row {
@@ -186,13 +186,15 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    padding: 13px 0;
-    border-top: 1px solid rgba(var(--primary-rgb), 0.12);
+    padding: 15px;
+    border: 1px solid rgba(var(--primary-rgb), 0.16);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 10px 24px rgba(26, 51, 31, 0.06);
 }
 
-.record-preview-row:first-child {
-    border-top: none;
-    padding-top: 0;
+.dark-theme .record-preview-row {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .record-preview-content {
