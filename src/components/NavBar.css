@@ -32,6 +32,7 @@
     transition: transform 0.2s ease;
 }
 
+.nav-icon-home,
 .nav-icon-profile,
 .nav-icon-record {
     width: 1.75rem;
@@ -42,6 +43,7 @@
     color: var(--primary-color);
 }
 
+.nav-home-icon,
 .nav-profile-icon,
 .nav-record-icon {
     width: 100%;

@@ -3152,7 +3152,7 @@ export const HappyProvider = ({ children }) => {
         sourceType: 'free',
         itemId: null,
         item: null,
-        itemTitle: '자유 기록',
+        itemTitle: '기록',
         itemDescription: ''
       };
     });

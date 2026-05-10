@@ -1,6 +1,32 @@
 import React, { memo } from 'react';
 import './NavBar.css';
 
+const HomeIcon = () => (
+    <svg className="nav-home-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <path
+            d="M4.75 11.25L12 5.25L19.25 11.25"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M6.75 10.75V18.25C6.75 18.8023 7.19772 19.25 7.75 19.25H16.25C16.8023 19.25 17.25 18.8023 17.25 18.25V10.75"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M10 19.25V14.25H14V19.25"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
 const ProfileIcon = () => (
     <svg className="nav-profile-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
         <path
@@ -40,7 +66,9 @@ const NavBar = ({ currentView, onViewChange }) => {
                 className={`nav-item ${currentView === 'home' ? 'active' : ''}`}
                 onClick={() => onViewChange('home')}
             >
-                <div className="nav-icon" aria-hidden="true">🏠</div>
+                <div className="nav-icon nav-icon-home" aria-hidden="true">
+                    <HomeIcon />
+                </div>
                 <span>홈</span>
             </button>
 

@@ -17,6 +17,7 @@ import './Records.css';
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
 const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
+const RECORD_PREVIEW_LIMIT = 3;
 
 const recordDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   month: 'long',
@@ -123,6 +124,21 @@ const RecordImageStrip = ({ images = [], onRemove, onOpen }) => {
   );
 };
 
+const getRecordSnippet = content => {
+  const normalizedContent = typeof content === 'string' ? content.trim() : '';
+
+  if (!normalizedContent) {
+    return '사진으로 남긴 기록';
+  }
+
+  return normalizedContent;
+};
+
+const getRecordDateValue = value => {
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
 const Records = () => {
   const {
     getAllRecords,
@@ -133,19 +149,26 @@ const Records = () => {
     authUser,
     isReviewAuthUser
   } = useHappy();
-  const records = getAllRecords();
-  const freeRecords = getFreeRecords();
-  const listRecordCount = records.filter(record => record.sourceType === 'list').length;
-  const freeRecordCount = freeRecords.length;
+
+  const allRecords = getAllRecords();
+  const records = getFreeRecords()
+    .sort((leftRecord, rightRecord) => (
+      getRecordDateValue(rightRecord.updatedAt) - getRecordDateValue(leftRecord.updatedAt)
+    ));
+  const happyMemos = useMemo(
+    () => allRecords.filter(record => record.sourceType === 'list'),
+    [allRecords]
+  );
   const isImageEnabled = isNativeMemoImageAvailable();
   const cloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
 
   const [draftRecordId, setDraftRecordId] = useState(() => createDraftRecordId());
-  const [freeText, setFreeText] = useState('');
-  const [freeImages, setFreeImages] = useState([]);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [recordText, setRecordText] = useState('');
+  const [recordImages, setRecordImages] = useState([]);
   const [editingRecordId, setEditingRecordId] = useState(null);
-  const [editingText, setEditingText] = useState('');
-  const [editingImages, setEditingImages] = useState([]);
+  const [showAllRecords, setShowAllRecords] = useState(false);
+  const [showAllHappyMemos, setShowAllHappyMemos] = useState(false);
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
   const [activeImage, setActiveImage] = useState(null);
@@ -155,7 +178,9 @@ const Records = () => {
   });
   const [selectedItem, setSelectedItem] = useState(null);
 
-  const sortedRecords = useMemo(() => records, [records]);
+  const visibleRecords = showAllRecords ? records : records.slice(0, RECORD_PREVIEW_LIMIT);
+  const visibleHappyMemos = showAllHappyMemos ? happyMemos : happyMemos.slice(0, RECORD_PREVIEW_LIMIT);
+  const isEditingRecord = Boolean(editingRecordId);
 
   const cleanupImages = useCallback(images => {
     if (!Array.isArray(images) || images.length === 0) {
@@ -166,18 +191,50 @@ const Records = () => {
   }, []);
 
   const getEditingOriginalImages = useCallback(() => (
-    freeRecords.find(record => record.id === editingRecordId)?.images || []
-  ), [editingRecordId, freeRecords]);
+    records.find(record => record.id === editingRecordId)?.images || []
+  ), [editingRecordId, records]);
 
-  const cleanupUncommittedEditingImages = useCallback(() => {
-    if (!editingRecordId || editingImages.length === 0) {
+  const cleanupUncommittedComposerImages = useCallback(() => {
+    if (recordImages.length === 0) {
+      return;
+    }
+
+    if (!editingRecordId) {
+      cleanupImages(recordImages);
       return;
     }
 
     const originalImageIds = new Set(getEditingOriginalImages().map(image => image.id));
-    const uncommittedImages = editingImages.filter(image => !originalImageIds.has(image.id));
+    const uncommittedImages = recordImages.filter(image => !originalImageIds.has(image.id));
     cleanupImages(uncommittedImages);
-  }, [cleanupImages, editingImages, editingRecordId, getEditingOriginalImages]);
+  }, [cleanupImages, editingRecordId, getEditingOriginalImages, recordImages]);
+
+  const resetComposer = useCallback(({ shouldCleanup = true } = {}) => {
+    if (shouldCleanup) {
+      cleanupUncommittedComposerImages();
+    }
+
+    setIsComposerOpen(false);
+    setEditingRecordId(null);
+    setRecordText('');
+    setRecordImages([]);
+    setDraftRecordId(createDraftRecordId());
+    setImageFeedback('');
+    setImageBusyTarget('');
+  }, [cleanupUncommittedComposerImages]);
+
+  const openCreateComposer = () => {
+    resetComposer({ shouldCleanup: true });
+    setIsComposerOpen(true);
+  };
+
+  const openEditComposer = record => {
+    resetComposer({ shouldCleanup: true });
+    setEditingRecordId(record.id);
+    setRecordText(record.content);
+    setRecordImages(Array.isArray(record.images) ? record.images : []);
+    setIsComposerOpen(true);
+  };
 
   const openImage = (image, src) => {
     if (!image) {
@@ -191,25 +248,18 @@ const Records = () => {
     });
   };
 
-  const handleAttachImage = async (target, source) => {
+  const handleAttachImage = async source => {
     if (!isImageEnabled) {
       return;
     }
 
-    const currentImages = target === 'edit' ? editingImages : freeImages;
-
-    if (currentImages.length >= MEMO_IMAGE_MAX_COUNT) {
+    if (recordImages.length >= MEMO_IMAGE_MAX_COUNT) {
       setImageFeedback(getImageErrorMessage('IMAGE_LIMIT_REACHED'));
       return;
     }
 
-    const recordId = target === 'edit' ? editingRecordId : draftRecordId;
-
-    if (!recordId) {
-      return;
-    }
-
-    const busyKey = `${target}:${source}`;
+    const recordId = editingRecordId || draftRecordId;
+    const busyKey = `composer:${source}`;
     setImageBusyTarget(busyKey);
     setImageFeedback('');
 
@@ -232,11 +282,7 @@ const Records = () => {
         mediaResult: pickResult.photo
       });
 
-      if (target === 'edit') {
-        setEditingImages(prev => [...prev, persistedImage]);
-      } else {
-        setFreeImages(prev => [...prev, persistedImage]);
-      }
+      setRecordImages(prev => [...prev, persistedImage]);
     } catch {
       setImageFeedback(getImageErrorMessage('PERSIST_FAILED'));
     } finally {
@@ -244,60 +290,33 @@ const Records = () => {
     }
   };
 
-  const handleRemoveDraftImage = image => {
-    setFreeImages(prev => prev.filter(candidate => candidate.id !== image.id));
-    cleanupImages([image]);
+  const handleRemoveComposerImage = image => {
+    setRecordImages(prev => prev.filter(candidate => candidate.id !== image.id));
+
+    const isOriginalEditingImage = editingRecordId
+      ? getEditingOriginalImages().some(originalImage => originalImage.id === image.id)
+      : false;
+
+    if (!isOriginalEditingImage) {
+      cleanupImages([image]);
+    }
   };
 
-  const handleRemoveEditingImage = image => {
-    setEditingImages(prev => prev.filter(candidate => candidate.id !== image.id));
-  };
-
-  const handleSaveFreeRecord = () => {
-    const savedRecord = addFreeRecord(freeText, freeImages, { id: draftRecordId });
+  const handleSaveRecord = () => {
+    const savedRecord = editingRecordId
+      ? updateFreeRecord(editingRecordId, recordText, recordImages)
+      : addFreeRecord(recordText, recordImages, { id: draftRecordId });
 
     if (!savedRecord) {
       return;
     }
 
-    setFreeText('');
-    setFreeImages([]);
-    setDraftRecordId(createDraftRecordId());
-    setImageFeedback('');
+    resetComposer({ shouldCleanup: false });
   };
 
-  const handleStartEdit = record => {
-    cleanupUncommittedEditingImages();
-    setEditingRecordId(record.id);
-    setEditingText(record.content);
-    setEditingImages(Array.isArray(record.images) ? record.images : []);
-    setImageFeedback('');
-  };
-
-  const handleCancelEdit = () => {
-    cleanupUncommittedEditingImages();
-    setEditingRecordId(null);
-    setEditingText('');
-    setEditingImages([]);
-    setImageFeedback('');
-  };
-
-  const handleSaveEdit = recordId => {
-    const didUpdate = updateFreeRecord(recordId, editingText, editingImages);
-
-    if (!didUpdate) {
-      return;
-    }
-
-    setEditingRecordId(null);
-    setEditingText('');
-    setEditingImages([]);
-    setImageFeedback('');
-  };
-
-  const handleDeleteFreeRecord = record => {
+  const handleDeleteRecord = record => {
     if (editingRecordId === record.id) {
-      handleCancelEdit();
+      resetComposer({ shouldCleanup: false });
     }
 
     deleteFreeRecord(record.id);
@@ -330,176 +349,167 @@ const Records = () => {
     <div className="view-container records-view">
       <header className="records-header">
         <div className="records-brand" aria-label="Happy Finder 로고">Happy Finder</div>
-        <h2>기록</h2>
-        <p>리스트에서 남긴 순간과 오늘의 자유 기록을 한곳에 모아요.</p>
+        <div className="records-header-row">
+          <div>
+            <h2>기록</h2>
+            <p>오늘 남긴 글과 행복 리스트에서 적은 메모를 모아요.</p>
+          </div>
+          <button type="button" className="records-write-btn" onClick={openCreateComposer}>
+            기록 남기기
+          </button>
+        </div>
       </header>
 
-      <section className="glass-card records-composer" aria-label="자유 기록 작성">
-        <div className="records-composer-head">
-          <div>
-            <span>FREE RECORD</span>
-            <h3>오늘 하루 기록하기</h3>
+      <main className="records-sections">
+        <section className="glass-card records-overview-section">
+          <div className="records-section-head">
+            <div>
+              <span>RECORD</span>
+              <h3>기록</h3>
+            </div>
+            <strong>{records.length}</strong>
           </div>
-          <strong>{freeRecordCount}</strong>
-        </div>
 
-        <textarea
-          value={freeText}
-          onChange={event => setFreeText(event.target.value)}
-          placeholder="짧은 한 줄도 좋고, 길게 쓰는 일기도 좋아요."
-          rows={5}
-          maxLength={1600}
-        />
-
-        {isImageEnabled && (
-          <div className="records-photo-actions">
-            <button
-              type="button"
-              onClick={() => handleAttachImage('compose', 'camera')}
-              disabled={Boolean(imageBusyTarget)}
-            >
-              {imageBusyTarget === 'compose:camera' ? '촬영 중...' : '카메라'}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleAttachImage('compose', 'gallery')}
-              disabled={Boolean(imageBusyTarget)}
-            >
-              {imageBusyTarget === 'compose:gallery' ? '선택 중...' : '앨범'}
-            </button>
-          </div>
-        )}
-
-        <RecordImageStrip
-          images={freeImages}
-          onRemove={handleRemoveDraftImage}
-          onOpen={openImage}
-        />
-
-        {imageFeedback && <p className="records-image-feedback">{imageFeedback}</p>}
-
-        <button
-          type="button"
-          className="btn-primary records-save-btn"
-          onClick={handleSaveFreeRecord}
-          disabled={!freeText.trim() && freeImages.length === 0}
-        >
-          자유 기록 저장하기
-        </button>
-      </section>
-
-      <section className="records-summary" aria-label="기록 요약">
-        <div>
-          <span>전체</span>
-          <strong>{records.length}</strong>
-        </div>
-        <div>
-          <span>리스트 기록</span>
-          <strong>{listRecordCount}</strong>
-        </div>
-        <div>
-          <span>자유 기록</span>
-          <strong>{freeRecordCount}</strong>
-        </div>
-      </section>
-
-      <div className="records-list">
-        {sortedRecords.length > 0 ? (
-          sortedRecords.map(record => {
-            const isFreeRecord = record.sourceType === 'free';
-            const isEditing = isFreeRecord && editingRecordId === record.id;
-
-            return (
-              <article key={record.recordKey} className={`glass-card record-card ${record.sourceType}`}>
-                <div className="record-card-head">
-                  <span>{isFreeRecord ? '자유 기록' : '리스트 기록'}</span>
-                  <time>{recordDateTimeFormatter.format(new Date(record.updatedAt))}</time>
-                </div>
-
-                <h3>{isFreeRecord ? '오늘의 기록' : record.itemTitle}</h3>
-                {!isFreeRecord && record.itemDescription && <p className="record-linked-desc">{record.itemDescription}</p>}
-
-                {isEditing ? (
-                  <div className="record-edit-wrap">
-                    <textarea
-                      value={editingText}
-                      onChange={event => setEditingText(event.target.value)}
-                      rows={5}
-                      maxLength={1600}
-                    />
-                    {isImageEnabled && (
-                      <div className="records-photo-actions">
-                        <button
-                          type="button"
-                          onClick={() => handleAttachImage('edit', 'camera')}
-                          disabled={Boolean(imageBusyTarget)}
-                        >
-                          {imageBusyTarget === 'edit:camera' ? '촬영 중...' : '카메라'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleAttachImage('edit', 'gallery')}
-                          disabled={Boolean(imageBusyTarget)}
-                        >
-                          {imageBusyTarget === 'edit:gallery' ? '선택 중...' : '앨범'}
-                        </button>
-                      </div>
+          {visibleRecords.length > 0 ? (
+            <div className="record-preview-list">
+              {visibleRecords.map(record => (
+                <article key={record.id} className="record-preview-row">
+                  <div className="record-preview-content">
+                    <time>{recordDateTimeFormatter.format(new Date(record.updatedAt))}</time>
+                    <p>{getRecordSnippet(record.content)}</p>
+                    {record.images.length > 0 && (
+                      <RecordImageStrip images={record.images} onOpen={openImage} />
                     )}
-                    <RecordImageStrip
-                      images={editingImages}
-                      onRemove={handleRemoveEditingImage}
-                      onOpen={openImage}
-                    />
-                    {imageFeedback && <p className="records-image-feedback">{imageFeedback}</p>}
-                    <div className="record-actions">
-                      <button type="button" className="record-secondary-btn" onClick={handleCancelEdit}>
-                        취소
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-primary record-primary-btn"
-                        onClick={() => handleSaveEdit(record.id)}
-                        disabled={!editingText.trim() && editingImages.length === 0}
-                      >
-                        저장
-                      </button>
-                    </div>
                   </div>
-                ) : (
-                  <>
-                    {record.content && <p className="record-content">{record.content}</p>}
-                    <RecordImageStrip images={record.images} onOpen={openImage} />
-                    <div className="record-actions">
-                      {isFreeRecord ? (
-                        <>
-                          <button type="button" className="record-secondary-btn" onClick={() => handleStartEdit(record)}>
-                            수정
-                          </button>
-                          <button type="button" className="record-danger-btn" onClick={() => handleDeleteFreeRecord(record)}>
-                            삭제
-                          </button>
-                        </>
-                      ) : (
-                        record.item && (
-                          <button type="button" className="record-secondary-btn" onClick={() => setSelectedItem(record.item)}>
-                            행복 열기
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </>
-                )}
-              </article>
-            );
-          })
-        ) : (
-          <div className="empty-state records-empty">
-            아직 남긴 기록이 없어요.
-            <br />
-            오늘의 행복을 한 줄로 시작해보세요.
+                  <div className="record-preview-actions">
+                    <button type="button" onClick={() => openEditComposer(record)}>수정</button>
+                    <button type="button" className="danger" onClick={() => handleDeleteRecord(record)}>삭제</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="record-section-empty">아직 남긴 기록이 없어요.</p>
+          )}
+
+          {records.length > RECORD_PREVIEW_LIMIT && (
+            <button
+              type="button"
+              className="record-view-all-btn"
+              onClick={() => setShowAllRecords(prev => !prev)}
+            >
+              {showAllRecords ? '접기' : '전체 보기'}
+            </button>
+          )}
+        </section>
+
+        <section className="glass-card records-overview-section">
+          <div className="records-section-head">
+            <div>
+              <span>HAPPINESS MEMO</span>
+              <h3>행복 메모</h3>
+            </div>
+            <strong>{happyMemos.length}</strong>
           </div>
-        )}
-      </div>
+
+          {visibleHappyMemos.length > 0 ? (
+            <div className="record-preview-list">
+              {visibleHappyMemos.map(memo => (
+                <article key={memo.recordKey} className="record-preview-row happy-memo">
+                  <div className="record-preview-content">
+                    <time>{recordDateTimeFormatter.format(new Date(memo.updatedAt))}</time>
+                    <h4>{memo.itemTitle}</h4>
+                    <p>{getRecordSnippet(memo.content)}</p>
+                    {memo.images.length > 0 && (
+                      <RecordImageStrip images={memo.images} onOpen={openImage} />
+                    )}
+                  </div>
+                  {memo.item && (
+                    <div className="record-preview-actions">
+                      <button type="button" onClick={() => setSelectedItem(memo.item)}>행복 열기</button>
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="record-section-empty">아직 행복 메모가 없어요.</p>
+          )}
+
+          {happyMemos.length > RECORD_PREVIEW_LIMIT && (
+            <button
+              type="button"
+              className="record-view-all-btn"
+              onClick={() => setShowAllHappyMemos(prev => !prev)}
+            >
+              {showAllHappyMemos ? '접기' : '전체 보기'}
+            </button>
+          )}
+        </section>
+      </main>
+
+      {isComposerOpen && (
+        <div className="record-composer-overlay" data-block-pull-refresh="true" onClick={() => resetComposer()}>
+          <div className="record-note-modal" data-block-pull-refresh="true" onClick={event => event.stopPropagation()}>
+            <div className="record-note-header">
+              <div>
+                <span>NOTE</span>
+                <h3>{isEditingRecord ? '기록 수정하기' : '기록 남기기'}</h3>
+              </div>
+              <button type="button" className="record-note-close" onClick={() => resetComposer()} aria-label="기록 작성 닫기">
+                &times;
+              </button>
+            </div>
+
+            <textarea
+              value={recordText}
+              onChange={event => setRecordText(event.target.value)}
+              placeholder="짧은 한 줄도 좋고, 길게 쓰는 일기도 좋아요."
+              rows={9}
+              maxLength={1600}
+              autoFocus
+            />
+
+            <RecordImageStrip
+              images={recordImages}
+              onRemove={handleRemoveComposerImage}
+              onOpen={openImage}
+            />
+
+            {imageFeedback && <p className="records-image-feedback">{imageFeedback}</p>}
+
+            <div className="record-note-footer">
+              {isImageEnabled && (
+                <div className="records-photo-actions">
+                  <button
+                    type="button"
+                    onClick={() => handleAttachImage('camera')}
+                    disabled={Boolean(imageBusyTarget)}
+                  >
+                    {imageBusyTarget === 'composer:camera' ? '촬영 중...' : '카메라'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAttachImage('gallery')}
+                    disabled={Boolean(imageBusyTarget)}
+                  >
+                    {imageBusyTarget === 'composer:gallery' ? '선택 중...' : '앨범'}
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="btn-primary record-note-save"
+                onClick={handleSaveRecord}
+                disabled={!recordText.trim() && recordImages.length === 0}
+              >
+                {isEditingRecord ? '기록 수정하기' : '기록 저장하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedItem && (
         <LazyLoadBoundary
