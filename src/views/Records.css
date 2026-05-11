@@ -139,6 +139,76 @@
     height: 21px;
 }
 
+.record-week-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 7px;
+    padding: 4px 0 2px;
+}
+
+.record-week-day {
+    position: relative;
+    min-width: 0;
+    min-height: 58px;
+    border: 1px solid rgba(var(--primary-rgb), 0.16);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.64);
+    color: var(--text-dark);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 2px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.dark-theme .record-week-day {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.record-week-day:disabled {
+    opacity: 0.34;
+    cursor: default;
+}
+
+.record-week-day span {
+    color: var(--text-light);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.record-week-day strong {
+    color: inherit;
+    font-size: clamp(0.96rem, 3vw, 1.08rem);
+    line-height: 1;
+}
+
+.record-week-day.has-records {
+    border-color: rgba(var(--primary-rgb), 0.42);
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.record-week-day.today {
+    background: linear-gradient(135deg, rgba(95, 188, 68, 0.9), rgba(169, 217, 79, 0.88));
+    color: #ffffff;
+    box-shadow: 0 10px 22px rgba(95, 188, 68, 0.18);
+}
+
+.record-week-day.today span {
+    color: rgba(255, 255, 255, 0.86);
+}
+
+.record-week-day i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #f7c437;
+}
+
 .records-month-meta {
     display: flex;
     align-items: center;
