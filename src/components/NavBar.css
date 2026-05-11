@@ -1,7 +1,7 @@
 .navbar {
     --nav-icon-box-size: 38px;
     --nav-icon-svg-size: 31px;
-    --nav-item-width: 96px;
+    --nav-item-width: clamp(72px, 21vw, 86px);
     --nav-item-height: 64px;
     position: fixed;
     bottom: 0;
@@ -45,7 +45,8 @@
 
 .nav-icon-home,
 .nav-icon-profile,
-.nav-icon-record {
+.nav-icon-record,
+.nav-icon-analysis {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -54,7 +55,8 @@
 
 .nav-home-icon,
 .nav-profile-icon,
-.nav-record-icon {
+.nav-record-icon,
+.nav-analysis-icon {
     width: var(--nav-icon-svg-size);
     height: var(--nav-icon-svg-size);
     display: block;

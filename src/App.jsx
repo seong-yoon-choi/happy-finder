@@ -37,6 +37,7 @@ const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const NicknameModal = lazy(() => import('./components/NicknameModal'));
 const FirstLoginSetupModal = lazy(() => import('./components/FirstLoginSetupModal'));
 const Records = lazy(() => import('./views/Records'));
+const Analysis = lazy(() => import('./views/Analysis'));
 const Profile = lazy(() => import('./views/Profile'));
 const AdminInquiriesPage = lazy(() => import('./views/AdminInquiriesPage'));
 const AccountDeletePage = lazy(() => import('./views/AccountDeletePage'));
@@ -44,6 +45,7 @@ const PasswordResetPage = lazy(() => import('./views/PasswordResetPage'));
 const SupportPage = lazy(() => import('./views/SupportPage'));
 const WebProfilePage = lazy(() => import('./views/WebProfilePage'));
 const PULL_TO_REFRESH_VIEW_STORAGE_KEY = 'happy_pull_refresh_view';
+const APP_VIEW_KEYS = ['home', 'records', 'analysis', 'profile'];
 
 const isNativeRuntime = () => Capacitor.isNativePlatform();
 
@@ -55,7 +57,7 @@ const consumePreservedAppView = () => {
   const preservedView = window.sessionStorage.getItem(PULL_TO_REFRESH_VIEW_STORAGE_KEY);
   window.sessionStorage.removeItem(PULL_TO_REFRESH_VIEW_STORAGE_KEY);
 
-  return ['home', 'records', 'profile'].includes(preservedView) ? preservedView : 'home';
+  return APP_VIEW_KEYS.includes(preservedView) ? preservedView : 'home';
 };
 
 const preserveAppViewForRefresh = view => {
@@ -65,7 +67,7 @@ const preserveAppViewForRefresh = view => {
 
   window.sessionStorage.setItem(
     PULL_TO_REFRESH_VIEW_STORAGE_KEY,
-    ['home', 'records', 'profile'].includes(view) ? view : 'home'
+    APP_VIEW_KEYS.includes(view) ? view : 'home'
   );
 };
 
@@ -376,6 +378,17 @@ function AppContent() {
             resetKey="records-view"
           >
             <Records />
+          </LazyLoadBoundary>
+        )}
+        {currentView === 'analysis' && (
+          <LazyLoadBoundary
+            mode="page"
+            loadingLabel="분석 화면을 불러오는 중이에요."
+            errorTitle="분석 화면을 열지 못했어요."
+            errorMessage="잠시 후 다시 시도해주세요."
+            resetKey="analysis-view"
+          >
+            <Analysis />
           </LazyLoadBoundary>
         )}
         {currentView === 'profile' && (

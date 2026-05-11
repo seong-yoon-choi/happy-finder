@@ -52,6 +52,35 @@ const RecordIcon = () => (
     </svg>
 );
 
+const AnalysisIcon = () => (
+    <svg className="nav-analysis-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <path
+            d="M5.5 18.25V13.25"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+        />
+        <path
+            d="M12 18.25V8.75"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+        />
+        <path
+            d="M18.5 18.25V5.75"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+        />
+        <path
+            d="M4.5 19.25H19.5"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+        />
+    </svg>
+);
+
 const NavBar = ({ currentView, onViewChange }) => {
     return (
         <nav className="glass-panel navbar">
@@ -73,6 +102,16 @@ const NavBar = ({ currentView, onViewChange }) => {
                     <RecordIcon />
                 </div>
                 <span>기록</span>
+            </button>
+
+            <button
+                className={`nav-item ${currentView === 'analysis' ? 'active' : ''}`}
+                onClick={() => onViewChange('analysis')}
+            >
+                <div className="nav-icon nav-icon-analysis" aria-hidden="true">
+                    <AnalysisIcon />
+                </div>
+                <span>분석</span>
             </button>
 
             <button
