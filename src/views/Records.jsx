@@ -405,6 +405,8 @@ const Records = () => {
   const maxWeekStartDate = getWeekStart(getRecordMaxDate());
   const canMoveToPreviousWeek = getDateKey(visibleWeekStartDate) > getDateKey(minWeekStartDate);
   const canMoveToNextWeek = getDateKey(visibleWeekStartDate) < getDateKey(maxWeekStartDate);
+  const canMoveToPreviousCalendarMonth = getMonthIndex(calendarMonthDate) > getMonthIndex(RECORD_MIN_MONTH_DATE);
+  const canMoveToNextCalendarMonth = getMonthIndex(calendarMonthDate) < getMonthIndex(maxMonthDate);
   const isEditingRecord = Boolean(editingRecordId);
 
   const cleanupImages = useCallback(images => {
@@ -509,6 +511,7 @@ const Records = () => {
     }
 
     setCalendarMonthDate(nextMonthDate);
+    setMonthPickerYear(nextMonthDate.getFullYear());
   };
 
   const handleCalendarWheel = event => {
@@ -560,9 +563,24 @@ const Records = () => {
     setIsMonthPickerOpen(true);
   };
 
-  const handleSelectMonth = (year, month) => {
-    setCalendarMonthDate(clampRecordMonthDate(new Date(year, month, 1)));
-    setIsMonthPickerOpen(false);
+  const handleChangeMonthPickerYear = event => {
+    const nextYear = Number(event.target.value);
+    const selectableMonths = getSelectableMonths(nextYear, maxMonthDate);
+    const currentMonth = calendarMonthDate.getMonth();
+    const nextMonth = selectableMonths.includes(currentMonth)
+      ? currentMonth
+      : selectableMonths[selectableMonths.length - 1];
+    const nextMonthDate = clampRecordMonthDate(new Date(nextYear, nextMonth, 1));
+
+    setMonthPickerYear(nextMonthDate.getFullYear());
+    setCalendarMonthDate(nextMonthDate);
+  };
+
+  const handleChangeMonthPickerMonth = event => {
+    const nextMonthDate = clampRecordMonthDate(new Date(monthPickerYear, Number(event.target.value), 1));
+
+    setMonthPickerYear(nextMonthDate.getFullYear());
+    setCalendarMonthDate(nextMonthDate);
   };
 
   const handleSelectRecordDate = (date, { shouldCloseCalendar = false } = {}) => {
@@ -818,35 +836,38 @@ const Records = () => {
               </button>
             </div>
 
-            <div className="record-month-picker-years" aria-label="연도 선택">
-              {availableYears.map(year => (
-                <button
-                  key={year}
-                  type="button"
-                  className={year === monthPickerYear ? 'active' : ''}
-                  onClick={() => setMonthPickerYear(year)}
+            <div className="record-month-picker-wheel" aria-label="연도와 월 스크롤 선택">
+              <label>
+                <span>연도</span>
+                <select
+                  value={monthPickerYear}
+                  onChange={handleChangeMonthPickerYear}
+                  size={Math.min(availableYears.length, 5)}
+                  aria-label="연도 선택"
                 >
-                  {year}년
-                </button>
-              ))}
-            </div>
+                  {availableYears.map(year => (
+                    <option key={year} value={year}>
+                      {year}년
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <div className="record-month-picker-grid" aria-label={`${monthPickerYear}년 월 선택`}>
-              {availableMonths.map(month => (
-                <button
-                  key={month}
-                  type="button"
-                  className={
-                    calendarMonthDate.getFullYear() === monthPickerYear
-                      && calendarMonthDate.getMonth() === month
-                      ? 'active'
-                      : ''
-                  }
-                  onClick={() => handleSelectMonth(monthPickerYear, month)}
+              <label>
+                <span>월</span>
+                <select
+                  value={calendarMonthDate.getMonth()}
+                  onChange={handleChangeMonthPickerMonth}
+                  size={Math.min(availableMonths.length, 5)}
+                  aria-label="월 선택"
                 >
-                  {month + 1}월
-                </button>
-              ))}
+                  {availableMonths.map(month => (
+                    <option key={month} value={month}>
+                      {month + 1}월
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
         </div>
@@ -867,8 +888,16 @@ const Records = () => {
             onClick={event => event.stopPropagation()}
           >
             <div className="record-calendar-header">
-              <div>
-                <span>CALENDAR</span>
+              <div className="record-calendar-month-nav">
+                <button
+                  type="button"
+                  className="record-calendar-shift-btn"
+                  onClick={() => handleMoveCalendarMonth(-1)}
+                  disabled={!canMoveToPreviousCalendarMonth}
+                  aria-label="이전 달 보기"
+                >
+                  &lt;
+                </button>
                 <button
                   type="button"
                   className="record-calendar-month-btn"
@@ -876,6 +905,15 @@ const Records = () => {
                   aria-label={`${getMonthLabel(calendarMonthDate)} 선택 변경`}
                 >
                   {getMonthLabel(calendarMonthDate)}
+                </button>
+                <button
+                  type="button"
+                  className="record-calendar-shift-btn"
+                  onClick={() => handleMoveCalendarMonth(1)}
+                  disabled={!canMoveToNextCalendarMonth}
+                  aria-label="다음 달 보기"
+                >
+                  &gt;
                 </button>
               </div>
               <button
