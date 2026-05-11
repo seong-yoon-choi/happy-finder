@@ -23,6 +23,14 @@ const recordDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   minute: '2-digit'
 });
 
+const recordDayFormatter = new Intl.DateTimeFormat('ko-KR', {
+  month: 'long',
+  day: 'numeric',
+  weekday: 'short'
+});
+
+const calendarWeekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+
 const createDraftRecordId = () => `fr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 const getImageErrorMessage = code => {
@@ -70,6 +78,13 @@ const getMonthStart = value => {
 const getMonthKey = date => `${date.getFullYear()}-${date.getMonth()}`;
 
 const getMonthLabel = date => `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+
+const getDateKey = date => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const addMonths = (date, amount) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
 
@@ -121,6 +136,30 @@ const getSelectableMonths = (year, maxMonthDate) => {
   );
 };
 
+const getCalendarDays = monthDate => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDate = new Date(year, month, 1);
+  const lastDate = new Date(year, month + 1, 0);
+  const leadingBlankCount = firstDate.getDay();
+  const trailingBlankCount = 6 - lastDate.getDay();
+  const dayCells = [];
+
+  for (let index = 0; index < leadingBlankCount; index += 1) {
+    dayCells.push(null);
+  }
+
+  for (let day = 1; day <= lastDate.getDate(); day += 1) {
+    dayCells.push(new Date(year, month, day));
+  }
+
+  for (let index = 0; index < trailingBlankCount; index += 1) {
+    dayCells.push(null);
+  }
+
+  return dayCells;
+};
+
 const isRecordInMonth = (record, monthDate) => {
   const recordDate = getRecordDate(record);
   return (
@@ -129,7 +168,37 @@ const isRecordInMonth = (record, monthDate) => {
   );
 };
 
+const isSameDay = (leftDate, rightDate) => (
+  leftDate.getFullYear() === rightDate.getFullYear()
+  && leftDate.getMonth() === rightDate.getMonth()
+  && leftDate.getDate() === rightDate.getDate()
+);
+
+const isSelectableRecordDate = date => {
+  const today = new Date();
+  const dateIndex = getDateKey(date);
+  const minDateIndex = getDateKey(RECORD_MIN_MONTH_DATE);
+  const todayIndex = getDateKey(today);
+
+  return dateIndex >= minDateIndex && dateIndex <= todayIndex;
+};
+
 const formatRecordDateTime = record => recordDateTimeFormatter.format(getRecordDate(record));
+
+const formatRecordDay = date => recordDayFormatter.format(date);
+
+const CalendarIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M7 4.75V7.25M17 4.75V7.25M5.75 9.25H18.25M7.25 6H16.75C18.2688 6 19.5 7.23122 19.5 8.75V17.25C19.5 18.7688 18.2688 20 16.75 20H7.25C5.73122 20 4.5 18.7688 4.5 17.25V8.75C4.5 7.23122 5.73122 6 7.25 6Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const RecordImageThumb = ({ image, onRemove, onOpen }) => {
   const [src, setSrc] = useState('');
@@ -225,6 +294,8 @@ const Records = () => {
 
   const [selectedMonthDate, setSelectedMonthDate] = useState(() => clampRecordMonthDate(new Date()));
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(null);
   const [monthPickerYear, setMonthPickerYear] = useState(() => clampRecordMonthDate(new Date()).getFullYear());
   const [draftRecordId, setDraftRecordId] = useState(() => createDraftRecordId());
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -247,6 +318,17 @@ const Records = () => {
   const canMoveToPreviousMonth = getMonthIndex(selectedMonthDate) > getMonthIndex(RECORD_MIN_MONTH_DATE);
   const canMoveToNextMonth = getMonthIndex(selectedMonthDate) < getMonthIndex(maxMonthDate);
   const selectedMonthRecords = records.filter(record => isRecordInMonth(record, selectedMonthDate));
+  const calendarDays = getCalendarDays(selectedMonthDate);
+  const recordsByDate = selectedMonthRecords.reduce((recordMap, record) => {
+    const dateKey = getDateKey(getRecordDate(record));
+    const dayRecords = recordMap.get(dateKey) || [];
+    dayRecords.push(record);
+    recordMap.set(dateKey, dayRecords);
+    return recordMap;
+  }, new Map());
+  const selectedCalendarDateRecords = selectedCalendarDate
+    ? recordsByDate.get(getDateKey(selectedCalendarDate)) || []
+    : [];
   const visibleRecords = showAllRecords
     ? selectedMonthRecords
     : selectedMonthRecords.slice(0, RECORD_PREVIEW_LIMIT);
@@ -335,7 +417,21 @@ const Records = () => {
 
   const handleSelectMonth = (year, month) => {
     setSelectedMonthDate(clampRecordMonthDate(new Date(year, month, 1)));
+    setSelectedCalendarDate(null);
     setIsMonthPickerOpen(false);
+  };
+
+  const openCalendar = () => {
+    setSelectedCalendarDate(null);
+    setIsCalendarOpen(true);
+  };
+
+  const handleOpenDateRecords = date => {
+    if (!date || !isSelectableRecordDate(date)) {
+      return;
+    }
+
+    setSelectedCalendarDate(date);
   };
 
   const handleAttachImage = async source => {
@@ -476,6 +572,14 @@ const Records = () => {
             </button>
             <button
               type="button"
+              className="records-calendar-open-btn"
+              onClick={openCalendar}
+              aria-label={`${getMonthLabel(selectedMonthDate)} 달력 보기`}
+            >
+              <CalendarIcon />
+            </button>
+            <button
+              type="button"
               className="records-month-shift-btn"
               onClick={() => handleMoveMonth(1)}
               disabled={!canMoveToNextMonth}
@@ -579,6 +683,132 @@ const Records = () => {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {isCalendarOpen && (
+        <div
+          className="record-calendar-overlay"
+          data-block-pull-refresh="true"
+          onClick={() => setIsCalendarOpen(false)}
+        >
+          <div
+            className="record-calendar-modal"
+            data-block-pull-refresh="true"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="record-calendar-header">
+              <div>
+                <span>CALENDAR</span>
+                <h3>{getMonthLabel(selectedMonthDate)}</h3>
+              </div>
+              <button
+                type="button"
+                className="record-calendar-close"
+                onClick={() => setIsCalendarOpen(false)}
+                aria-label="달력 닫기"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="record-calendar-weekdays" aria-hidden="true">
+              {calendarWeekdayLabels.map(label => (
+                <span key={label}>{label}</span>
+              ))}
+            </div>
+
+            <div className="record-calendar-grid" aria-label={`${getMonthLabel(selectedMonthDate)} 날짜 선택`}>
+              {calendarDays.map((date, index) => {
+                if (!date) {
+                  return <span key={`blank-${index}`} className="record-calendar-blank" />;
+                }
+
+                const dateKey = getDateKey(date);
+                const dayRecords = recordsByDate.get(dateKey) || [];
+                const isToday = isSameDay(date, new Date());
+                const isDisabled = !isSelectableRecordDate(date);
+
+                return (
+                  <button
+                    key={dateKey}
+                    type="button"
+                    className={`record-calendar-day${dayRecords.length > 0 ? ' has-records' : ''}${isToday ? ' today' : ''}`}
+                    onClick={() => handleOpenDateRecords(date)}
+                    disabled={isDisabled}
+                    aria-label={`${date.getDate()}일 기록 ${dayRecords.length}개 보기`}
+                  >
+                    <span>{date.getDate()}</span>
+                    {dayRecords.length > 0 && <i aria-hidden="true">{dayRecords.length}</i>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedCalendarDate && (
+        <div
+          className="record-date-records-overlay"
+          data-block-pull-refresh="true"
+          onClick={() => setSelectedCalendarDate(null)}
+        >
+          <div
+            className="record-date-records-modal"
+            data-block-pull-refresh="true"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="record-date-records-header">
+              <div>
+                <span>RECORDS</span>
+                <h3>{formatRecordDay(selectedCalendarDate)}</h3>
+              </div>
+              <button
+                type="button"
+                className="record-date-records-close"
+                onClick={() => setSelectedCalendarDate(null)}
+                aria-label="일자 기록 닫기"
+              >
+                &times;
+              </button>
+            </div>
+
+            {selectedCalendarDateRecords.length > 0 ? (
+              <div className="record-date-records-list">
+                {selectedCalendarDateRecords.map(record => (
+                  <article key={record.id} className="record-date-record-card">
+                    <time>{formatRecordDateTime(record)}</time>
+                    <p>{getRecordSnippet(record.content)}</p>
+                    {record.images.length > 0 && (
+                      <RecordImageStrip images={record.images} onOpen={openImage} />
+                    )}
+                    <div className="record-preview-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCalendarDate(null);
+                          setIsCalendarOpen(false);
+                          openEditComposer(record);
+                        }}
+                      >
+                        수정
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={() => handleDeleteRecord(record)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="record-date-records-empty">이 날에는 남긴 기록이 없어요.</p>
+            )}
           </div>
         </div>
       )}
