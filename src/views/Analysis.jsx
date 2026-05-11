@@ -2,8 +2,6 @@ import React, { useMemo } from 'react';
 import { useHappy } from '../store/HappyContext';
 import './Analysis.css';
 
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
 const happinessTypes = [
   { key: 'sensory', label: '감각적', color: '#4ca33a' },
   { key: 'achievement', label: '성취적', color: '#a9d94f' },
@@ -48,12 +46,6 @@ const ignoredWords = new Set([
   '시간'
 ]);
 
-const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  month: 'long',
-  day: 'numeric',
-  weekday: 'short'
-});
-
 const getSafeDate = value => {
   const date = new Date(value || Date.now());
   return Number.isNaN(date.getTime()) ? new Date() : date;
@@ -61,37 +53,9 @@ const getSafeDate = value => {
 
 const getRecordDate = record => getSafeDate(record?.createdAt || record?.updatedAt);
 
-const getDateKey = date => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const startOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-const getCalendarDayDiff = (leftDate, rightDate) => (
-  Math.floor((startOfDay(leftDate).getTime() - startOfDay(rightDate).getTime()) / DAY_IN_MS)
-);
-
-const isCurrentMonth = (date, now) => (
-  date.getFullYear() === now.getFullYear()
-  && date.getMonth() === now.getMonth()
-);
-
 const getRecordContent = record => (
   typeof record?.content === 'string' ? record.content.trim() : ''
 );
-
-const getRecordSnippet = record => {
-  const content = getRecordContent(record);
-
-  if (!content) {
-    return '사진으로 남긴 기록';
-  }
-
-  return content.length > 64 ? `${content.slice(0, 64)}...` : content;
-};
 
 const getTypeKey = type => {
   if (typeof type !== 'string') {
@@ -199,13 +163,6 @@ const getTopWords = records => {
 };
 
 const buildAnalysisModel = ({ records, items }) => {
-  const now = new Date();
-  const thisMonthRecords = records.filter(record => isCurrentMonth(getRecordDate(record), now));
-  const recentWeekRecords = records.filter(record => {
-    const dayDiff = getCalendarDayDiff(now, getRecordDate(record));
-    return dayDiff >= 0 && dayDiff < 7;
-  });
-  const activeDayCount = new Set(records.map(record => getDateKey(getRecordDate(record)))).size;
   const freeRecordCount = records.filter(record => record.sourceType === 'free').length;
   const linkedRecordCount = records.filter(record => record.sourceType === 'list').length;
   const typeScores = getRecordTypeScores(records);
@@ -222,17 +179,10 @@ const buildAnalysisModel = ({ records, items }) => {
     : `${records.length}개의 기록 중 자유 기록 ${freeRecordCount}개, 리스트 기록 ${linkedRecordCount}개가 쌓였습니다.`;
 
   return {
-    stats: [
-      { label: '이번 달', value: thisMonthRecords.length, unit: '개' },
-      { label: '최근 7일', value: recentWeekRecords.length, unit: '개' },
-      { label: '기록한 날', value: activeDayCount, unit: '일' },
-      { label: '전체 기록', value: records.length, unit: '개' }
-    ],
     styleTitle,
     styleDescription,
     freeRecordCount,
     linkedRecordCount,
-    latestRecords: records.slice(0, 3),
     typeScores,
     topTags,
     topWords,
@@ -262,41 +212,6 @@ const Analysis = () => {
       </header>
 
       <main className="analysis-sections">
-        <section className="analysis-stats-grid" aria-label="기록 요약">
-          {analysis.stats.map(stat => (
-            <article key={stat.label} className="analysis-stat-card">
-              <span>{stat.label}</span>
-              <strong>{stat.value}</strong>
-              <small>{stat.unit}</small>
-            </article>
-          ))}
-        </section>
-
-        <section className="analysis-style-section">
-          <div className="analysis-section-head">
-            <span>STYLE</span>
-            <h3>나의 행복 스타일</h3>
-          </div>
-          <div className="analysis-style-body">
-            <div className="analysis-style-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path
-                  d="M12 20C8.25 17.15 5 14.35 5 10.75C5 8.4 6.7 6.75 8.9 6.75C10.15 6.75 11.25 7.35 12 8.3C12.75 7.35 13.85 6.75 15.1 6.75C17.3 6.75 19 8.4 19 10.75C19 14.35 15.75 17.15 12 20Z"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.9"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div>
-              <strong>{analysis.styleTitle}</strong>
-              <p>{analysis.styleDescription}</p>
-            </div>
-          </div>
-        </section>
-
         <section className="analysis-type-section">
           <div className="analysis-section-head">
             <span>TYPES</span>
@@ -328,6 +243,31 @@ const Analysis = () => {
           </div>
         </section>
 
+        <section className="analysis-style-section">
+          <div className="analysis-section-head">
+            <span>STYLE</span>
+            <h3>나의 행복 스타일</h3>
+          </div>
+          <div className="analysis-style-body">
+            <div className="analysis-style-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path
+                  d="M12 20C8.25 17.15 5 14.35 5 10.75C5 8.4 6.7 6.75 8.9 6.75C10.15 6.75 11.25 7.35 12 8.3C12.75 7.35 13.85 6.75 15.1 6.75C17.3 6.75 19 8.4 19 10.75C19 14.35 15.75 17.15 12 20Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div>
+              <strong>{analysis.styleTitle}</strong>
+              <p>{analysis.styleDescription}</p>
+            </div>
+          </div>
+        </section>
+
         <section className="analysis-keyword-section">
           <div className="analysis-section-head">
             <span>KEYWORDS</span>
@@ -345,27 +285,6 @@ const Analysis = () => {
             </div>
           ) : (
             <p className="analysis-empty-line">표시할 태그와 단어가 없습니다.</p>
-          )}
-        </section>
-
-        <section className="analysis-latest-section">
-          <div className="analysis-section-head">
-            <span>RECENT</span>
-            <h3>최근 기록</h3>
-          </div>
-
-          {analysis.latestRecords.length > 0 ? (
-            <div className="analysis-record-list">
-              {analysis.latestRecords.map(record => (
-                <article key={record.recordKey || record.id} className="analysis-record-card">
-                  <time>{dateFormatter.format(getRecordDate(record))}</time>
-                  <strong>{record.itemTitle || '기록'}</strong>
-                  <p>{getRecordSnippet(record)}</p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="analysis-empty-line">표시할 최근 기록이 없습니다.</p>
           )}
         </section>
 
