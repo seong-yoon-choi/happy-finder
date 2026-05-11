@@ -228,25 +228,6 @@
     background: #f7c437;
 }
 
-.records-month-meta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 28px;
-}
-
-.records-month-meta span {
-    display: inline-flex;
-    align-items: center;
-    min-height: 26px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: rgba(var(--primary-rgb), 0.1);
-    color: var(--text-light);
-    font-size: var(--font-body-sm);
-    font-weight: 800;
-}
-
 .records-section-head {
     display: flex;
     align-items: flex-start;

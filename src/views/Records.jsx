@@ -18,15 +18,8 @@ const RECORD_PREVIEW_LIMIT = 3;
 const RECORD_MIN_MONTH_DATE = new Date(2026, 0, 1);
 
 const recordDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
-  day: 'numeric',
   hour: '2-digit',
   minute: '2-digit'
-});
-
-const recordDayFormatter = new Intl.DateTimeFormat('ko-KR', {
-  month: 'long',
-  day: 'numeric',
-  weekday: 'short'
 });
 
 const calendarWeekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
@@ -252,20 +245,17 @@ const isSelectableRecordDate = date => {
   return dateIndex >= minDateIndex && dateIndex <= todayIndex;
 };
 
-const formatRecordDateTime = record => recordDateTimeFormatter.format(getRecordDate(record));
+const getWeekDisplayDate = (weekStartDate, selectedDate) => {
+  const preferredDate = addDays(weekStartDate, selectedDate.getDay());
 
-const formatRecordDay = date => recordDayFormatter.format(date);
+  if (isSelectableRecordDate(preferredDate)) {
+    return preferredDate;
+  }
 
-const getDefaultRecordDateForMonth = monthDate => {
-  const maxDate = getRecordMaxDate();
-  const monthStart = clampRecordMonthDate(monthDate);
-  const isMaxMonth = (
-    monthStart.getFullYear() === maxDate.getFullYear()
-    && monthStart.getMonth() === maxDate.getMonth()
-  );
-
-  return isMaxMonth ? clampRecordDate(maxDate) : clampRecordDate(monthStart);
+  return getWeekDays(weekStartDate).find(isSelectableRecordDate) || clampRecordDate(preferredDate);
 };
+
+const formatRecordDateTime = record => recordDateTimeFormatter.format(getRecordDate(record));
 
 const CalendarIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -373,7 +363,7 @@ const Records = () => {
   const cloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
 
   const [selectedRecordDate, setSelectedRecordDate] = useState(() => clampRecordDate(new Date()));
-  const [selectedMonthDate, setSelectedMonthDate] = useState(() => getMonthStart(clampRecordDate(new Date())));
+  const [calendarMonthDate, setCalendarMonthDate] = useState(() => getMonthStart(clampRecordDate(new Date())));
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [visibleWeekStartDate, setVisibleWeekStartDate] = useState(() => getWeekStart(clampRecordDate(new Date())));
@@ -397,8 +387,9 @@ const Records = () => {
   const maxMonthDate = getRecordMaxMonthDate();
   const availableYears = getSelectableYears(maxMonthDate);
   const availableMonths = getSelectableMonths(monthPickerYear, maxMonthDate);
-  const calendarDays = getCalendarDays(selectedMonthDate);
   const visibleWeekDays = getWeekDays(visibleWeekStartDate);
+  const visibleWeekMonthDate = getMonthStart(getWeekDisplayDate(visibleWeekStartDate, selectedRecordDate));
+  const calendarDays = getCalendarDays(calendarMonthDate);
   const recordsByDate = records.reduce((recordMap, record) => {
     const dateKey = getDateKey(getRecordDate(record));
     const dayRecords = recordMap.get(dateKey) || [];
@@ -482,11 +473,15 @@ const Records = () => {
     });
   };
 
+  const openCalendar = () => {
+    setCalendarMonthDate(visibleWeekMonthDate);
+    setIsCalendarOpen(true);
+  };
+
   const applySelectedRecordDate = date => {
     const nextDate = clampRecordDate(date);
 
     setSelectedRecordDate(nextDate);
-    setSelectedMonthDate(getMonthStart(nextDate));
     setVisibleWeekStartDate(getWeekStart(nextDate));
     setShowAllRecords(false);
 
@@ -494,17 +489,26 @@ const Records = () => {
   };
 
   const handleMoveWeek = amount => {
-    applySelectedRecordDate(addDays(selectedRecordDate, amount * 7));
-  };
+    const nextWeekStartDate = getWeekStart(addDays(visibleWeekStartDate, amount * 7));
 
-  const handleMoveCalendarMonth = amount => {
-    const nextMonthDate = clampRecordMonthDate(addMonths(selectedMonthDate, amount));
-
-    if (getMonthIndex(nextMonthDate) === getMonthIndex(selectedMonthDate)) {
+    if (
+      getDateKey(nextWeekStartDate) < getDateKey(minWeekStartDate)
+      || getDateKey(nextWeekStartDate) > getDateKey(maxWeekStartDate)
+    ) {
       return;
     }
 
-    applySelectedRecordDate(getDefaultRecordDateForMonth(nextMonthDate));
+    setVisibleWeekStartDate(nextWeekStartDate);
+  };
+
+  const handleMoveCalendarMonth = amount => {
+    const nextMonthDate = clampRecordMonthDate(addMonths(calendarMonthDate, amount));
+
+    if (getMonthIndex(nextMonthDate) === getMonthIndex(calendarMonthDate)) {
+      return;
+    }
+
+    setCalendarMonthDate(nextMonthDate);
   };
 
   const handleCalendarWheel = event => {
@@ -550,14 +554,14 @@ const Records = () => {
   };
 
   const openMonthPicker = () => {
-    const clampedSelectedMonth = clampRecordMonthDate(selectedMonthDate);
-    setSelectedMonthDate(clampedSelectedMonth);
+    const clampedSelectedMonth = clampRecordMonthDate(calendarMonthDate);
+    setCalendarMonthDate(clampedSelectedMonth);
     setMonthPickerYear(clampedSelectedMonth.getFullYear());
     setIsMonthPickerOpen(true);
   };
 
   const handleSelectMonth = (year, month) => {
-    applySelectedRecordDate(getDefaultRecordDateForMonth(new Date(year, month, 1)));
+    setCalendarMonthDate(clampRecordMonthDate(new Date(year, month, 1)));
     setIsMonthPickerOpen(false);
   };
 
@@ -566,7 +570,8 @@ const Records = () => {
       return;
     }
 
-    applySelectedRecordDate(date);
+    const nextDate = applySelectedRecordDate(date);
+    setCalendarMonthDate(getMonthStart(nextDate));
 
     if (shouldCloseCalendar) {
       setIsCalendarOpen(false);
@@ -703,15 +708,15 @@ const Records = () => {
             </button>
             <div
               className="records-month-display"
-              aria-label={`${getMonthLabel(selectedMonthDate)} 기록 주`}
+              aria-label={`${getMonthLabel(visibleWeekMonthDate)} 기록 주`}
             >
-              <strong>{getMonthLabel(selectedMonthDate)}</strong>
+              <strong>{getMonthLabel(visibleWeekMonthDate)}</strong>
             </div>
             <button
               type="button"
               className="records-calendar-open-btn"
-              onClick={() => setIsCalendarOpen(true)}
-              aria-label={`${getMonthLabel(selectedMonthDate)} 달력 보기`}
+              onClick={openCalendar}
+              aria-label={`${getMonthLabel(visibleWeekMonthDate)} 달력 보기`}
             >
               <CalendarIcon />
             </button>
@@ -726,7 +731,7 @@ const Records = () => {
             </button>
           </div>
 
-          <div className="record-week-strip" aria-label={`${getMonthLabel(selectedMonthDate)} 주간 기록 달력`}>
+          <div className="record-week-strip" aria-label={`${getMonthLabel(visibleWeekMonthDate)} 주간 기록 달력`}>
             {visibleWeekDays.map(date => {
               const dateKey = getDateKey(date);
               const dayRecords = recordsByDate.get(dateKey) || [];
@@ -751,14 +756,6 @@ const Records = () => {
                 </button>
               );
             })}
-          </div>
-
-          <div className="records-month-meta">
-            <span>
-              {selectedDateRecords.length > 0
-                ? `${formatRecordDay(selectedRecordDate)} 기록 ${selectedDateRecords.length}개`
-                : `${formatRecordDay(selectedRecordDate)} 기록 없음`}
-            </span>
           </div>
 
           {visibleRecords.length > 0 ? (
@@ -840,8 +837,8 @@ const Records = () => {
                   key={month}
                   type="button"
                   className={
-                    selectedMonthDate.getFullYear() === monthPickerYear
-                      && selectedMonthDate.getMonth() === month
+                    calendarMonthDate.getFullYear() === monthPickerYear
+                      && calendarMonthDate.getMonth() === month
                       ? 'active'
                       : ''
                   }
@@ -876,9 +873,9 @@ const Records = () => {
                   type="button"
                   className="record-calendar-month-btn"
                   onClick={openMonthPicker}
-                  aria-label={`${getMonthLabel(selectedMonthDate)} 선택 변경`}
+                  aria-label={`${getMonthLabel(calendarMonthDate)} 선택 변경`}
                 >
-                  {getMonthLabel(selectedMonthDate)}
+                  {getMonthLabel(calendarMonthDate)}
                 </button>
               </div>
               <button
@@ -902,7 +899,7 @@ const Records = () => {
               ))}
             </div>
 
-            <div className="record-calendar-grid" aria-label={`${getMonthLabel(selectedMonthDate)} 날짜 선택`}>
+            <div className="record-calendar-grid" aria-label={`${getMonthLabel(calendarMonthDate)} 날짜 선택`}>
               {calendarDays.map((date, index) => {
                 if (!date) {
                   return <span key={`blank-${index}`} className="record-calendar-blank" />;
