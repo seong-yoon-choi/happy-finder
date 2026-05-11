@@ -93,7 +93,7 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-.records-month-select-btn {
+.records-month-display {
     min-width: 142px;
     min-height: 38px;
     border: 1px solid rgba(var(--primary-rgb), 0.18);
@@ -101,15 +101,16 @@
     background: rgba(255, 255, 255, 0.66);
     color: var(--text-dark);
     padding: 0 16px;
-    font: inherit;
-    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.dark-theme .records-month-select-btn {
+.dark-theme .records-month-display {
     background: rgba(255, 255, 255, 0.08);
 }
 
-.records-month-select-btn strong {
+.records-month-display strong {
     display: block;
     text-align: center;
     font-size: clamp(1.18rem, 4vw, 1.42rem);
@@ -186,20 +187,38 @@
     line-height: 1;
 }
 
+.record-week-day.sunday strong {
+    color: #d65b68;
+}
+
+.record-week-day.saturday strong {
+    color: #2f78d4;
+}
+
 .record-week-day.has-records {
     border-color: rgba(var(--primary-rgb), 0.42);
     background: rgba(var(--primary-rgb), 0.1);
     color: var(--primary-color);
 }
 
-.record-week-day.today {
+.record-week-day.today:not(.selected) {
+    border-color: rgba(247, 196, 55, 0.42);
+    box-shadow: inset 0 0 0 2px rgba(247, 196, 55, 0.2);
+}
+
+.record-week-day.selected {
+    border-color: rgba(var(--primary-rgb), 0.56);
     background: linear-gradient(135deg, rgba(95, 188, 68, 0.9), rgba(169, 217, 79, 0.88));
     color: #ffffff;
     box-shadow: 0 10px 22px rgba(95, 188, 68, 0.18);
 }
 
-.record-week-day.today span {
+.record-week-day.selected span {
     color: rgba(255, 255, 255, 0.86);
+}
+
+.record-week-day.selected strong {
+    color: #ffffff;
 }
 
 .record-week-day i {
@@ -238,8 +257,7 @@
 .records-section-head span,
 .record-note-header span,
 .record-month-picker-header span,
-.record-calendar-header span,
-.record-date-records-header span {
+.record-calendar-header span {
     display: inline-flex;
     align-items: center;
     min-height: 23px;
@@ -375,7 +393,7 @@
 .record-month-picker-overlay {
     position: fixed;
     inset: 0;
-    z-index: 2550;
+    z-index: 2580;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -385,8 +403,7 @@
     -webkit-backdrop-filter: blur(10px);
 }
 
-.record-calendar-overlay,
-.record-date-records-overlay {
+.record-calendar-overlay {
     position: fixed;
     inset: 0;
     z-index: 2550;
@@ -397,10 +414,6 @@
     background: rgba(19, 37, 23, 0.34);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-}
-
-.record-date-records-overlay {
-    z-index: 2560;
 }
 
 .record-month-picker-modal {
@@ -415,8 +428,7 @@
     box-shadow: 0 22px 56px rgba(23, 48, 31, 0.18);
 }
 
-.record-calendar-modal,
-.record-date-records-modal {
+.record-calendar-modal {
     width: min(100%, 440px);
     max-height: min(86vh, 680px);
     display: flex;
@@ -436,8 +448,7 @@
     gap: 12px;
 }
 
-.record-calendar-header,
-.record-date-records-header {
+.record-calendar-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -445,13 +456,6 @@
 }
 
 .record-month-picker-header h3 {
-    margin-top: 8px;
-    font-size: clamp(1.16rem, 3.7vw, 1.34rem);
-    line-height: 1.24;
-}
-
-.record-calendar-header h3,
-.record-date-records-header h3 {
     margin-top: 8px;
     font-size: clamp(1.16rem, 3.7vw, 1.34rem);
     line-height: 1.24;
@@ -470,8 +474,20 @@
     cursor: pointer;
 }
 
-.record-calendar-close,
-.record-date-records-close {
+.record-calendar-month-btn {
+    margin-top: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-dark);
+    padding: 0;
+    font: inherit;
+    font-size: clamp(1.16rem, 3.7vw, 1.34rem);
+    font-weight: 800;
+    line-height: 1.24;
+    cursor: pointer;
+}
+
+.record-calendar-close {
     flex: 0 0 auto;
     width: 38px;
     height: 38px;
@@ -488,8 +504,7 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-.dark-theme .record-calendar-close,
-.dark-theme .record-date-records-close {
+.dark-theme .record-calendar-close {
     background: rgba(255, 255, 255, 0.08);
 }
 
@@ -546,6 +561,14 @@
     text-align: center;
 }
 
+.record-calendar-weekdays span.sunday {
+    color: #d65b68;
+}
+
+.record-calendar-weekdays span.saturday {
+    color: #2f78d4;
+}
+
 .record-calendar-blank {
     min-height: 44px;
 }
@@ -572,71 +595,28 @@
     cursor: default;
 }
 
+.record-calendar-day.sunday {
+    color: #d65b68;
+}
+
+.record-calendar-day.saturday {
+    color: #2f78d4;
+}
+
 .record-calendar-day.has-records {
-    border-color: rgba(var(--primary-rgb), 0.42);
-    background: linear-gradient(135deg, rgba(95, 188, 68, 0.18), rgba(169, 217, 79, 0.18));
-    color: var(--primary-color);
+    border-color: rgba(var(--primary-rgb), 0.52);
+    background: linear-gradient(135deg, rgba(95, 188, 68, 0.9), rgba(169, 217, 79, 0.88));
+    color: #ffffff;
 }
 
 .record-calendar-day.today {
     box-shadow: inset 0 0 0 2px rgba(247, 196, 55, 0.32);
 }
 
-.record-calendar-day i {
-    position: absolute;
-    left: 50%;
-    bottom: 5px;
-    min-width: 15px;
-    height: 15px;
-    transform: translateX(-50%);
-    border-radius: 999px;
-    background: #f7c437;
-    color: #24482b;
-    font-style: normal;
-    font-size: 0.64rem;
-    line-height: 15px;
-}
-
-.record-date-records-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-}
-
-.record-date-record-card {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px;
-    border: 1px solid rgba(var(--primary-rgb), 0.16);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.72);
-}
-
-.dark-theme .record-date-record-card {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.record-date-record-card time {
-    color: var(--text-light);
-    font-size: var(--font-body-sm);
-    font-weight: 800;
-}
-
-.record-date-record-card p,
-.record-date-records-empty {
-    margin: 0;
-    color: var(--text-dark);
-    font-size: var(--font-body-md);
-    line-height: 1.55;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
-
-.record-date-records-empty {
-    color: var(--text-light);
-    text-align: center;
+.record-calendar-day.selected {
+    border-color: rgba(var(--primary-rgb), 0.56);
+    background: linear-gradient(135deg, rgba(95, 188, 68, 0.92), rgba(169, 217, 79, 0.88));
+    color: #ffffff;
 }
 
 .record-composer-overlay {
