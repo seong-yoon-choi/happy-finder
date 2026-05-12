@@ -26,21 +26,25 @@ const NoteIcon = () => (
 const HappinessCard = ({ item, onClick }) => {
   const { getItemMemos, isItemOwnedByCurrentUser } = useHappy();
   const isOwner = isItemOwnedByCurrentUser(item.id);
-  const hasMemo = getItemMemos(item.id).length > 0;
+  const memoCount = getItemMemos(item.id).length;
+  const hasMemo = memoCount > 0;
 
   return (
     <div className="glass-card happiness-card compact" onClick={() => onClick(item)}>
-      <div className="card-top-row">
+      {item.isCustom && isOwner && (
         <div className="card-header">
-          {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
+          <span className="custom-badge">MY</span>
         </div>
-        {hasMemo && (
-          <span className="card-note-indicator" aria-label="작성한 메모 있음">
-            <NoteIcon />
-          </span>
-        )}
-      </div>
+      )}
       <h3 className="card-title">{item.title}</h3>
+      {hasMemo && (
+        <div className="card-meta-row">
+          <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
+            <NoteIcon />
+            <span>{memoCount}</span>
+          </span>
+        </div>
+      )}
       <p className="card-desc-short">{item.description}</p>
     </div>
   );

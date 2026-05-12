@@ -54,6 +54,32 @@ const FavoriteIcon = ({ isActive = false }) => (
   </svg>
 );
 
+const ShareIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path
+      d="M8.75 11.1L15.35 7.65M8.75 12.9L15.35 16.35"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M7.25 14.75C8.76878 14.75 10 13.5188 10 12C10 10.4812 8.76878 9.25 7.25 9.25C5.73122 9.25 4.5 10.4812 4.5 12C4.5 13.5188 5.73122 14.75 7.25 14.75Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    />
+    <path
+      d="M17.25 9.75C18.7688 9.75 20 8.51878 20 7C20 5.48122 18.7688 4.25 17.25 4.25C15.7312 4.25 14.5 5.48122 14.5 7C14.5 8.51878 15.7312 9.75 17.25 9.75Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    />
+    <path
+      d="M17.25 19.75C18.7688 19.75 20 18.5188 20 17C20 15.4812 18.7688 14.25 17.25 14.25C15.7312 14.25 14.5 15.4812 14.5 17C14.5 18.5188 15.7312 19.75 17.25 19.75Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    />
+  </svg>
+);
+
 const MemoEditIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
@@ -77,12 +103,12 @@ const MemoEditIcon = () => (
 const MemoDeleteIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M6.75 8.25H17.25M10 11.25V16.25M14 11.25V16.25M8.25 8.25L8.75 18.25C8.8 19.05 9.45 19.65 10.25 19.65H13.75C14.55 19.65 15.2 19.05 15.25 18.25L15.75 8.25M10 6.25H14M9.5 6.25L10.1 4.75H13.9L14.5 6.25"
+      d="M7.25 8.25H16.75M10.2 5.6H13.8M10.75 5.6L11.18 4.45H12.82L13.25 5.6M9 8.25L9.48 18.05C9.53 18.9 10.23 19.55 11.08 19.55H12.92C13.77 19.55 14.47 18.9 14.52 18.05L15 8.25M10.75 11.15V16.35M13.25 11.15V16.35"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="1.8"
+      strokeWidth="1.55"
     />
   </svg>
 );
@@ -774,6 +800,14 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
               aria-pressed={isFavorited}
             >
               <FavoriteIcon isActive={isFavorited} />
+            </button>
+            <button
+              type="button"
+              className="detail-icon-btn detail-share-trigger"
+              aria-label="share"
+              aria-disabled="true"
+            >
+              <ShareIcon />
             </button>
           </div>
           <button className="close-btn detail-close" onClick={() => requestClose()}>&times;</button>

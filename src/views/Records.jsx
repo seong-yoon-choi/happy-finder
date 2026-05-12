@@ -332,12 +332,12 @@ const EditIcon = () => (
 const TrashIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M6.75 8.25H17.25M10 11.25V16.25M14 11.25V16.25M8.25 8.25L8.75 18.25C8.8 19.05 9.45 19.65 10.25 19.65H13.75C14.55 19.65 15.2 19.05 15.25 18.25L15.75 8.25M10 6.25H14M9.5 6.25L10.1 4.75H13.9L14.5 6.25"
+      d="M7.25 8.25H16.75M10.2 5.6H13.8M10.75 5.6L11.18 4.45H12.82L13.25 5.6M9 8.25L9.48 18.05C9.53 18.9 10.23 19.55 11.08 19.55H12.92C13.77 19.55 14.47 18.9 14.52 18.05L15 8.25M10.75 11.15V16.35M13.25 11.15V16.35"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="1.8"
+      strokeWidth="1.55"
     />
   </svg>
 );

@@ -196,8 +196,10 @@
 }
 
 .record-week-day.today:not(.selected) {
-    border-color: rgba(var(--primary-rgb), 0.56);
-    box-shadow: inset 0 0 0 2px rgba(var(--primary-rgb), 0.14);
+    border-color: rgba(var(--primary-rgb), 0.82);
+    box-shadow:
+        inset 0 0 0 2px rgba(var(--primary-rgb), 0.3),
+        0 8px 16px rgba(var(--primary-rgb), 0.08);
 }
 
 .record-week-day.selected {
@@ -440,13 +442,14 @@
 }
 
 .record-detail-actions button.danger {
-    border-color: rgba(255, 95, 115, 0.26);
-    color: #d65b68;
+    border-color: rgba(214, 91, 104, 0.18);
+    background: rgba(255, 255, 255, 0.78);
+    color: #c95b63;
 }
 
 .record-detail-actions svg {
-    width: 19px;
-    height: 19px;
+    width: 18px;
+    height: 18px;
 }
 
 .record-detail-close {
@@ -751,7 +754,10 @@
 }
 
 .record-calendar-day.today {
-    box-shadow: inset 0 0 0 2px rgba(247, 196, 55, 0.32);
+    border-color: rgba(var(--primary-rgb), 0.82);
+    box-shadow:
+        inset 0 0 0 2px rgba(var(--primary-rgb), 0.3),
+        0 8px 16px rgba(var(--primary-rgb), 0.08);
 }
 
 .record-calendar-day.selected {

@@ -46,7 +46,8 @@
 
 .detail-close,
 .detail-report-trigger,
-.detail-favorite-trigger {
+.detail-favorite-trigger,
+.detail-share-trigger {
     background: rgba(255, 255, 255, 0.7);
     width: 32px;
     height: 32px;
@@ -86,9 +87,19 @@
     color: rgba(51, 51, 51, 0.72);
 }
 
+.detail-share-trigger {
+    color: var(--primary-color);
+    cursor: default;
+}
+
 .detail-favorite-trigger svg {
     width: 19px;
     height: 19px;
+}
+
+.detail-share-trigger svg {
+    width: 18px;
+    height: 18px;
 }
 
 .detail-favorite-trigger.active {
@@ -564,13 +575,14 @@
 }
 
 .detail-memo-delete-btn {
-    color: var(--danger);
+    border-color: rgba(214, 91, 104, 0.18);
+    color: #c95b63;
 }
 
 .detail-memo-edit-btn svg,
 .detail-memo-delete-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
 }
 
 .detail-memo-edit-wrap {
