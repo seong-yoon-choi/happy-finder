@@ -4,6 +4,7 @@
 }
 
 .detail-modal-content {
+    position: relative;
     width: 90%;
     max-width: 400px;
     max-height: 90vh;
@@ -26,10 +27,21 @@
 .detail-top-actions {
     position: absolute;
     top: 14px;
+    left: 14px;
     right: 14px;
     display: flex;
-    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     z-index: 10;
+    pointer-events: none;
+}
+
+.detail-side-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: auto;
 }
 
 .detail-close,
@@ -47,6 +59,7 @@
 
 .detail-close {
     font-size: 1.3rem;
+    pointer-events: auto;
 }
 
 .detail-icon-btn {
@@ -88,10 +101,9 @@
 }
 
 .detail-header {
-    /* Match top padding with the close button's top (16px) and add min-height to ensure vertical centering */
-    padding: 16px 132px 0 20px;
-    min-height: 40px;
-    margin-bottom: clamp(24px, 6vw, 34px);
+    padding: 58px 20px 0;
+    min-height: 0;
+    margin-bottom: clamp(18px, 5vw, 26px);
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
@@ -461,7 +473,7 @@
 
 @media (max-width: 420px) {
     .detail-header {
-        padding: 16px 122px 0 20px;
+        padding: 58px 20px 0;
     }
 
     .detail-header .custom-badge {
@@ -530,12 +542,21 @@
 
 .detail-memo-edit-btn,
 .detail-memo-delete-btn {
-    border: none;
-    background: transparent;
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.72);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 0;
-    font-size: 0.82rem;
-    font-weight: 700;
     cursor: pointer;
+}
+
+.dark-theme .detail-memo-edit-btn,
+.dark-theme .detail-memo-delete-btn {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .detail-memo-edit-btn {
@@ -544,6 +565,12 @@
 
 .detail-memo-delete-btn {
     color: var(--danger);
+}
+
+.detail-memo-edit-btn svg,
+.detail-memo-delete-btn svg {
+    width: 16px;
+    height: 16px;
 }
 
 .detail-memo-edit-wrap {

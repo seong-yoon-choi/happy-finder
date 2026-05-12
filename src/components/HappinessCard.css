@@ -21,6 +21,29 @@
     min-width: 0;
 }
 
+.card-note-indicator {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 16px rgba(26, 51, 31, 0.06);
+}
+
+.dark-theme .card-note-indicator {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.card-note-indicator svg {
+    width: 16px;
+    height: 16px;
+}
+
 .custom-badge {
     background: var(--secondary-color);
     color: white;

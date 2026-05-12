@@ -78,7 +78,23 @@ const getRecordSnippet = content => {
     return '사진으로 남긴 기록';
   }
 
-  return normalizedContent;
+  return normalizedContent.replace(/\s+/g, ' ');
+};
+
+const getRecordDetailContent = content => {
+  const normalizedContent = typeof content === 'string' ? content.trim() : '';
+
+  return normalizedContent || '사진으로 남긴 기록';
+};
+
+const getRecordTitle = record => {
+  const normalizedTitle = typeof record?.title === 'string' ? record.title.trim() : '';
+
+  if (normalizedTitle) {
+    return normalizedTitle;
+  }
+
+  return '제목 없는 기록';
 };
 
 const getRecordDate = record => {
@@ -270,6 +286,39 @@ const CalendarIcon = () => (
   </svg>
 );
 
+const EditIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M4.75 18.75L8 18.05L18.15 7.9C18.85 7.2 18.85 6.05 18.15 5.35C17.45 4.65 16.3 4.65 15.6 5.35L5.45 15.5L4.75 18.75Z"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    />
+    <path
+      d="M14.55 6.4L17.1 8.95"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.8"
+    />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M6.75 8.25H17.25M10 11.25V16.25M14 11.25V16.25M8.25 8.25L8.75 18.25C8.8 19.05 9.45 19.65 10.25 19.65H13.75C14.55 19.65 15.2 19.05 15.25 18.25L15.75 8.25M10 6.25H14M9.5 6.25L10.1 4.75H13.9L14.5 6.25"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    />
+  </svg>
+);
+
 const RecordImageThumb = ({ image, onRemove, onOpen }) => {
   const [src, setSrc] = useState('');
   const imageId = image.id;
@@ -370,9 +419,11 @@ const Records = () => {
   const [monthPickerYear, setMonthPickerYear] = useState(() => clampRecordMonthDate(new Date()).getFullYear());
   const [draftRecordId, setDraftRecordId] = useState(() => createDraftRecordId());
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [recordTitle, setRecordTitle] = useState('');
   const [recordText, setRecordText] = useState('');
   const [recordImages, setRecordImages] = useState([]);
   const [editingRecordId, setEditingRecordId] = useState(null);
+  const [activeRecordId, setActiveRecordId] = useState(null);
   const [showAllRecords, setShowAllRecords] = useState(false);
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
@@ -407,6 +458,7 @@ const Records = () => {
   const canMoveToNextWeek = getDateKey(visibleWeekStartDate) < getDateKey(maxWeekStartDate);
   const canMoveToPreviousCalendarMonth = getMonthIndex(calendarMonthDate) > getMonthIndex(RECORD_MIN_MONTH_DATE);
   const canMoveToNextCalendarMonth = getMonthIndex(calendarMonthDate) < getMonthIndex(maxMonthDate);
+  const activeRecord = activeRecordId ? records.find(record => record.id === activeRecordId) : null;
   const isEditingRecord = Boolean(editingRecordId);
 
   const cleanupImages = useCallback(images => {
@@ -443,6 +495,7 @@ const Records = () => {
 
     setIsComposerOpen(false);
     setEditingRecordId(null);
+    setRecordTitle('');
     setRecordText('');
     setRecordImages([]);
     setDraftRecordId(createDraftRecordId());
@@ -458,9 +511,19 @@ const Records = () => {
   const openEditComposer = record => {
     resetComposer({ shouldCleanup: true });
     setEditingRecordId(record.id);
+    setRecordTitle(record.title || '');
     setRecordText(record.content);
     setRecordImages(Array.isArray(record.images) ? record.images : []);
+    setActiveRecordId(null);
     setIsComposerOpen(true);
+  };
+
+  const openRecordDetail = record => {
+    if (!record?.id) {
+      return;
+    }
+
+    setActiveRecordId(record.id);
   };
 
   const openImage = (image, src) => {
@@ -652,8 +715,8 @@ const Records = () => {
 
   const handleSaveRecord = () => {
     const savedRecord = editingRecordId
-      ? updateFreeRecord(editingRecordId, recordText, recordImages)
-      : addFreeRecord(recordText, recordImages, { id: draftRecordId });
+      ? updateFreeRecord(editingRecordId, recordText, recordImages, { title: recordTitle })
+      : addFreeRecord(recordText, recordImages, { id: draftRecordId, title: recordTitle });
 
     if (!savedRecord) {
       return;
@@ -669,6 +732,10 @@ const Records = () => {
   const handleDeleteRecord = record => {
     if (editingRecordId === record.id) {
       resetComposer({ shouldCleanup: false });
+    }
+
+    if (activeRecordId === record.id) {
+      setActiveRecordId(null);
     }
 
     deleteFreeRecord(record.id);
@@ -779,19 +846,19 @@ const Records = () => {
           {visibleRecords.length > 0 ? (
             <div className="record-preview-list">
               {visibleRecords.map(record => (
-                <article key={record.id} className="record-preview-row">
+                <button
+                  key={record.id}
+                  type="button"
+                  className="record-preview-row"
+                  onClick={() => openRecordDetail(record)}
+                  aria-label={`${getRecordTitle(record)} 기록 전체 보기`}
+                >
                   <div className="record-preview-content">
                     <time>{formatRecordDateTime(record)}</time>
+                    <h3>{getRecordTitle(record)}</h3>
                     <p>{getRecordSnippet(record.content)}</p>
-                    {record.images.length > 0 && (
-                      <RecordImageStrip images={record.images} onOpen={openImage} />
-                    )}
                   </div>
-                  <div className="record-preview-actions">
-                    <button type="button" onClick={() => openEditComposer(record)}>수정</button>
-                    <button type="button" className="danger" onClick={() => handleDeleteRecord(record)}>삭제</button>
-                  </div>
-                </article>
+                </button>
               ))}
             </div>
           ) : (
@@ -969,6 +1036,58 @@ const Records = () => {
         </div>
       )}
 
+      {activeRecord && (
+        <div
+          className="record-detail-overlay"
+          data-block-pull-refresh="true"
+          onClick={() => setActiveRecordId(null)}
+        >
+          <div
+            className="record-detail-modal"
+            data-block-pull-refresh="true"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="record-detail-header">
+              <div>
+                <time>{formatRecordDateTime(activeRecord)}</time>
+                <h3>{getRecordTitle(activeRecord)}</h3>
+              </div>
+              <div className="record-detail-actions">
+                <button
+                  type="button"
+                  onClick={() => openEditComposer(activeRecord)}
+                  aria-label="기록 수정"
+                >
+                  <EditIcon />
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => handleDeleteRecord(activeRecord)}
+                  aria-label="기록 삭제"
+                >
+                  <TrashIcon />
+                </button>
+                <button
+                  type="button"
+                  className="record-detail-close"
+                  onClick={() => setActiveRecordId(null)}
+                  aria-label="기록 상세 닫기"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+
+            <p className="record-detail-content">{getRecordDetailContent(activeRecord.content)}</p>
+
+            {activeRecord.images.length > 0 && (
+              <RecordImageStrip images={activeRecord.images} onOpen={openImage} />
+            )}
+          </div>
+        </div>
+      )}
+
       {isComposerOpen && (
         <div className="record-composer-overlay" data-block-pull-refresh="true" onClick={() => resetComposer()}>
           <div className="record-note-modal" data-block-pull-refresh="true" onClick={event => event.stopPropagation()}>
@@ -982,13 +1101,21 @@ const Records = () => {
               </button>
             </div>
 
+            <input
+              className="record-note-title-input"
+              value={recordTitle}
+              onChange={event => setRecordTitle(event.target.value)}
+              placeholder="제목"
+              maxLength={48}
+              autoFocus
+            />
+
             <textarea
               value={recordText}
               onChange={event => setRecordText(event.target.value)}
               placeholder="짧은 한 줄도 좋고, 길게 쓰는 일기도 좋아요."
               rows={9}
               maxLength={1600}
-              autoFocus
             />
 
             <RecordImageStrip
@@ -1023,7 +1150,7 @@ const Records = () => {
                 type="button"
                 className="btn-primary record-note-save"
                 onClick={handleSaveRecord}
-                disabled={!recordText.trim() && recordImages.length === 0}
+                disabled={!recordTitle.trim() && !recordText.trim() && recordImages.length === 0}
               >
                 {isEditingRecord ? '기록 수정하기' : '기록 저장하기'}
               </button>

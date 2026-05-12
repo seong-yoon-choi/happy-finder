@@ -629,6 +629,7 @@ const normalizeFreeRecord = (record) => {
     id: typeof record?.id === 'string' && record.id.trim()
       ? record.id.trim()
       : `fr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    title: typeof record?.title === 'string' ? record.title : '',
     content: typeof record?.content === 'string' ? record.content : '',
     images: normalizeMemoImages(record?.images),
     createdAt,
@@ -1080,7 +1081,7 @@ const normalizeFreeRecords = (value) => {
 
   return value
     .map(normalizeFreeRecord)
-    .filter(record => record.content.trim() || record.images.length > 0)
+    .filter(record => record.title.trim() || record.content.trim() || record.images.length > 0)
     .sort((leftRecord, rightRecord) => (
       getComparableDateValue(rightRecord.updatedAt) - getComparableDateValue(leftRecord.updatedAt)
     ));
@@ -3167,15 +3168,17 @@ export const HappyProvider = ({ children }) => {
 
   const addFreeRecord = (content, images = [], options = {}) => {
     const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    const trimmedTitle = typeof options.title === 'string' ? options.title.trim() : '';
     const normalizedImages = normalizeMemoImages(images);
 
-    if (!trimmedContent && normalizedImages.length === 0) {
+    if (!trimmedTitle && !trimmedContent && normalizedImages.length === 0) {
       return null;
     }
 
     const nowIso = new Date().toISOString();
     const nextRecord = {
       id: typeof options.id === 'string' && options.id.trim() ? options.id.trim() : `fr_${Date.now()}`,
+      title: trimmedTitle,
       content: trimmedContent,
       images: normalizedImages,
       createdAt: nowIso,
@@ -3187,12 +3190,13 @@ export const HappyProvider = ({ children }) => {
     return nextRecord;
   };
 
-  const updateFreeRecord = (recordId, content, images = null) => {
+  const updateFreeRecord = (recordId, content, images = null, options = {}) => {
     const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    const trimmedTitle = typeof options.title === 'string' ? options.title.trim() : '';
     const hasNextImages = Array.isArray(images);
     const normalizedImages = hasNextImages ? normalizeMemoImages(images) : null;
 
-    if (!trimmedContent && (!hasNextImages || normalizedImages.length === 0)) {
+    if (!trimmedTitle && !trimmedContent && (!hasNextImages || normalizedImages.length === 0)) {
       return false;
     }
 
@@ -3215,6 +3219,7 @@ export const HappyProvider = ({ children }) => {
 
         return {
           ...normalizedRecord,
+          title: trimmedTitle,
           content: trimmedContent,
           images: nextImages,
           updatedAt: new Date().toISOString()

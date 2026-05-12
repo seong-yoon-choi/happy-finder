@@ -54,6 +54,39 @@ const FavoriteIcon = ({ isActive = false }) => (
   </svg>
 );
 
+const MemoEditIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M4.75 18.75L8 18.05L18.15 7.9C18.85 7.2 18.85 6.05 18.15 5.35C17.45 4.65 16.3 4.65 15.6 5.35L5.45 15.5L4.75 18.75Z"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    />
+    <path
+      d="M14.55 6.4L17.1 8.95"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.8"
+    />
+  </svg>
+);
+
+const MemoDeleteIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M6.75 8.25H17.25M10 11.25V16.25M14 11.25V16.25M8.25 8.25L8.75 18.25C8.8 19.05 9.45 19.65 10.25 19.65H13.75C14.55 19.65 15.2 19.05 15.25 18.25L15.75 8.25M10 6.25H14M9.5 6.25L10.1 4.75H13.9L14.5 6.25"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    />
+  </svg>
+);
+
 const getReportErrorMessage = code => {
   switch (code) {
     case 'REASONS_REQUIRED':
@@ -720,27 +753,29 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
         onClick={event => event.stopPropagation()}
       >
         <div className="detail-top-actions">
-          {canReportItem && (
+          <div className="detail-side-actions">
+            {canReportItem && (
+              <button
+                type="button"
+                className="detail-icon-btn detail-report-trigger"
+                onClick={openReportDialog}
+                disabled={isReportTriggerDisabled}
+                aria-label={hasReportedCurrentItem ? '이미 신고한 행복 항목' : '행복 항목 신고'}
+                aria-busy={isCheckingReportStatus}
+              >
+                <ReportIcon />
+              </button>
+            )}
             <button
               type="button"
-              className="detail-icon-btn detail-report-trigger"
-              onClick={openReportDialog}
-              disabled={isReportTriggerDisabled}
-              aria-label={hasReportedCurrentItem ? '이미 신고한 행복 항목' : '행복 항목 신고'}
-              aria-busy={isCheckingReportStatus}
+              className={`detail-icon-btn detail-favorite-trigger ${isFavorited ? 'active' : ''}`}
+              onClick={() => toggleFavorite(currentItem.id)}
+              aria-label={isFavorited ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+              aria-pressed={isFavorited}
             >
-              <ReportIcon />
+              <FavoriteIcon isActive={isFavorited} />
             </button>
-          )}
-          <button
-            type="button"
-            className={`detail-icon-btn detail-favorite-trigger ${isFavorited ? 'active' : ''}`}
-            onClick={() => toggleFavorite(currentItem.id)}
-            aria-label={isFavorited ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-            aria-pressed={isFavorited}
-          >
-            <FavoriteIcon isActive={isFavorited} />
-          </button>
+          </div>
           <button className="close-btn detail-close" onClick={() => requestClose()}>&times;</button>
         </div>
 
@@ -862,15 +897,17 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
                             type="button"
                             className="detail-memo-edit-btn"
                             onClick={() => handleStartMemoEdit(memo)}
+                            aria-label="메모 수정"
                           >
-                            수정
+                            <MemoEditIcon />
                           </button>
                           <button
                             type="button"
                             className="detail-memo-delete-btn"
                             onClick={() => handleDeleteMemo(memo.id)}
+                            aria-label="메모 삭제"
                           >
-                            삭제
+                            <MemoDeleteIcon />
                           </button>
                         </div>
                       </div>
