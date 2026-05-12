@@ -55,26 +55,21 @@ const FavoriteIcon = ({ isActive = false }) => (
 );
 
 const ShareIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M8.75 11.1L15.35 7.65M8.75 12.9L15.35 16.35"
+      d="M4.75 12.1L19.25 5.25L16.2 18.75L12.2 13.5L8.9 16.65L9.45 12.65L4.75 12.1Z"
+      fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
       strokeLinecap="round"
-    />
-    <path
-      d="M7.25 14.75C8.76878 14.75 10 13.5188 10 12C10 10.4812 8.76878 9.25 7.25 9.25C5.73122 9.25 4.5 10.4812 4.5 12C4.5 13.5188 5.73122 14.75 7.25 14.75Z"
-      stroke="currentColor"
+      strokeLinejoin="round"
       strokeWidth="1.8"
     />
     <path
-      d="M17.25 9.75C18.7688 9.75 20 8.51878 20 7C20 5.48122 18.7688 4.25 17.25 4.25C15.7312 4.25 14.5 5.48122 14.5 7C14.5 8.51878 15.7312 9.75 17.25 9.75Z"
+      d="M9.45 12.65L19.25 5.25"
+      fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
-    />
-    <path
-      d="M17.25 19.75C18.7688 19.75 20 18.5188 20 17C20 15.4812 18.7688 14.25 17.25 14.25C15.7312 14.25 14.5 15.4812 14.5 17C14.5 18.5188 15.7312 19.75 17.25 19.75Z"
-      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       strokeWidth="1.8"
     />
   </svg>
@@ -103,12 +98,12 @@ const MemoEditIcon = () => (
 const MemoDeleteIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M7.25 8.25H16.75M10.2 5.6H13.8M10.75 5.6L11.18 4.45H12.82L13.25 5.6M9 8.25L9.48 18.05C9.53 18.9 10.23 19.55 11.08 19.55H12.92C13.77 19.55 14.47 18.9 14.52 18.05L15 8.25M10.75 11.15V16.35M13.25 11.15V16.35"
+      d="M6.4 8.15H17.6M9.7 5.65H14.3M10.35 5.65L10.85 4.45H13.15L13.65 5.65M8.35 8.15L8.9 18.05C8.95 18.88 9.64 19.52 10.48 19.52H13.52C14.36 19.52 15.05 18.88 15.1 18.05L15.65 8.15M10.65 11.2V16.2M13.35 11.2V16.2"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="1.55"
+      strokeWidth="1.45"
     />
   </svg>
 );

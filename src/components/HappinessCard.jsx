@@ -23,6 +23,27 @@ const NoteIcon = () => (
   </svg>
 );
 
+const ShareIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M4.75 12.1L19.25 5.25L16.2 18.75L12.2 13.5L8.9 16.65L9.45 12.65L4.75 12.1Z"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.7"
+    />
+    <path
+      d="M9.45 12.65L19.25 5.25"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.7"
+    />
+  </svg>
+);
+
 const HappinessCard = ({ item, onClick }) => {
   const { getItemMemos, isItemOwnedByCurrentUser } = useHappy();
   const isOwner = isItemOwnedByCurrentUser(item.id);
@@ -31,20 +52,28 @@ const HappinessCard = ({ item, onClick }) => {
 
   return (
     <div className="glass-card happiness-card compact" onClick={() => onClick(item)}>
-      {item.isCustom && isOwner && (
+      <div className="card-top-row">
         <div className="card-header">
-          <span className="custom-badge">MY</span>
+          {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
         </div>
-      )}
+        <div className="card-top-actions">
+          {hasMemo && (
+            <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
+              <NoteIcon />
+              <span>{memoCount}</span>
+            </span>
+          )}
+          <button
+            type="button"
+            className="card-share-btn"
+            onClick={event => event.stopPropagation()}
+            aria-label="share"
+          >
+            <ShareIcon />
+          </button>
+        </div>
+      </div>
       <h3 className="card-title">{item.title}</h3>
-      {hasMemo && (
-        <div className="card-meta-row">
-          <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
-            <NoteIcon />
-            <span>{memoCount}</span>
-          </span>
-        </div>
-      )}
       <p className="card-desc-short">{item.description}</p>
     </div>
   );

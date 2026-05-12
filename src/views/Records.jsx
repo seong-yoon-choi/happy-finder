@@ -332,12 +332,33 @@ const EditIcon = () => (
 const TrashIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M7.25 8.25H16.75M10.2 5.6H13.8M10.75 5.6L11.18 4.45H12.82L13.25 5.6M9 8.25L9.48 18.05C9.53 18.9 10.23 19.55 11.08 19.55H12.92C13.77 19.55 14.47 18.9 14.52 18.05L15 8.25M10.75 11.15V16.35M13.25 11.15V16.35"
+      d="M6.4 8.15H17.6M9.7 5.65H14.3M10.35 5.65L10.85 4.45H13.15L13.65 5.65M8.35 8.15L8.9 18.05C8.95 18.88 9.64 19.52 10.48 19.52H13.52C14.36 19.52 15.05 18.88 15.1 18.05L15.65 8.15M10.65 11.2V16.2M13.35 11.2V16.2"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="1.55"
+      strokeWidth="1.45"
+    />
+  </svg>
+);
+
+const ShareIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M4.75 12.1L19.25 5.25L16.2 18.75L12.2 13.5L8.9 16.65L9.45 12.65L4.75 12.1Z"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.7"
+    />
+    <path
+      d="M9.45 12.65L19.25 5.25"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.7"
     />
   </svg>
 );
@@ -898,19 +919,27 @@ const Records = () => {
           {visibleRecords.length > 0 ? (
             <div className="record-preview-list">
               {visibleRecords.map(record => (
-                <button
-                  key={record.id}
-                  type="button"
-                  className="record-preview-row"
-                  onClick={() => openRecordDetail(record)}
+                <article key={record.id} className="record-preview-row">
+                  <button
+                    type="button"
+                    className="record-preview-open"
+                    onClick={() => openRecordDetail(record)}
                   aria-label={`${getRecordTitle(record)} 기록 전체 보기`}
-                >
-                  <div className="record-preview-content">
+                  >
+                    <div className="record-preview-content">
                     <time>{formatRecordDateTime(record)}</time>
                     <h3>{getRecordTitle(record)}</h3>
                     <p>{getRecordSnippet(record.content)}</p>
                   </div>
-                </button>
+                  </button>
+                  <button
+                    type="button"
+                    className="record-preview-share-btn"
+                    aria-label="share"
+                  >
+                    <ShareIcon />
+                  </button>
+                </article>
               ))}
             </div>
           ) : (
@@ -1144,6 +1173,13 @@ const Records = () => {
                 <h3>{getRecordTitle(activeRecord)}</h3>
               </div>
               <div className="record-detail-actions">
+                <button
+                  type="button"
+                  className="record-detail-share"
+                  aria-label="share"
+                >
+                  <ShareIcon />
+                </button>
                 <button
                   type="button"
                   onClick={() => openEditComposer(activeRecord)}
