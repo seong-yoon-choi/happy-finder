@@ -119,6 +119,8 @@ const defaultCloudSyncStatus = {
 const PROFILES_TABLE = 'profiles';
 const CLOUD_SNAPSHOT_TABLE = 'happy_user_snapshots';
 const HAPPINESS_ITEMS_TABLE = 'happiness_items';
+const HAPPINESS_ITEM_SELECT_COLUMNS = 'id, title, description, category, source, owner_user_id, is_public, created_at';
+const HAPPINESS_ITEM_SELECT_COLUMNS_WITH_TAGS = `${HAPPINESS_ITEM_SELECT_COLUMNS}, tags`;
 const DELETE_ACCOUNT_FUNCTION_NAME = 'delete-account';
 const DELETE_HAPPINESS_ITEM_FUNCTION_NAME = 'delete-happiness-item';
 const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
@@ -131,6 +133,32 @@ const createTemporarySignupPassword = () => (
 );
 
 const createGuestLocalCreatorId = () => `guest_${Math.random().toString(36).slice(2, 10)}`;
+
+const isMissingTagsColumnError = error => {
+  if (!error) {
+    return false;
+  }
+
+  const errorMessage = typeof error.message === 'string' ? error.message.toLowerCase() : '';
+  const errorDetails = typeof error.details === 'string' ? error.details.toLowerCase() : '';
+  const combinedMessage = `${errorMessage} ${errorDetails}`;
+
+  return (
+    combinedMessage.includes('tags')
+    && (
+      error.code === '42703'
+      || error.code === 'PGRST204'
+      || combinedMessage.includes('column')
+      || combinedMessage.includes('schema cache')
+    )
+  );
+};
+
+const omitTagsFromPayload = payload => {
+  const payloadWithoutTags = { ...payload };
+  delete payloadWithoutTags.tags;
+  return payloadWithoutTags;
+};
 
 const getGuestLocalCreatorId = () => {
   if (typeof window === 'undefined') {
@@ -978,6 +1006,10 @@ const normalizeItem = (item, savedStamps = {}) => {
 
 const normalizeRemoteCatalogItem = (item, localItemMap = new Map()) => {
   const matchedLocalItem = localItemMap.get(item.id);
+  const remoteTags = normalizeVisibleTags(item.tags, MAX_RECORD_TAGS);
+  const preservedTags = remoteTags.length > 0
+    ? remoteTags
+    : normalizeVisibleTags(matchedLocalItem?.tags, MAX_RECORD_TAGS);
 
   return {
     id: item.id,
@@ -989,6 +1021,7 @@ const normalizeRemoteCatalogItem = (item, localItemMap = new Map()) => {
     creatorId: typeof item.owner_user_id === 'string' ? item.owner_user_id : undefined,
     isPublic: item.source === 'system' || item.is_public === true,
     isCloudBacked: true,
+    tags: preservedTags,
     totalEnjoyCount: Number.isFinite(matchedLocalItem?.totalEnjoyCount)
       ? matchedLocalItem.totalEnjoyCount
       : undefined
@@ -2162,11 +2195,22 @@ export const HappyProvider = ({ children }) => {
       return { success: false, reason: 'supabase_unavailable' };
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from(HAPPINESS_ITEMS_TABLE)
-      .select('id, title, description, category, source, owner_user_id, is_public, created_at')
+      .select(HAPPINESS_ITEM_SELECT_COLUMNS_WITH_TAGS)
       .eq('is_active', true)
       .order('created_at', { ascending: true });
+
+    if (isMissingTagsColumnError(error)) {
+      const fallbackResult = await supabase
+        .from(HAPPINESS_ITEMS_TABLE)
+        .select(HAPPINESS_ITEM_SELECT_COLUMNS)
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+    }
 
     if (error) {
       return { success: false, error };
@@ -2841,9 +2885,10 @@ export const HappyProvider = ({ children }) => {
     reminderSettings.reminders
   ]);
 
-  const addCustomItem = async (title, description, category, visibility = 'private') => {
+  const addCustomItem = async (title, description, category, visibility = 'private', tags = []) => {
     const isPublic = visibility === 'public';
     const canSyncToCloud = Boolean(supabase && authUser?.id);
+    const normalizedTags = normalizeVisibleTags(tags, MAX_RECORD_TAGS);
 
     if (isPublic && !canSyncToCloud) {
       return { success: false, code: 'AUTH_REQUIRED' };
@@ -2859,22 +2904,33 @@ export const HappyProvider = ({ children }) => {
       creatorId: authUser?.id || getGuestLocalCreatorId(),
       isPublic,
       isCloudBacked: false,
+      tags: normalizedTags,
       totalEnjoyCount: 0
     };
 
     if (canSyncToCloud) {
-      const { error } = await supabase
+      const cloudItemPayload = {
+        id: newItem.id,
+        title: newItem.title,
+        description: newItem.description,
+        category: newItem.category,
+        source: 'custom',
+        owner_user_id: authUser.id,
+        is_active: true,
+        is_public: isPublic,
+        tags: normalizedTags
+      };
+      let { error } = await supabase
         .from(HAPPINESS_ITEMS_TABLE)
-        .insert({
-          id: newItem.id,
-          title: newItem.title,
-          description: newItem.description,
-          category: newItem.category,
-          source: 'custom',
-          owner_user_id: authUser.id,
-          is_active: true,
-          is_public: isPublic
-        });
+        .insert(cloudItemPayload);
+
+      if (isMissingTagsColumnError(error)) {
+        const fallbackResult = await supabase
+          .from(HAPPINESS_ITEMS_TABLE)
+          .insert(omitTagsFromPayload(cloudItemPayload));
+
+        error = fallbackResult.error;
+      }
 
       if (error) {
         if (isPublic) {
@@ -2911,34 +2967,62 @@ export const HappyProvider = ({ children }) => {
     let nextCreatorId = targetItem.creatorId;
 
     if (canSyncToCloud) {
+      const normalizedTags = normalizeVisibleTags(targetItem.tags, MAX_RECORD_TAGS);
+
       if (targetItem.isCloudBacked && targetItem.creatorId === authUser.id) {
-        const { error } = await supabase
+        let { error } = await supabase
           .from(HAPPINESS_ITEMS_TABLE)
           .update({
-            is_public: isPublic
+            is_public: isPublic,
+            tags: normalizedTags
           })
           .eq('id', targetItem.id)
           .eq('source', 'custom')
           .eq('owner_user_id', authUser.id);
 
+        if (isMissingTagsColumnError(error)) {
+          const fallbackResult = await supabase
+            .from(HAPPINESS_ITEMS_TABLE)
+            .update({
+              is_public: isPublic
+            })
+            .eq('id', targetItem.id)
+            .eq('source', 'custom')
+            .eq('owner_user_id', authUser.id);
+
+          error = fallbackResult.error;
+        }
+
         if (error) {
           return { success: false, code: 'SAVE_FAILED', error };
         }
       } else {
-        const { error } = await supabase
+        const cloudItemPayload = {
+          id: targetItem.id,
+          title: targetItem.title,
+          description: targetItem.description,
+          category: normalizeCategoryName(targetItem.category),
+          source: 'custom',
+          owner_user_id: authUser.id,
+          is_active: true,
+          is_public: isPublic,
+          tags: normalizedTags
+        };
+        let { error } = await supabase
           .from(HAPPINESS_ITEMS_TABLE)
-          .upsert({
-            id: targetItem.id,
-            title: targetItem.title,
-            description: targetItem.description,
-            category: normalizeCategoryName(targetItem.category),
-            source: 'custom',
-            owner_user_id: authUser.id,
-            is_active: true,
-            is_public: isPublic
-          }, {
+          .upsert(cloudItemPayload, {
             onConflict: 'id'
           });
+
+        if (isMissingTagsColumnError(error)) {
+          const fallbackResult = await supabase
+            .from(HAPPINESS_ITEMS_TABLE)
+            .upsert(omitTagsFromPayload(cloudItemPayload), {
+              onConflict: 'id'
+            });
+
+          error = fallbackResult.error;
+        }
 
         if (error) {
           return { success: false, code: 'SAVE_FAILED', error };

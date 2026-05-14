@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
+import { HAPPINESS_TAG_GROUPS, MAX_RECORD_TAGS, normalizeVisibleTags } from '../lib/happinessTags';
 import { useHappy } from '../store/HappyContext';
 import './CreateHappinessModal.css';
 
@@ -14,6 +15,8 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState(VISIBILITY_OPTIONS[0].value);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -21,6 +24,8 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     setTitle('');
     setDescription('');
     setVisibility(VISIBILITY_OPTIONS[0].value);
+    setSelectedTags([]);
+    setIsTagPickerOpen(false);
     setSubmitError('');
     setIsSubmitting(false);
   };
@@ -48,7 +53,13 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
 
     setSubmitError('');
     setIsSubmitting(true);
-    const result = await addCustomItem(trimmedTitle, trimmedDescription, DEFAULT_CUSTOM_CATEGORY, visibility);
+    const result = await addCustomItem(
+      trimmedTitle,
+      trimmedDescription,
+      DEFAULT_CUSTOM_CATEGORY,
+      visibility,
+      selectedTags
+    );
     setIsSubmitting(false);
 
     if (!result?.success) {
@@ -62,6 +73,20 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     }
 
     handleClose();
+  };
+
+  const handleTagToggle = tag => {
+    setSelectedTags(prev => {
+      if (prev.includes(tag)) {
+        return prev.filter(selectedTag => selectedTag !== tag);
+      }
+
+      if (prev.length >= MAX_RECORD_TAGS) {
+        return prev;
+      }
+
+      return normalizeVisibleTags([...prev, tag], MAX_RECORD_TAGS);
+    });
   };
 
   if (!isOpen) {
@@ -125,6 +150,29 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
             </div>
 
             <div className="form-group">
+              <div className="create-form-label-row">
+                <label>태그</label>
+                <span>{selectedTags.length}/{MAX_RECORD_TAGS}</span>
+              </div>
+              <button
+                type="button"
+                className={`create-tag-selector ${selectedTags.length > 0 ? 'has-tags' : ''}`}
+                onClick={() => setIsTagPickerOpen(true)}
+              >
+                {selectedTags.length > 0 ? (
+                  <span className="create-selected-tags">
+                    {selectedTags.map(tag => (
+                      <span key={tag} className="create-selected-tag">{tag}</span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="create-tag-placeholder">태그 선택하기</span>
+                )}
+              </button>
+              <p className="form-helper">검색과 필터에 쓰일 태그를 최대 3개 선택할 수 있어요.</p>
+            </div>
+
+            <div className="form-group">
               <label>공개 범위</label>
               <div className="category-pills">
                 {VISIBILITY_OPTIONS.map(option => (
@@ -155,6 +203,57 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
           </form>
         </div>
       </div>
+
+      {isTagPickerOpen && (
+        <div
+          className="create-tag-picker-overlay"
+          onClick={event => {
+            event.stopPropagation();
+            setIsTagPickerOpen(false);
+          }}
+        >
+          <div className="create-tag-picker-modal" onClick={event => event.stopPropagation()}>
+            <div className="create-tag-picker-header">
+              <div>
+                <h3>태그 선택</h3>
+                <p>{selectedTags.length}/{MAX_RECORD_TAGS}개 선택됨</p>
+              </div>
+              <button type="button" className="create-tag-picker-close" onClick={() => setIsTagPickerOpen(false)}>
+                완료
+              </button>
+            </div>
+
+            <div className="create-tag-picker-groups">
+              {HAPPINESS_TAG_GROUPS.map(group => (
+                <section key={group.label} className="create-tag-picker-group">
+                  <h4>{group.label}</h4>
+                  <div className="create-tag-option-grid">
+                    {group.tags.map(tag => {
+                      const isSelected = selectedTags.includes(tag);
+                      const isDisabled = !isSelected && selectedTags.length >= MAX_RECORD_TAGS;
+
+                      return (
+                        <label
+                          key={tag}
+                          className={`create-tag-option ${isSelected ? 'is-selected' : ''} ${isDisabled ? 'is-disabled' : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            disabled={isDisabled}
+                            onChange={() => handleTagToggle(tag)}
+                          />
+                          <span>{tag}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
