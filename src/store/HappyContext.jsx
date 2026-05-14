@@ -44,6 +44,7 @@ import {
 } from '../lib/reviewAdminAccess';
 import { requestReviewAdminSession } from '../lib/reviewAdminSession';
 import { APP_PATH, PASSWORD_RESET_PATH, getAppRedirectUrl, getNativeAuthCallbackPathFromUrl } from '../lib/routes';
+import { MAX_RECORD_TAGS, normalizeVisibleTags } from '../lib/happinessTags';
 
 const LEGACY_LOCAL_CREATOR_ID = 'local-user';
 const DEFAULT_REMINDER_TIME = '12:00';
@@ -187,6 +188,7 @@ const initialItems = [
     id: 'h21',
     title: '일기 쓰기',
     description: '오늘의 기분을 짧게라도 적으며 마음을 천천히 정리해보세요.',
+    previewImage: '/happiness-sample-journal.svg',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -632,6 +634,7 @@ const normalizeFreeRecord = (record) => {
     title: typeof record?.title === 'string' ? record.title : '',
     content: typeof record?.content === 'string' ? record.content : '',
     images: normalizeMemoImages(record?.images),
+    tags: normalizeVisibleTags(record?.tags, MAX_RECORD_TAGS),
     createdAt,
     updatedAt
   };
@@ -687,6 +690,43 @@ const initialItemCountMap = initialItems.reduce((acc, item) => {
   acc[item.id] = item.totalEnjoyCount || 0;
   return acc;
 }, {});
+const initialItemTagMap = {
+  h21: ['혼자', '실내', '편안함'],
+  h22: ['혼자', '짧게', '즐거움'],
+  h23: ['혼자', '짧게', '뿌듯함'],
+  h24: ['혼자', '실내', '새로움'],
+  h25: ['혼자', '실내', '편안함'],
+  h26: ['혼자', '짧게', '편안함'],
+  h27: ['혼자', '유료', '새로움'],
+  h28: ['혼자', '길게', '즐거움'],
+  h29: ['함께', '유료', '즐거움'],
+  h30: ['혼자', '짧게', '설렘'],
+  h31: ['혼자', '실내', '새로움'],
+  h32: ['혼자', '유료', '뿌듯함'],
+  h33: ['함께', '유료', '감동'],
+  h34: ['혼자', '길게', '뿌듯함'],
+  h35: ['혼자', '길게', '뿌듯함'],
+  h36: ['혼자', '활동적', '뿌듯함'],
+  h37: ['혼자', '길게', '즐거움'],
+  h38: ['혼자', '짧게', '감동'],
+  h39: ['혼자', '실내', '감동'],
+  h40: ['혼자', '실외', '새로움'],
+  h41: ['혼자', '짧게', '즐거움'],
+  h42: ['혼자', '유료', '새로움'],
+  h43: ['함께', '유료', '감동'],
+  h44: ['혼자', '실내', '감동'],
+  h45: ['혼자', '휴식', '감동'],
+  h46: ['혼자', '실외', '활동적'],
+  h47: ['혼자', '길게', '위로'],
+  h48: ['혼자', '활동적', '뿌듯함']
+};
+const initialItemDefaultMap = new Map(initialItems.map(item => [
+  item.id,
+  {
+    ...item,
+    tags: normalizeVisibleTags(item.tags || initialItemTagMap[item.id])
+  }
+]));
 
 const getCreatorIdsForCurrentUser = (authUser) => {
   if (typeof authUser?.id === 'string' && authUser.id) {
@@ -914,6 +954,10 @@ const normalizeCategoryName = (category) => {
 };
 
 const normalizeItem = (item, savedStamps = {}) => {
+  const initialDefaults = initialItemDefaultMap.get(item.id) || {};
+  const itemTags = Array.isArray(item.tags) && item.tags.length > 0
+    ? item.tags
+    : initialDefaults.tags;
   const ownCount = getStampCountFromData(savedStamps[item.id]);
   const baseCount = Number.isFinite(item.totalEnjoyCount)
     ? item.totalEnjoyCount
@@ -926,6 +970,8 @@ const normalizeItem = (item, savedStamps = {}) => {
     isCloudBacked: item.isCloudBacked === true,
     category: normalizeCategoryName(item.category),
     creatorId: item.creatorId || (item.isCustom && item.creator === 'user' ? getGuestLocalCreatorId() : undefined),
+    previewImage: item.previewImage || initialDefaults.previewImage || '',
+    tags: normalizeVisibleTags(itemTags || []),
     totalEnjoyCount: Math.max(baseCount, ownCount)
   };
 };
@@ -3140,7 +3186,8 @@ export const HappyProvider = ({ children }) => {
           itemId,
           item: linkedItem || null,
           itemTitle: linkedItem?.title || '삭제된 행복',
-          itemDescription: linkedItem?.description || ''
+          itemDescription: linkedItem?.description || '',
+          tags: []
         }));
     });
 
@@ -3170,6 +3217,7 @@ export const HappyProvider = ({ children }) => {
     const trimmedContent = typeof content === 'string' ? content.trim() : '';
     const trimmedTitle = typeof options.title === 'string' ? options.title.trim() : '';
     const normalizedImages = normalizeMemoImages(images);
+    const normalizedTags = normalizeVisibleTags(options.tags, MAX_RECORD_TAGS);
 
     if (!trimmedTitle && !trimmedContent && normalizedImages.length === 0) {
       return null;
@@ -3181,6 +3229,7 @@ export const HappyProvider = ({ children }) => {
       title: trimmedTitle,
       content: trimmedContent,
       images: normalizedImages,
+      tags: normalizedTags,
       createdAt: nowIso,
       updatedAt: nowIso
     };
@@ -3195,6 +3244,7 @@ export const HappyProvider = ({ children }) => {
     const trimmedTitle = typeof options.title === 'string' ? options.title.trim() : '';
     const hasNextImages = Array.isArray(images);
     const normalizedImages = hasNextImages ? normalizeMemoImages(images) : null;
+    const normalizedTags = normalizeVisibleTags(options.tags, MAX_RECORD_TAGS);
 
     if (!trimmedTitle && !trimmedContent && (!hasNextImages || normalizedImages.length === 0)) {
       return false;
@@ -3222,6 +3272,7 @@ export const HappyProvider = ({ children }) => {
           title: trimmedTitle,
           content: trimmedContent,
           images: nextImages,
+          tags: normalizedTags,
           updatedAt: new Date().toISOString()
         };
       });

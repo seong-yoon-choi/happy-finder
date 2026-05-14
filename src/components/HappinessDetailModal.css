@@ -162,6 +162,29 @@
     margin-bottom: 24px;
 }
 
+.detail-tag-list {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 0 20px;
+    margin: -12px 0 22px;
+}
+
+.detail-tag-list span {
+    min-height: 25px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.08);
+    color: var(--primary-color);
+    padding: 0 9px;
+    font-size: var(--font-body-sm);
+    font-weight: 850;
+    line-height: 1;
+}
+
 .detail-inline-feedback {
     margin: 0 20px 18px;
     padding: 12px 14px;
@@ -527,10 +550,18 @@
     border: 1px solid var(--glass-border);
     border-radius: 18px;
     padding: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    scroll-margin: 28px;
 }
 
 .dark-theme .detail-memo-item {
     background: rgba(255, 255, 255, 0.05);
+}
+
+.detail-memo-item.is-focused {
+    border-color: rgba(var(--primary-rgb), 0.58);
+    background: rgba(var(--primary-rgb), 0.08);
+    box-shadow: 0 12px 28px rgba(var(--primary-rgb), 0.14);
 }
 
 .detail-memo-meta {

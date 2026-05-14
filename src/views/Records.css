@@ -356,6 +356,28 @@
     overflow-wrap: anywhere;
 }
 
+.record-tag-list {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+.record-tag-list span {
+    min-height: 24px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.08);
+    color: var(--primary-color);
+    padding: 0 8px;
+    font-size: var(--font-body-sm);
+    font-weight: 800;
+    line-height: 1;
+}
+
 .record-preview-actions {
     flex: 0 0 auto;
     display: flex;
@@ -1026,6 +1048,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .records-photo-actions {
@@ -1033,6 +1056,18 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.records-tag-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.records-tag-action svg {
+    width: 16px;
+    height: 16px;
 }
 
 .records-photo-actions button:disabled,
@@ -1044,6 +1079,146 @@
 
 .record-note-save {
     flex: 1 1 auto;
+    min-height: 46px;
+    border-radius: 16px;
+}
+
+.record-note-footer > .record-tag-list {
+    flex: 1 0 100%;
+}
+
+.record-tag-picker-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2660;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--native-safe-area-top) + 18px) var(--screen-side-padding) calc(var(--native-safe-area-bottom) + 18px);
+    background: rgba(19, 37, 23, 0.36);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.record-tag-picker-modal {
+    width: min(100%, 460px);
+    max-height: min(86vh, 680px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: clamp(18px, 4.6vw, 22px);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
+    border-radius: 24px;
+    background: var(--white);
+    box-shadow: 0 22px 56px rgba(23, 48, 31, 0.2);
+    overflow-y: auto;
+}
+
+.dark-theme .record-tag-picker-modal {
+    background: var(--glass-bg);
+}
+
+.record-tag-picker-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.record-tag-picker-header span {
+    color: var(--primary-color);
+    font-size: var(--font-body-sm);
+    font-weight: 900;
+}
+
+.record-tag-picker-header h3 {
+    margin: 2px 0 4px;
+    color: var(--text-dark);
+    font-size: clamp(1.2rem, 4vw, 1.42rem);
+    line-height: 1.25;
+}
+
+.record-tag-picker-header p,
+.record-tag-feedback {
+    margin: 0;
+    color: var(--text-light);
+    font-size: var(--font-body-sm);
+    font-weight: 800;
+}
+
+.record-tag-picker-close {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--text-dark);
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.record-tag-picker-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.record-tag-picker-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.record-tag-picker-group > strong {
+    color: var(--text-dark);
+    font-size: var(--font-body-md);
+}
+
+.record-tag-options {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.record-tag-option {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-dark);
+    padding: 0 12px;
+    font-size: var(--font-body-sm);
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.dark-theme .record-tag-option {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.record-tag-option.checked {
+    border-color: rgba(var(--primary-rgb), 0.54);
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary-color);
+}
+
+.record-tag-option.disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.record-tag-option input {
+    accent-color: var(--primary-color);
+}
+
+.record-tag-picker-done {
+    width: 100%;
     min-height: 46px;
     border-radius: 16px;
 }
@@ -1193,6 +1368,6 @@
     .records-photo-actions {
         width: 100%;
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }

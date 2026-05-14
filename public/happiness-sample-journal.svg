@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720" role="img" aria-label="sunlit journal and leaves">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffdf4"/>
+      <stop offset="0.52" stop-color="#f7f1dc"/>
+      <stop offset="1" stop-color="#e9f4d4"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd667"/>
+      <stop offset="1" stop-color="#f5b931"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8fd067"/>
+      <stop offset="1" stop-color="#4ca33a"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#27422b" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <rect width="720" height="720" rx="80" fill="url(#bg)"/>
+  <circle cx="554" cy="142" r="66" fill="url(#sun)" opacity="0.92"/>
+  <g stroke="#f4bf2f" stroke-width="16" stroke-linecap="round" opacity="0.72">
+    <path d="M554 34v44"/>
+    <path d="M554 206v44"/>
+    <path d="M446 142h44"/>
+    <path d="M618 142h44"/>
+    <path d="M477 65l31 31"/>
+    <path d="M600 188l31 31"/>
+    <path d="M631 65l-31 31"/>
+    <path d="M508 188l-31 31"/>
+  </g>
+  <g filter="url(#softShadow)">
+    <rect x="116" y="184" width="390" height="430" rx="42" fill="#ffffff" stroke="#dcebc8" stroke-width="6"/>
+    <path d="M174 184h282c28 0 50 22 50 50v24H116v-24c0-28 22-50 58-50Z" fill="#f0f8df"/>
+    <circle cx="170" cy="222" r="14" fill="#4ca33a"/>
+    <circle cx="218" cy="222" r="14" fill="#a9d94f"/>
+    <circle cx="266" cy="222" r="14" fill="#f7c437"/>
+    <path d="M178 328h228" stroke="#25442d" stroke-width="22" stroke-linecap="round"/>
+    <path d="M178 392h258" stroke="#708169" stroke-width="16" stroke-linecap="round" opacity="0.68"/>
+    <path d="M178 448h206" stroke="#708169" stroke-width="16" stroke-linecap="round" opacity="0.48"/>
+  </g>
+  <g transform="translate(390 390)">
+    <path d="M64 154c-52-84-10-170 76-226 50 102 14 184-76 226Z" fill="url(#leaf)" opacity="0.9"/>
+    <path d="M64 154c-6-88 45-151 145-175 13 98-39 159-145 175Z" fill="#b7dc83" opacity="0.78"/>
+    <path d="M66 154c26-74 72-126 139-165" fill="none" stroke="#4d913d" stroke-width="9" stroke-linecap="round" opacity="0.68"/>
+    <path d="M64 154c-70-37-100-95-82-174 78 22 111 78 82 174Z" fill="#6fbf73" opacity="0.84"/>
+    <path d="M64 154c-26-66-27-121-3-167" fill="none" stroke="#4d913d" stroke-width="8" stroke-linecap="round" opacity="0.62"/>
+  </g>
+</svg>

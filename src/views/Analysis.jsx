@@ -46,13 +46,6 @@ const ignoredWords = new Set([
   '시간'
 ]);
 
-const getSafeDate = value => {
-  const date = new Date(value || Date.now());
-  return Number.isNaN(date.getTime()) ? new Date() : date;
-};
-
-const getRecordDate = record => getSafeDate(record?.createdAt || record?.updatedAt);
-
 const getRecordContent = record => (
   typeof record?.content === 'string' ? record.content.trim() : ''
 );

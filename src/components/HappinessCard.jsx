@@ -28,26 +28,47 @@ const HappinessCard = ({ item, onClick }) => {
   const isOwner = isItemOwnedByCurrentUser(item.id);
   const memoCount = getItemMemos(item.id).length;
   const hasMemo = memoCount > 0;
+  const hasPreviewImage = typeof item.previewImage === 'string' && item.previewImage.trim();
+  const visibleTags = Array.isArray(item.tags) ? item.tags.slice(0, 3) : [];
 
   return (
-    <div className="glass-card happiness-card compact" onClick={() => onClick(item)}>
-      {((item.isCustom && isOwner) || hasMemo) && (
-        <div className="card-top-row">
-          <div className="card-header">
-            {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
-          </div>
-          {hasMemo && (
-            <div className="card-top-actions">
-              <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
-                <NoteIcon />
-                <span>{memoCount}</span>
-              </span>
+    <div
+      className={`glass-card happiness-card compact ${hasPreviewImage ? 'with-preview-image' : ''}`}
+      onClick={() => onClick(item)}
+    >
+      <div className="happiness-card-main">
+        <div className="happiness-card-copy">
+          {((item.isCustom && isOwner) || hasMemo) && (
+            <div className="card-top-row">
+              <div className="card-header">
+                {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
+              </div>
+              {hasMemo && (
+                <div className="card-top-actions">
+                  <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
+                    <NoteIcon />
+                    <span>{memoCount}</span>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          <h3 className="card-title">{item.title}</h3>
+          <p className="card-desc-short">{item.description}</p>
+          {visibleTags.length > 0 && (
+            <div className="card-tag-list" aria-label="태그">
+              {visibleTags.map(tag => (
+                <span key={tag}>{tag}</span>
+              ))}
             </div>
           )}
         </div>
-      )}
-      <h3 className="card-title">{item.title}</h3>
-      <p className="card-desc-short">{item.description}</p>
+        {hasPreviewImage && (
+          <div className="happiness-card-preview" aria-hidden="true">
+            <img src={item.previewImage} alt="" loading="lazy" />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

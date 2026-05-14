@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import {
   createHappinessItemReport,
@@ -107,6 +107,20 @@ const MemoDeleteIcon = () => (
     />
   </svg>
 );
+
+const DetailTagList = ({ tags = [] }) => {
+  if (!Array.isArray(tags) || tags.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="detail-tag-list" aria-label="태그">
+      {tags.map(tag => (
+        <span key={tag}>{tag}</span>
+      ))}
+    </div>
+  );
+};
 
 const getReportErrorMessage = code => {
   switch (code) {
@@ -231,7 +245,14 @@ const MemoImageStrip = ({ images = [], onRemove, onOpen }) => {
   );
 };
 
-const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOpenMemoComposer = false }) => {
+const HappinessDetailModal = ({
+  item,
+  isOpen,
+  onClose,
+  canDelete = false,
+  autoOpenMemoComposer = false,
+  focusMemoId = ''
+}) => {
   const {
     items,
     userFavorites,
@@ -279,6 +300,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
   });
   const [deleteFeedback, setDeleteFeedback] = useState('');
   const [isDeletingItem, setIsDeletingItem] = useState(false);
+  const memoElementRefs = useRef(new Map());
 
   const currentItem = item ? items.find(existingItem => existingItem.id === item.id) || item : null;
   const currentItemId = currentItem?.id ?? '';
@@ -300,6 +322,27 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
       setShowMemoComposer(true);
     }
   }, [autoOpenMemoComposer, currentItemId, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !focusMemoId) {
+      return undefined;
+    }
+
+    const focusTimer = window.setTimeout(() => {
+      const targetElement = memoElementRefs.current.get(focusMemoId);
+
+      if (!targetElement) {
+        return;
+      }
+
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }, 80);
+
+    return () => window.clearTimeout(focusTimer);
+  }, [currentItemId, focusMemoId, isOpen, itemMemos.length]);
 
   const cleanupImages = images => {
     if (!Array.isArray(images) || images.length === 0) {
@@ -816,6 +859,7 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
 
         <h2 className="detail-title">{currentItem.title}</h2>
         <p className="detail-desc">{currentItem.description}</p>
+        <DetailTagList tags={currentItem.tags} />
 
         {reportFeedback.message && (
           <div className={`detail-inline-feedback ${reportFeedback.type === 'error' ? 'error' : 'success'}`}>
@@ -916,7 +960,18 @@ const HappinessDetailModal = ({ item, isOpen, onClose, canDelete = false, autoOp
               {itemMemos.length > 0 && (
                 <div className="detail-memo-list">
                   {itemMemos.map(memo => (
-                    <div key={memo.id} className="detail-memo-item">
+                    <div
+                      key={memo.id}
+                      ref={node => {
+                        if (node) {
+                          memoElementRefs.current.set(memo.id, node);
+                          return;
+                        }
+
+                        memoElementRefs.current.delete(memo.id);
+                      }}
+                      className={`detail-memo-item ${focusMemoId === memo.id ? 'is-focused' : ''}`}
+                    >
                       <div className="detail-memo-meta">
                         <div className="detail-memo-time">
                           {memoDateTimeFormatter.format(new Date(memo.updatedAt))}

@@ -11,6 +11,7 @@ import {
   takeMemoPhoto
 } from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
+import { HAPPINESS_TAG_GROUPS, MAX_RECORD_TAGS } from '../lib/happinessTags';
 import { useHappy } from '../store/HappyContext';
 import './Records.css';
 
@@ -375,6 +376,43 @@ const ShareIcon = () => (
   </svg>
 );
 
+const TagIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path
+      d="M5.5 7H18.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M8.5 12H15.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M10.5 17H13.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const RecordTagList = ({ tags = [] }) => {
+  if (!Array.isArray(tags) || tags.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="record-tag-list" aria-label="태그">
+      {tags.map(tag => (
+        <span key={tag}>{tag}</span>
+      ))}
+    </div>
+  );
+};
+
 const RecordImageThumb = ({ image, onRemove, onOpen }) => {
   const [src, setSrc] = useState('');
   const imageId = image.id;
@@ -483,11 +521,15 @@ const Records = () => {
   const [recordTitle, setRecordTitle] = useState('');
   const [recordText, setRecordText] = useState('');
   const [recordImages, setRecordImages] = useState([]);
+  const [recordTags, setRecordTags] = useState([]);
   const [editingRecordId, setEditingRecordId] = useState(null);
   const [activeRecordId, setActiveRecordId] = useState(null);
   const [activeMemoItem, setActiveMemoItem] = useState(null);
+  const [activeMemoFocusId, setActiveMemoFocusId] = useState('');
   const [activeRecordsTab, setActiveRecordsTab] = useState('records');
   const [showAllRecords, setShowAllRecords] = useState(false);
+  const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
+  const [tagFeedback, setTagFeedback] = useState('');
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
   const [activeImage, setActiveImage] = useState(null);
@@ -564,7 +606,10 @@ const Records = () => {
     setRecordTitle('');
     setRecordText('');
     setRecordImages([]);
+    setRecordTags([]);
     setDraftRecordId(createDraftRecordId());
+    setIsTagPickerOpen(false);
+    setTagFeedback('');
     setImageFeedback('');
     setImageBusyTarget('');
   }, [cleanupUncommittedComposerImages]);
@@ -580,6 +625,7 @@ const Records = () => {
     setRecordTitle(record.title || '');
     setRecordText(record.content);
     setRecordImages(Array.isArray(record.images) ? record.images : []);
+    setRecordTags(Array.isArray(record.tags) ? record.tags : []);
     setActiveRecordId(null);
     setIsComposerOpen(true);
   };
@@ -591,12 +637,14 @@ const Records = () => {
 
     setActiveRecordId(record.id);
     setActiveMemoItem(null);
+    setActiveMemoFocusId('');
   };
 
   const openTimelineEntry = record => {
     if (record?.sourceType === 'list') {
       setActiveRecordId(null);
       if (record.item) {
+        setActiveMemoFocusId(record.id);
         setActiveMemoItem(record.item);
       }
       return;
@@ -819,10 +867,27 @@ const Records = () => {
     }
   };
 
+  const handleToggleRecordTag = tag => {
+    setRecordTags(prevTags => {
+      if (prevTags.includes(tag)) {
+        setTagFeedback('');
+        return prevTags.filter(savedTag => savedTag !== tag);
+      }
+
+      if (prevTags.length >= MAX_RECORD_TAGS) {
+        setTagFeedback(`태그는 최대 ${MAX_RECORD_TAGS}개까지 선택할 수 있어요.`);
+        return prevTags;
+      }
+
+      setTagFeedback('');
+      return [...prevTags, tag];
+    });
+  };
+
   const handleSaveRecord = () => {
     const savedRecord = editingRecordId
-      ? updateFreeRecord(editingRecordId, recordText, recordImages, { title: recordTitle })
-      : addFreeRecord(recordText, recordImages, { id: draftRecordId, title: recordTitle });
+      ? updateFreeRecord(editingRecordId, recordText, recordImages, { title: recordTitle, tags: recordTags })
+      : addFreeRecord(recordText, recordImages, { id: draftRecordId, title: recordTitle, tags: recordTags });
 
     if (!savedRecord) {
       return;
@@ -994,6 +1059,7 @@ const Records = () => {
                       <time>{formatRecordDateTime(record)}</time>
                       <h3>{getTimelineEntryTitle(record)}</h3>
                       <p>{getRecordSnippet(record.content)}</p>
+                      <RecordTagList tags={record.tags} />
                     </div>
                   </button>
                 </article>
@@ -1206,6 +1272,7 @@ const Records = () => {
                       <time>{formatRecordDateTime(record)}</time>
                       <strong>{getTimelineEntryTitle(record)}</strong>
                       <p>{getRecordSnippet(record.content)}</p>
+                      <RecordTagList tags={record.tags} />
                     </button>
                   ))}
                 </div>
@@ -1272,6 +1339,7 @@ const Records = () => {
             </div>
 
             <p className="record-detail-content">{getRecordDetailContent(activeRecord.content)}</p>
+            <RecordTagList tags={activeRecord.tags} />
 
             {activeRecord.images.length > 0 && (
               <RecordImageStrip images={activeRecord.images} onOpen={openImage} />
@@ -1286,15 +1354,22 @@ const Records = () => {
           loadingLabel="행복 메모를 불러오는 중이에요."
           errorTitle="행복 메모를 열지 못했어요."
           errorMessage="잠시 후 다시 시도해주세요."
-          onDismiss={() => setActiveMemoItem(null)}
-          resetKey={`record-memo-${activeMemoItem.id}`}
+          onDismiss={() => {
+            setActiveMemoItem(null);
+            setActiveMemoFocusId('');
+          }}
+          resetKey={`record-memo-${activeMemoItem.id}-${activeMemoFocusId || 'all'}`}
         >
           <HappinessDetailModal
             item={activeMemoItem}
             isOpen={Boolean(activeMemoItem)}
-            onClose={() => setActiveMemoItem(null)}
+            onClose={() => {
+              setActiveMemoItem(null);
+              setActiveMemoFocusId('');
+            }}
             canDelete={false}
             autoOpenMemoComposer={false}
+            focusMemoId={activeMemoFocusId}
           />
         </LazyLoadBoundary>
       )}
@@ -1338,8 +1413,9 @@ const Records = () => {
             {imageFeedback && <p className="records-image-feedback">{imageFeedback}</p>}
 
             <div className="record-note-footer">
-              {isImageEnabled && (
-                <div className="records-photo-actions">
+              <div className="records-photo-actions">
+                {isImageEnabled && (
+                  <>
                   <button
                     type="button"
                     onClick={() => handleAttachImage('camera')}
@@ -1354,8 +1430,20 @@ const Records = () => {
                   >
                     {imageBusyTarget === 'composer:gallery' ? '선택 중...' : '앨범'}
                   </button>
-                </div>
-              )}
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="records-tag-action"
+                  onClick={() => setIsTagPickerOpen(true)}
+                  aria-label={`태그 선택 ${recordTags.length}개`}
+                >
+                  <TagIcon />
+                  <span>태그 {recordTags.length > 0 ? recordTags.length : ''}</span>
+                </button>
+              </div>
+
+              <RecordTagList tags={recordTags} />
 
               <button
                 type="button"
@@ -1366,6 +1454,72 @@ const Records = () => {
                 {isEditingRecord ? '기록 수정하기' : '기록 저장하기'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isTagPickerOpen && (
+        <div
+          className="record-tag-picker-overlay"
+          data-block-pull-refresh="true"
+          onClick={() => setIsTagPickerOpen(false)}
+        >
+          <div
+            className="record-tag-picker-modal"
+            data-block-pull-refresh="true"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="record-tag-picker-header">
+              <div>
+                <span>TAG</span>
+                <h3>태그 선택</h3>
+                <p>{recordTags.length}/{MAX_RECORD_TAGS}개 선택</p>
+              </div>
+              <button
+                type="button"
+                className="record-tag-picker-close"
+                onClick={() => setIsTagPickerOpen(false)}
+                aria-label="태그 선택 닫기"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="record-tag-picker-groups">
+              {HAPPINESS_TAG_GROUPS.map(group => (
+                <section key={group.label} className="record-tag-picker-group">
+                  <strong>{group.label}</strong>
+                  <div className="record-tag-options">
+                    {group.tags.map(tag => {
+                      const isChecked = recordTags.includes(tag);
+                      const isDisabled = !isChecked && recordTags.length >= MAX_RECORD_TAGS;
+
+                      return (
+                        <label key={tag} className={`record-tag-option ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isDisabled}
+                            onChange={() => handleToggleRecordTag(tag)}
+                          />
+                          <span>{tag}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            {tagFeedback && <p className="record-tag-feedback">{tagFeedback}</p>}
+
+            <button
+              type="button"
+              className="btn-primary record-tag-picker-done"
+              onClick={() => setIsTagPickerOpen(false)}
+            >
+              선택 완료
+            </button>
           </div>
         </div>
       )}
