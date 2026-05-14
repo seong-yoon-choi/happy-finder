@@ -469,6 +469,7 @@ const Records = () => {
   const [recordImages, setRecordImages] = useState([]);
   const [editingRecordId, setEditingRecordId] = useState(null);
   const [activeRecordId, setActiveRecordId] = useState(null);
+  const [activeRecordsTab, setActiveRecordsTab] = useState('records');
   const [showAllRecords, setShowAllRecords] = useState(false);
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
@@ -843,12 +844,33 @@ const Records = () => {
         <div className="records-brand" aria-label="Happy Finder 로고">Happy Finder</div>
         <div className="records-header-row">
           <div>
-            <h2>기록</h2>
+            <div className="records-heading-tabs" role="tablist" aria-label="기록 탭">
+              <button
+                type="button"
+                className={`records-heading-tab ${activeRecordsTab === 'records' ? 'active' : ''}`}
+                role="tab"
+                aria-selected={activeRecordsTab === 'records'}
+                onClick={() => setActiveRecordsTab('records')}
+              >
+                기록
+              </button>
+              <button
+                type="button"
+                className={`records-heading-tab ${activeRecordsTab === 'memos' ? 'active' : ''}`}
+                role="tab"
+                aria-selected={activeRecordsTab === 'memos'}
+                onClick={() => setActiveRecordsTab('memos')}
+              >
+                행복 메모
+              </button>
+            </div>
             <p>지금 행복한 감정을 기록해 보세요.</p>
           </div>
-          <button type="button" className="records-write-btn" onClick={openCreateComposer}>
-            기록 남기기
-          </button>
+          {activeRecordsTab === 'records' && (
+            <button type="button" className="records-write-btn" onClick={openCreateComposer}>
+              기록 남기기
+            </button>
+          )}
         </div>
       </header>
 
@@ -931,13 +953,6 @@ const Records = () => {
                     <h3>{getRecordTitle(record)}</h3>
                     <p>{getRecordSnippet(record.content)}</p>
                   </div>
-                  </button>
-                  <button
-                    type="button"
-                    className="record-preview-share-btn"
-                    aria-label="share"
-                  >
-                    <ShareIcon />
                   </button>
                 </article>
               ))}
