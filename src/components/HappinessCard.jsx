@@ -38,19 +38,11 @@ const HappinessCard = ({ item, onClick }) => {
     >
       <div className="happiness-card-main">
         <div className="happiness-card-copy">
-          {((item.isCustom && isOwner) || hasMemo) && (
+          {item.isCustom && isOwner && (
             <div className="card-top-row">
               <div className="card-header">
-                {item.isCustom && isOwner && <span className="custom-badge">MY</span>}
+                <span className="custom-badge">MY</span>
               </div>
-              {hasMemo && (
-                <div className="card-top-actions">
-                  <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
-                    <NoteIcon />
-                    <span>{memoCount}</span>
-                  </span>
-                </div>
-              )}
             </div>
           )}
           <h3 className="card-title">{item.title}</h3>
@@ -69,6 +61,14 @@ const HappinessCard = ({ item, onClick }) => {
           </div>
         )}
       </div>
+      {hasMemo && (
+        <div className="card-bottom-actions">
+          <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
+            <NoteIcon />
+            <span>{memoCount}</span>
+          </span>
+        </div>
+      )}
     </div>
   );
 };

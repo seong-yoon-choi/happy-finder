@@ -53,15 +53,6 @@
     min-width: 0;
 }
 
-.card-top-actions {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 7px;
-    min-height: 28px;
-}
-
 .card-note-indicator {
     display: inline-flex;
     align-items: center;
@@ -70,6 +61,14 @@
     font-size: var(--font-body-sm);
     font-weight: 800;
     line-height: 1;
+}
+
+.card-bottom-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: 20px;
+    margin-top: -2px;
 }
 
 .card-note-indicator svg {
