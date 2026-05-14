@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { lazy, useCallback, useRef, useState } from 'react';
+import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import {
   chooseMemoPhoto,
   deleteMemoStoredImages,
@@ -12,6 +13,9 @@ import {
 import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
 import './Records.css';
+
+const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
+const HappinessDetailModal = lazy(loadHappinessDetailModal);
 
 const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
 const RECORD_PREVIEW_LIMIT = 3;
@@ -101,6 +105,14 @@ const getRecordTitle = record => {
   }
 
   return '제목 없는 기록';
+};
+
+const getTimelineEntryTitle = record => {
+  if (record?.sourceType === 'list') {
+    return record.itemTitle || '삭제된 행복';
+  }
+
+  return getRecordTitle(record);
 };
 
 const getRecordDate = record => {
@@ -443,6 +455,7 @@ const RecordImageStrip = ({ images = [], onRemove, onOpen }) => {
 const Records = () => {
   const {
     getFreeRecords,
+    getAllRecords,
     addFreeRecord,
     updateFreeRecord,
     deleteFreeRecord,
@@ -451,6 +464,9 @@ const Records = () => {
   } = useHappy();
 
   const records = getFreeRecords()
+    .sort((leftRecord, rightRecord) => getRecordDateValue(rightRecord) - getRecordDateValue(leftRecord));
+  const happinessMemoRecords = getAllRecords()
+    .filter(record => record.sourceType === 'list')
     .sort((leftRecord, rightRecord) => getRecordDateValue(rightRecord) - getRecordDateValue(leftRecord));
   const isImageEnabled = isNativeMemoImageAvailable();
   const cloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
@@ -469,6 +485,7 @@ const Records = () => {
   const [recordImages, setRecordImages] = useState([]);
   const [editingRecordId, setEditingRecordId] = useState(null);
   const [activeRecordId, setActiveRecordId] = useState(null);
+  const [activeMemoItem, setActiveMemoItem] = useState(null);
   const [activeRecordsTab, setActiveRecordsTab] = useState('records');
   const [showAllRecords, setShowAllRecords] = useState(false);
   const [imageFeedback, setImageFeedback] = useState('');
@@ -487,7 +504,9 @@ const Records = () => {
   const visibleWeekDays = getWeekDays(visibleWeekStartDate);
   const visibleWeekMonthDate = getMonthStart(getWeekDisplayDate(visibleWeekStartDate, selectedRecordDate));
   const calendarDays = getCalendarDays(calendarMonthDate);
-  const recordsByDate = records.reduce((recordMap, record) => {
+  const activeTimelineRecords = activeRecordsTab === 'memos' ? happinessMemoRecords : records;
+  const activeTabLabel = activeRecordsTab === 'memos' ? '행복 메모' : '기록';
+  const recordsByDate = activeTimelineRecords.reduce((recordMap, record) => {
     const dateKey = getDateKey(getRecordDate(record));
     const dayRecords = recordMap.get(dateKey) || [];
     dayRecords.push(record);
@@ -571,6 +590,19 @@ const Records = () => {
     }
 
     setActiveRecordId(record.id);
+    setActiveMemoItem(null);
+  };
+
+  const openTimelineEntry = record => {
+    if (record?.sourceType === 'list') {
+      setActiveRecordId(null);
+      if (record.item) {
+        setActiveMemoItem(record.item);
+      }
+      return;
+    }
+
+    openRecordDetail(record);
   };
 
   const openImage = (image, src) => {
@@ -850,7 +882,10 @@ const Records = () => {
                 className={`records-heading-tab ${activeRecordsTab === 'records' ? 'active' : ''}`}
                 role="tab"
                 aria-selected={activeRecordsTab === 'records'}
-                onClick={() => setActiveRecordsTab('records')}
+                onClick={() => {
+                  setActiveRecordsTab('records');
+                  setShowAllRecords(false);
+                }}
               >
                 기록
               </button>
@@ -859,12 +894,19 @@ const Records = () => {
                 className={`records-heading-tab ${activeRecordsTab === 'memos' ? 'active' : ''}`}
                 role="tab"
                 aria-selected={activeRecordsTab === 'memos'}
-                onClick={() => setActiveRecordsTab('memos')}
+                onClick={() => {
+                  setActiveRecordsTab('memos');
+                  setShowAllRecords(false);
+                }}
               >
                 행복 메모
               </button>
             </div>
-            <p>지금 행복한 감정을 기록해 보세요.</p>
+            <p>
+              {activeRecordsTab === 'memos'
+                ? '행복 리스트에 남긴 메모를 모아보세요.'
+                : '지금 행복한 감정을 기록해 보세요.'}
+            </p>
           </div>
           {activeRecordsTab === 'records' && (
             <button type="button" className="records-write-btn" onClick={openCreateComposer}>
@@ -911,7 +953,7 @@ const Records = () => {
             </button>
           </div>
 
-          <div className="record-week-strip" aria-label={`${getMonthLabel(visibleWeekMonthDate)} 주간 기록 달력`}>
+          <div className="record-week-strip" aria-label={`${getMonthLabel(visibleWeekMonthDate)} 주간 ${activeTabLabel} 달력`}>
             {visibleWeekDays.map(date => {
               const dateKey = getDateKey(date);
               const dayRecords = recordsByDate.get(dateKey) || [];
@@ -928,7 +970,7 @@ const Records = () => {
                   className={`record-week-day${dayToneClass}${dayRecords.length > 0 ? ' has-records' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}`}
                   onClick={() => handleSelectRecordDate(date)}
                   disabled={isDisabled}
-                  aria-label={`${date.getDate()}일${holidayLabel} 기록 ${dayRecords.length}개 보기`}
+                  aria-label={`${date.getDate()}일${holidayLabel} ${activeTabLabel} ${dayRecords.length}개 보기`}
                 >
                   <span>{calendarWeekdayLabels[date.getDay()]}</span>
                   <strong>{date.getDate()}</strong>
@@ -941,24 +983,28 @@ const Records = () => {
           {visibleRecords.length > 0 ? (
             <div className="record-preview-list">
               {visibleRecords.map(record => (
-                <article key={record.id} className="record-preview-row">
+                <article key={record.recordKey || record.id} className="record-preview-row">
                   <button
                     type="button"
                     className="record-preview-open"
-                    onClick={() => openRecordDetail(record)}
-                  aria-label={`${getRecordTitle(record)} 기록 전체 보기`}
+                    onClick={() => openTimelineEntry(record)}
+                    aria-label={`${getTimelineEntryTitle(record)} ${activeTabLabel} 전체 보기`}
                   >
                     <div className="record-preview-content">
-                    <time>{formatRecordDateTime(record)}</time>
-                    <h3>{getRecordTitle(record)}</h3>
-                    <p>{getRecordSnippet(record.content)}</p>
-                  </div>
+                      <time>{formatRecordDateTime(record)}</time>
+                      <h3>{getTimelineEntryTitle(record)}</h3>
+                      <p>{getRecordSnippet(record.content)}</p>
+                    </div>
                   </button>
                 </article>
               ))}
             </div>
           ) : (
-            <p className="record-section-empty">이 날에는 아직 남긴 기록이 없어요.</p>
+            <p className="record-section-empty">
+              {activeRecordsTab === 'memos'
+                ? '이 날에는 아직 남긴 행복 메모가 없어요.'
+                : '이 날에는 아직 남긴 기록이 없어요.'}
+            </p>
           )}
 
           {selectedDateRecords.length > RECORD_PREVIEW_LIMIT && (
@@ -1121,7 +1167,7 @@ const Records = () => {
                     className={`record-calendar-day${dayToneClass}${dayRecords.length > 0 ? ' has-records' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}`}
                     onClick={() => handlePreviewCalendarDate(date)}
                     disabled={isDisabled}
-                    aria-label={`${date.getDate()}일${holidayLabel} 기록 ${dayRecords.length}개 보기`}
+                    aria-label={`${date.getDate()}일${holidayLabel} ${activeTabLabel} ${dayRecords.length}개 보기`}
                   >
                     <span>{date.getDate()}</span>
                   </button>
@@ -1129,14 +1175,14 @@ const Records = () => {
               })}
             </div>
 
-            <section className="record-calendar-preview" aria-label={`${formatCalendarPreviewDate(calendarPreviewDate)} 기록 미리보기`}>
+            <section className="record-calendar-preview" aria-label={`${formatCalendarPreviewDate(calendarPreviewDate)} ${activeTabLabel} 미리보기`}>
               <div className="record-calendar-preview-head">
                 <div>
-                  <strong>{formatCalendarPreviewDate(calendarPreviewDate)} 기록</strong>
+                  <strong>{formatCalendarPreviewDate(calendarPreviewDate)} {activeTabLabel}</strong>
                   <span>
                     {calendarPreviewRecords.length > 0
                       ? `${calendarPreviewRecords.length}개`
-                      : '기록 없음'}
+                      : `${activeTabLabel} 없음`}
                   </span>
                 </div>
                 <button
@@ -1151,20 +1197,24 @@ const Records = () => {
                 <div className="record-calendar-preview-list">
                   {calendarPreviewRecords.map(record => (
                     <button
-                      key={record.id}
+                      key={record.recordKey || record.id}
                       type="button"
                       className="record-calendar-preview-row"
-                      onClick={() => openRecordDetail(record)}
-                      aria-label={`${getRecordTitle(record)} 기록 전체 보기`}
+                      onClick={() => openTimelineEntry(record)}
+                      aria-label={`${getTimelineEntryTitle(record)} ${activeTabLabel} 전체 보기`}
                     >
                       <time>{formatRecordDateTime(record)}</time>
-                      <strong>{getRecordTitle(record)}</strong>
+                      <strong>{getTimelineEntryTitle(record)}</strong>
                       <p>{getRecordSnippet(record.content)}</p>
                     </button>
                   ))}
                 </div>
               ) : (
-                <p className="record-calendar-preview-empty">기록이 없습니다.</p>
+                <p className="record-calendar-preview-empty">
+                  {activeRecordsTab === 'memos'
+                    ? '행복 메모가 없습니다.'
+                    : '기록이 없습니다.'}
+                </p>
               )}
             </section>
           </div>
@@ -1228,6 +1278,25 @@ const Records = () => {
             )}
           </div>
         </div>
+      )}
+
+      {activeMemoItem && (
+        <LazyLoadBoundary
+          mode="overlay"
+          loadingLabel="행복 메모를 불러오는 중이에요."
+          errorTitle="행복 메모를 열지 못했어요."
+          errorMessage="잠시 후 다시 시도해주세요."
+          onDismiss={() => setActiveMemoItem(null)}
+          resetKey={`record-memo-${activeMemoItem.id}`}
+        >
+          <HappinessDetailModal
+            item={activeMemoItem}
+            isOpen={Boolean(activeMemoItem)}
+            onClose={() => setActiveMemoItem(null)}
+            canDelete={false}
+            autoOpenMemoComposer={false}
+          />
+        </LazyLoadBoundary>
       )}
 
       {isComposerOpen && (
