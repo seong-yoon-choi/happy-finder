@@ -1,0 +1,266 @@
+Happy Finder AI 인수인계
+작성일: 2026-05-15
+현재 작업 폴더: C:\Users\USER\Desktop\happy finder
+
+
+1. 가장 중요한 협업 규칙
+
+사용자는 Codex를 단순 코딩 도구가 아니라 사업 파트너로 보고 있다.
+다음 AI는 반드시 아래 방식으로 대화해야 한다.
+
+- 사용자의 말을 100% 이해했고 실행 방향이 명확하면 바로 실행한다.
+- 이해가 애매하거나 구현 방식이 여러 갈래라면, 먼저 "내가 이해한 게 이게 맞는지" 확인한다.
+- 기능 수정이나 추가 요청을 받으면, 바로 코딩만 하지 말고 더 나은 아이디어, 보완점, UI/UX 관점의 추천을 먼저 말한다.
+- 제품 방향, UI/UX, 마케팅, 운영 관점까지 함께 고민한다.
+- 최초 아이디어는 사용자가 내고, 그 아이디어를 제품적으로 발전시키는 과정은 함께 만든다.
+- 코드 수정 뒤에는 항상 AAB 최신화와 커밋/푸시 진행 여부를 사용자에게 확인한다.
+- 문서만 수정한 경우 AAB는 보통 필요 없지만, 커밋/푸시 여부는 확인한다.
+- 사용자가 앱 기능을 말할 때 웹 기능 얘기로 돌리지 않는다. 웹은 빌드/관리 대상일 수 있지만, 핵심 제품은 앱이다.
+- 사용자가 만든 변경을 되돌리지 않는다. 작업 전후로 git status를 확인한다.
+
+
+2. 현재 git 상태
+
+최신 커밋:
+- 1342eb2 Fix build warnings and update Android bundle
+
+최근 커밋:
+- 1342eb2 Fix build warnings and update Android bundle
+- 1326ede Move memo indicator to card bottom
+- 8d0b340 Add tags to custom happiness creation
+- 53c9118 Add record tags and memo focus
+- 4f403f7 Show happiness memos in records tab
+
+현재 미커밋 변경:
+- happy finder new plan .txt
+  - 방금 "협업 / 말하기 규칙" 섹션이 추가됨.
+- 이 인수인계 파일도 새로 생성되었으므로 커밋 전이면 untracked 상태일 수 있음.
+
+최신 AAB:
+- android/app/build/outputs/bundle/release/app-release.aab
+- 마지막 확인 크기: 7,807,251 bytes
+- 마지막 확인 시간: 2026-05-15 오후 5:21:25
+
+
+3. 제품 방향
+
+Happy Finder는 "행복 리스트를 보고, 내 일상의 행복을 기록하고, 나중에 내 행복 패턴을 이해하는 앱"이다.
+
+큰 방향:
+- AI는 바로 출시 기능으로 넣지 않는다.
+- AI 없이도 쓸 수 있는 MVP를 먼저 완성한다.
+- AI는 비용이 드는 기능이므로, 비AI 버전의 사용자 반응을 본 뒤 붙인다.
+- 핵심은 기능 수가 아니라 "행복을 쉽게 발견하고 부담 없이 기록하는 흐름"이다.
+- 앱 색감은 초록/노랑 계열, 햇빛에 비친 풀 느낌을 지향한다.
+
+
+4. 구현된 주요 기능
+
+MVP 1단계: 홈 / 행복 리스트
+- 홈을 행복 리스트 중심으로 정리.
+- 기존 카테고리 중심 구조 제거.
+- 길게 눌러 행복을 찾는 흐름 제거.
+- 스탬프와 찾은 횟수 중심 구조 제거.
+- 검색창 형태 UI, 태그 아이콘, 플러스 버튼 추가.
+- 플러스 버튼으로 내 행복 만들기 가능.
+- 즐겨찾기 구조 유지.
+- 리스트 카드에는 액션 버튼을 과하게 노출하지 않음.
+- 메모가 있는 행복 카드에는 노트 아이콘과 메모 개수 표시.
+- 노트 아이콘과 숫자는 현재 카드 우측 하단에 표시.
+- 공유 버튼은 리스트 카드에서 제거하고 상세 모달 안에만 둠.
+
+MVP 2단계: 기록
+- 하단 네비게이션: 홈 / 기록 / 분석 / 프로필.
+- 기록 탭 추가.
+- 기록 작성, 제목, 내용, 사진 첨부, 사진 저장 기능 구현.
+- 기록 리스트는 제목과 내용 한 줄 중심으로 축소.
+- 기록을 누르면 상세 모달에서 전체 내용 확인.
+- 수정/삭제/공유 아이콘은 상세 모달 안에 배치.
+- 수정/삭제는 텍스트가 아니라 아이콘.
+- 기록 화면에는 주간 캘린더 표시.
+- 날짜 선택 시 해당 날짜 기록만 아래 리스트에 표시.
+- 달력 모달은 날짜를 누르면 하단에 그 날짜 기록을 먼저 보여주고, "이 날짜 보기"를 눌러 이동.
+- 오늘 날짜는 초록 테두리.
+- 기록이 있는 날짜는 노란 점.
+- 토요일 파랑, 일요일/공휴일 빨강 계열.
+
+MVP 2.5단계: 분석 화면 뼈대
+- 분석 탭 추가.
+- 원형 그래프 영역을 상단에 둠.
+- 최근 기록/이번 달/최근 7일/전체 기록 같은 중복 통계는 제거.
+- AI 분석은 아직 붙이지 않음.
+
+MVP 2.7단계: 기록 / 행복 메모 정리
+- 기록 화면 안에 "기록" / "행복 메모" 탭 구조 적용.
+- 행복 메모 탭은 행복 리스트 상세 모달에서 작성한 메모만 모아 보여줌.
+- 행복 메모를 누르면 연결된 행복 상세 모달에서 해당 메모로 포커스.
+- 기본 행복 리스트 중 하나에 샘플 이미지 썸네일 적용.
+- 기본 보기 방식은 리스트형 유지.
+- 사진형/피드형 보기 방식은 나중에 검토.
+
+MVP 3단계: 태그 / 검색 / 공유
+- 2층 태그 시스템 적용.
+- 기록 작성 모달에 태그 버튼 추가.
+- 내 행복 만들기 모달에도 태그 선택 추가.
+- 기본 행복 리스트에는 앱에서 미리 태그 부여.
+- 행복 메모에는 태그 없음.
+- 홈 검색은 제목, 설명, 태그를 대상으로 함.
+- 홈 태그 필터는 OR 방식.
+  - 선택한 태그 중 하나라도 포함된 행복을 보여준다.
+- 행복 상세 모달 공유 기능 구현.
+- 기록 상세 모달 공유 기능 구현.
+- 공유는 native share가 가능하면 공유창, 아니면 클립보드 복사 fallback.
+
+
+5. 태그 정책
+
+사용자에게 보이는 2층 태그:
+- 상황: 혼자, 함께, 실내, 실외
+- 조건: 짧게, 길게, 무료, 유료
+- 상태: 활동적, 휴식
+- 감정: 즐거움, 편안함, 설렘, 뿌듯함, 위로, 감동, 새로움
+
+정책:
+- 기록 태그는 최대 3개.
+- 사용자가 만든 행복 리스트 태그도 최대 3개.
+- 행복 메모에는 태그를 붙이지 않는다.
+- 1층 행복 유형과 가중치는 AI 도입 전까지 보류.
+- 태그는 검색/필터/분석 기반 데이터로 사용한다.
+
+관련 파일:
+- src/lib/happinessTags.js
+- src/views/Home.jsx
+- src/views/Home.css
+- src/views/Records.jsx
+- src/views/Records.css
+- src/components/CreateHappinessModal.jsx
+- src/components/CreateHappinessModal.css
+- src/components/HappinessCard.jsx
+- src/components/HappinessCard.css
+- src/components/HappinessDetailModal.jsx
+- src/components/HappinessDetailModal.css
+- src/store/HappyContext.jsx
+
+
+6. Supabase 상태
+
+Supabase 태그 저장 관련 파일:
+- supabase/happiness_item_tags.sql
+- supabase/migrations/20260515000000_happiness_item_tags.sql
+- supabase/happy_normalized_schema.sql에도 tags 컬럼 반영됨.
+
+중요:
+- 원격 Supabase DB에 tags 컬럼 적용이 완료되었는지는 아직 확인되지 않았다.
+- 이전 작업에서 Management API로 직접 SQL 실행을 시도했지만 400 Bad Request로 실패했다.
+- global supabase CLI는 설치되어 있지 않았지만, npx supabase는 동작했다.
+- npx supabase db push를 쓰려면 프로젝트 링크 설정 또는 remote DB password가 필요하다.
+
+현재 앱 코드는 Supabase에 tags 컬럼이 없어도 깨지지 않게 fallback 처리되어 있다.
+하지만 공개 행복 태그를 다른 사용자에게 안정적으로 보여주려면 실제 DB migration 적용이 필요하다.
+
+
+7. 빌드 / 검증 명령
+
+자주 쓰는 명령:
+- npm run lint
+- npm run build
+- npm run build:mobile
+- cd android
+- .\gradlew.bat bundleRelease
+
+최근 검증 상태:
+- npm run lint 통과
+- npm run build 통과
+- npm run build:mobile 통과
+- AAB 빌드 성공
+
+알려진 경고:
+- Vite chunk size 500k 초과 경고가 뜬다.
+  - 현재는 비차단 경고.
+  - 일부 lazy import / manualChunks 작업으로 완화했지만 완전히 없어진 것은 아닐 수 있다.
+- Gradle flatDir / deprecated 경고가 뜬다.
+  - 현재는 비차단 경고.
+
+
+8. 현재 중요한 파일
+
+계획서:
+- happy finder new plan .txt
+
+인수인계:
+- happy finder ai handoff.txt
+
+핵심 앱:
+- src/App.jsx
+- src/views/Home.jsx
+- src/views/Records.jsx
+- src/views/Analysis.jsx
+- src/views/Profile.jsx
+- src/store/HappyContext.jsx
+
+행복 리스트 관련:
+- src/components/HappinessCard.jsx
+- src/components/HappinessDetailModal.jsx
+- src/components/CreateHappinessModal.jsx
+
+공유:
+- src/lib/share.js
+
+이미지:
+- src/lib/memoImages.js
+
+Supabase:
+- src/lib/supabase.js
+- supabase/happiness_item_tags.sql
+- supabase/migrations/20260515000000_happiness_item_tags.sql
+- supabase/happy_normalized_schema.sql
+
+
+9. 다음으로 추천하는 작업
+
+우선순위 1: Supabase migration 실제 적용 확인
+- 원격 DB에 happiness_items.tags가 있는지 확인.
+- 없으면 supabase/migrations/20260515000000_happiness_item_tags.sql 적용.
+- 적용 후 공개 행복 태그가 다른 기기/계정에서도 보이는지 확인.
+
+우선순위 2: 실제 기기 QA
+- 홈 검색 입력 키보드 동작.
+- 태그 모달 열기/닫기/뒤로가기.
+- 태그 필터가 너무 복잡해 보이지 않는지.
+- 행복 상세 공유.
+- 기록 상세 공유.
+- 기록 사진 첨부/저장.
+- 행복 메모 사진 첨부/저장.
+
+우선순위 3: MVP 3단계 마무리 UI 조정
+- 홈 검색/태그 필터 UI가 카드 리스트와 너무 붙어 보이지 않는지 확인.
+- 선택된 태그 칩 위치가 모바일에서 괜찮은지 확인.
+- 태그가 많아질 때 리스트 카드가 답답하지 않은지 확인.
+
+우선순위 4: 출시 전 완성도 점검
+- 빈 상태 문구.
+- 권한 거부 흐름.
+- 이미지 실패 흐름.
+- 로그인/게스트 전환.
+- 공개 행복 신고 흐름.
+- AAB, 앱 아이콘, 스토어 이미지, 약관/개인정보 문구.
+
+
+10. 사용자가 최근에 특히 신경 쓰는 부분
+
+- UI 정리가 가장 불안하다고 말했음.
+- 홈/기록/프로필 아이콘 크기와 스타일 통일에 민감함.
+- 버튼 위치, 아이콘 모양, 카드 안 정보 배치에 세밀하게 반응함.
+- 기록과 행복 메모를 분리하되 한 화면 안에서 탭으로 이동하는 흐름을 선호함.
+- 리스트 카드에는 액션을 많이 노출하지 않고, 상세 모달 안으로 모으는 방향을 선호함.
+- AI는 나중에 붙이고, 지금은 AI 없는 MVP 반응을 먼저 보고 싶어함.
+
+
+11. 다음 AI가 조심해야 할 것
+
+- "웹에서는..." 같은 말을 먼저 꺼내지 말 것. 사용자는 앱 기능을 이야기하고 있다.
+- 사용자가 이미 결정한 방향을 무시하고 일반적인 앱 추천으로 되돌리지 말 것.
+- 기능을 추가할 때 UI가 복잡해지는지 먼저 판단할 것.
+- 정확히 이해하지 못한 요청은 바로 구현하지 말고 짧게 확인할 것.
+- 코드 변경 뒤에는 항상 검증하고, AAB/커밋/푸시 여부를 물을 것.
+- Supabase 비밀키나 환경변수 값을 답변에 노출하지 말 것.
