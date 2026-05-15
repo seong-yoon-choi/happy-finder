@@ -150,13 +150,16 @@ Supabase 태그 저장 관련 파일:
 - supabase/happy_normalized_schema.sql에도 tags 컬럼 반영됨.
 
 중요:
-- 원격 Supabase DB에 tags 컬럼 적용이 완료되었는지는 아직 확인되지 않았다.
-- 이전 작업에서 Management API로 직접 SQL 실행을 시도했지만 400 Bad Request로 실패했다.
-- global supabase CLI는 설치되어 있지 않았지만, npx supabase는 동작했다.
-- npx supabase db push를 쓰려면 프로젝트 링크 설정 또는 remote DB password가 필요하다.
+- 2026-05-15에 새 Supabase access token으로 원격 상태를 다시 확인했다.
+- npx supabase link --project-ref mqqfenxtgegkyucallsh --yes 성공.
+- npx supabase db push --dry-run 결과 remote database is up to date.
+- Management API read-only query로 public.happiness_items.tags 컬럼 존재 확인.
+- happiness_items_tags_check constraint 존재 확인.
+- idx_happiness_items_tags index 존재 확인.
+- 결론: Supabase 태그 저장 구조는 원격 DB에 적용된 상태다.
 
 현재 앱 코드는 Supabase에 tags 컬럼이 없어도 깨지지 않게 fallback 처리되어 있다.
-하지만 공개 행복 태그를 다른 사용자에게 안정적으로 보여주려면 실제 DB migration 적용이 필요하다.
+이제 남은 것은 실제 앱에서 공개 행복을 만들 때 태그가 저장되고, 다른 기기/계정에서 다시 보이는지 QA하는 것이다.
 
 
 7. 빌드 / 검증 명령
@@ -218,10 +221,10 @@ Supabase:
 
 9. 다음으로 추천하는 작업
 
-우선순위 1: Supabase migration 실제 적용 확인
-- 원격 DB에 happiness_items.tags가 있는지 확인.
-- 없으면 supabase/migrations/20260515000000_happiness_item_tags.sql 적용.
-- 적용 후 공개 행복 태그가 다른 기기/계정에서도 보이는지 확인.
+우선순위 1: 공개 행복 태그 QA
+- 공개 행복을 새로 만들 때 선택한 태그가 Supabase에 저장되는지 확인.
+- 앱 재실행/다른 기기/다른 계정에서 공개 행복 태그가 다시 보이는지 확인.
+- 태그 검색/필터에서 공개 행복 태그가 정상적으로 잡히는지 확인.
 
 우선순위 2: 실제 기기 QA
 - 홈 검색 입력 키보드 동작.
