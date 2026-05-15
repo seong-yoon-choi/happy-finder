@@ -16,6 +16,7 @@ import {
   saveMemoImageToGallery,
   takeMemoPhoto
 } from '../lib/memoImages';
+import { shareTextContent } from '../lib/share';
 import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
 import './HappinessDetailModal.css';
@@ -143,6 +144,30 @@ const getReportSuccessMessage = duplicate => {
   }
 
   return '신고가 접수되었어요. 검토 후 조치할게요.';
+};
+
+const getShareFeedbackMessage = result => {
+  if (result?.success) {
+    return result.method === 'clipboard'
+      ? '공유할 내용을 복사했어요.'
+      : '공유를 열었어요.';
+  }
+
+  if (result?.code === 'CANCELLED') {
+    return '';
+  }
+
+  return '공유하지 못했어요. 잠시 후 다시 시도해주세요.';
+};
+
+const getItemShareText = item => {
+  const tagText = Array.isArray(item?.tags) && item.tags.length > 0
+    ? `태그: ${item.tags.join(', ')}`
+    : '';
+
+  return [item?.description, tagText, 'Happy Finder']
+    .filter(value => typeof value === 'string' && value.trim())
+    .join('\n');
 };
 
 const createDraftMemoId = () => `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -293,6 +318,11 @@ const HappinessDetailModal = ({
     type: 'idle',
     message: ''
   });
+  const [shareFeedback, setShareFeedback] = useState({
+    type: 'idle',
+    message: ''
+  });
+  const [isSharing, setIsSharing] = useState(false);
   const [reportStatus, setReportStatus] = useState({
     key: '',
     hasReported: false,
@@ -489,6 +519,11 @@ const HappinessDetailModal = ({
       type: 'idle',
       message: ''
     });
+    setShareFeedback({
+      type: 'idle',
+      message: ''
+    });
+    setIsSharing(false);
     setReportStatus({
       key: '',
       hasReported: false,
@@ -641,6 +676,30 @@ const HappinessDetailModal = ({
     }
 
     setVisibilityError('공개 범위를 변경하지 못했어요. 잠시 후 다시 시도해주세요.');
+  };
+
+  const handleShareItem = async () => {
+    if (!currentItem || isSharing) {
+      return;
+    }
+
+    setIsSharing(true);
+    setShareFeedback({
+      type: 'idle',
+      message: ''
+    });
+
+    const result = await shareTextContent({
+      title: currentItem.title,
+      text: getItemShareText(currentItem)
+    });
+    const message = getShareFeedbackMessage(result);
+
+    setIsSharing(false);
+    setShareFeedback({
+      type: result?.success ? 'success' : 'error',
+      message
+    });
   };
 
   const openReportDialog = () => {
@@ -842,8 +901,9 @@ const HappinessDetailModal = ({
             <button
               type="button"
               className="detail-icon-btn detail-share-trigger"
-              aria-label="share"
-              aria-disabled="true"
+              onClick={handleShareItem}
+              disabled={isSharing}
+              aria-label="행복 공유"
             >
               <ShareIcon />
             </button>
@@ -864,6 +924,12 @@ const HappinessDetailModal = ({
         {reportFeedback.message && (
           <div className={`detail-inline-feedback ${reportFeedback.type === 'error' ? 'error' : 'success'}`}>
             {reportFeedback.message}
+          </div>
+        )}
+
+        {shareFeedback.message && (
+          <div className={`detail-inline-feedback ${shareFeedback.type === 'error' ? 'error' : 'success'}`}>
+            {shareFeedback.message}
           </div>
         )}
 

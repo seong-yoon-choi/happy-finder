@@ -89,6 +89,10 @@
 
 .detail-share-trigger {
     color: var(--primary-color);
+}
+
+.detail-share-trigger:disabled {
+    opacity: 0.5;
     cursor: default;
 }
 

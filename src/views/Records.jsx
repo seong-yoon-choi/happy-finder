@@ -12,6 +12,7 @@ import {
 } from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
 import { HAPPINESS_TAG_GROUPS, MAX_RECORD_TAGS } from '../lib/happinessTags';
+import { shareTextContent } from '../lib/share';
 import { useHappy } from '../store/HappyContext';
 import './Records.css';
 
@@ -96,6 +97,34 @@ const getRecordDetailContent = content => {
   const normalizedContent = typeof content === 'string' ? content.trim() : '';
 
   return normalizedContent || '사진으로 남긴 기록';
+};
+
+const getShareFeedbackMessage = result => {
+  if (result?.success) {
+    return result.method === 'clipboard'
+      ? '공유할 내용을 복사했어요.'
+      : '공유를 열었어요.';
+  }
+
+  if (result?.code === 'CANCELLED') {
+    return '';
+  }
+
+  return '공유하지 못했어요. 잠시 후 다시 시도해주세요.';
+};
+
+const getRecordShareText = record => {
+  const tagText = Array.isArray(record?.tags) && record.tags.length > 0
+    ? `태그: ${record.tags.join(', ')}`
+    : '';
+
+  return [
+    getRecordDetailContent(record?.content),
+    tagText,
+    'Happy Finder'
+  ]
+    .filter(value => typeof value === 'string' && value.trim())
+    .join('\n');
 };
 
 const getRecordTitle = record => {
@@ -532,6 +561,11 @@ const Records = () => {
   const [tagFeedback, setTagFeedback] = useState('');
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
+  const [recordShareFeedback, setRecordShareFeedback] = useState({
+    type: 'idle',
+    message: ''
+  });
+  const [isSharingRecord, setIsSharingRecord] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
   const [gallerySaveState, setGallerySaveState] = useState({
     isSaving: false,
@@ -627,6 +661,11 @@ const Records = () => {
     setRecordImages(Array.isArray(record.images) ? record.images : []);
     setRecordTags(Array.isArray(record.tags) ? record.tags : []);
     setActiveRecordId(null);
+    setRecordShareFeedback({
+      type: 'idle',
+      message: ''
+    });
+    setIsSharingRecord(false);
     setIsComposerOpen(true);
   };
 
@@ -636,6 +675,11 @@ const Records = () => {
     }
 
     setActiveRecordId(record.id);
+    setRecordShareFeedback({
+      type: 'idle',
+      message: ''
+    });
+    setIsSharingRecord(false);
     setActiveMemoItem(null);
     setActiveMemoFocusId('');
   };
@@ -906,10 +950,43 @@ const Records = () => {
     }
 
     if (activeRecordId === record.id) {
-      setActiveRecordId(null);
+      closeRecordDetail();
     }
 
     deleteFreeRecord(record.id);
+  };
+
+  const closeRecordDetail = () => {
+    setActiveRecordId(null);
+    setRecordShareFeedback({
+      type: 'idle',
+      message: ''
+    });
+    setIsSharingRecord(false);
+  };
+
+  const handleShareActiveRecord = async () => {
+    if (!activeRecord || isSharingRecord) {
+      return;
+    }
+
+    setIsSharingRecord(true);
+    setRecordShareFeedback({
+      type: 'idle',
+      message: ''
+    });
+
+    const result = await shareTextContent({
+      title: getRecordTitle(activeRecord),
+      text: getRecordShareText(activeRecord)
+    });
+    const message = getShareFeedbackMessage(result);
+
+    setIsSharingRecord(false);
+    setRecordShareFeedback({
+      type: result?.success ? 'success' : 'error',
+      message
+    });
   };
 
   const handleSaveActiveImageToGallery = async () => {
@@ -1292,7 +1369,7 @@ const Records = () => {
         <div
           className="record-detail-overlay"
           data-block-pull-refresh="true"
-          onClick={() => setActiveRecordId(null)}
+          onClick={closeRecordDetail}
         >
           <div
             className="record-detail-modal"
@@ -1308,6 +1385,8 @@ const Records = () => {
                 <button
                   type="button"
                   className="record-detail-share"
+                  onClick={handleShareActiveRecord}
+                  disabled={isSharingRecord}
                   aria-label="share"
                 >
                   <ShareIcon />
@@ -1330,7 +1409,7 @@ const Records = () => {
                 <button
                   type="button"
                   className="record-detail-close"
-                  onClick={() => setActiveRecordId(null)}
+                  onClick={closeRecordDetail}
                   aria-label="기록 상세 닫기"
                 >
                   &times;
@@ -1340,6 +1419,12 @@ const Records = () => {
 
             <p className="record-detail-content">{getRecordDetailContent(activeRecord.content)}</p>
             <RecordTagList tags={activeRecord.tags} />
+
+            {recordShareFeedback.message && (
+              <div className={`record-detail-share-feedback ${recordShareFeedback.type === 'error' ? 'error' : 'success'}`}>
+                {recordShareFeedback.message}
+              </div>
+            )}
 
             {activeRecord.images.length > 0 && (
               <RecordImageStrip images={activeRecord.images} onOpen={openImage} />

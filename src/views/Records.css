@@ -500,7 +500,8 @@
     color: #c95b63;
 }
 
-.record-detail-actions button.record-detail-share {
+.record-detail-actions button:disabled {
+    opacity: 0.5;
     cursor: default;
 }
 
@@ -522,6 +523,26 @@
     line-height: 1.65;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+}
+
+.record-detail-share-feedback {
+    padding: 11px 13px;
+    border-radius: 16px;
+    font-size: var(--font-body-sm);
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.record-detail-share-feedback.success {
+    background: rgba(43, 192, 106, 0.12);
+    color: #248f53;
+    border: 1px solid rgba(43, 192, 106, 0.18);
+}
+
+.record-detail-share-feedback.error {
+    background: rgba(255, 71, 87, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(255, 71, 87, 0.18);
 }
 
 .dark-theme .record-detail-modal,
