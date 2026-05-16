@@ -339,6 +339,10 @@
     text-align: left;
     padding: 0;
     cursor: pointer;
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
 }
 
 .record-preview-content {
@@ -347,6 +351,33 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.record-preview-thumb {
+    flex: 0 0 min(33%, 112px);
+    width: min(33%, 112px);
+    aspect-ratio: 1 / 1;
+    align-self: center;
+    border: 1px solid rgba(var(--primary-rgb), 0.14);
+    border-radius: 14px;
+    background: rgba(var(--primary-rgb), 0.08);
+    overflow: hidden;
+}
+
+.record-preview-thumb img,
+.record-preview-thumb span {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.record-preview-thumb img {
+    object-fit: cover;
+}
+
+.record-preview-thumb span {
+    background:
+        linear-gradient(135deg, rgba(var(--primary-rgb), 0.12), rgba(var(--secondary-rgb), 0.14));
 }
 
 .record-preview-content time {
@@ -1077,6 +1108,64 @@
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
 }
 
+.record-note-title-input.record-field-prompt,
+.record-note-modal textarea.record-field-prompt {
+    border-color: rgba(214, 91, 104, 0.52);
+    color: var(--text-dark);
+    box-shadow: 0 0 0 3px rgba(214, 91, 104, 0.12);
+}
+
+.record-note-title-input.record-field-prompt::placeholder,
+.record-note-modal textarea.record-field-prompt::placeholder {
+    color: #c84f5c;
+    font-weight: 900;
+    opacity: 1;
+}
+
+.record-field-prompt.pulse-even {
+    animation: recordFieldPromptBounceEven 0.42s ease;
+}
+
+.record-field-prompt.pulse-odd {
+    animation: recordFieldPromptBounceOdd 0.42s ease;
+}
+
+@keyframes recordFieldPromptBounceEven {
+    0% {
+        transform: translateY(0);
+    }
+
+    38% {
+        transform: translateY(-5px) scale(1.01);
+    }
+
+    68% {
+        transform: translateY(2px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes recordFieldPromptBounceOdd {
+    0% {
+        transform: translateY(0);
+    }
+
+    38% {
+        transform: translateY(-5px) scale(1.01);
+    }
+
+    68% {
+        transform: translateY(2px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
 .records-image-feedback {
     margin: 0;
     color: var(--text-light);
@@ -1098,18 +1187,6 @@
     flex-wrap: wrap;
 }
 
-.records-tag-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-}
-
-.records-tag-action svg {
-    width: 16px;
-    height: 16px;
-}
-
 .records-photo-actions button:disabled,
 .record-note-save:disabled,
 .record-image-save-btn:disabled {
@@ -1127,58 +1204,57 @@
     flex: 1 0 100%;
 }
 
-.record-tag-picker-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 2660;
+.record-note-modal > .record-tag-list {
+    margin-top: -6px;
+}
+
+.record-tag-dropdown {
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.66);
+    color: var(--text-dark);
+    overflow: hidden;
+}
+
+.dark-theme .record-tag-dropdown {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.record-tag-dropdown summary {
+    min-height: 46px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: calc(var(--native-safe-area-top) + 18px) var(--screen-side-padding) calc(var(--native-safe-area-bottom) + 18px);
-    background: rgba(19, 37, 23, 0.36);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-.record-tag-picker-modal {
-    width: min(100%, 460px);
-    max-height: min(86vh, 680px);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: clamp(18px, 4.6vw, 22px);
-    border: 1px solid rgba(var(--primary-rgb), 0.22);
-    border-radius: 24px;
-    background: var(--white);
-    box-shadow: 0 22px 56px rgba(23, 48, 31, 0.2);
-    overflow-y: auto;
-}
-
-.dark-theme .record-tag-picker-modal {
-    background: var(--glass-bg);
-}
-
-.record-tag-picker-header {
-    display: flex;
-    align-items: flex-start;
     justify-content: space-between;
-    gap: 14px;
+    gap: 12px;
+    padding: 0 14px;
+    list-style: none;
+    cursor: pointer;
 }
 
-.record-tag-picker-header span {
-    color: var(--primary-color);
-    font-size: var(--font-body-sm);
+.record-tag-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+
+.record-tag-dropdown[open] summary {
+    border-bottom: 1px solid rgba(var(--primary-rgb), 0.12);
+}
+
+.record-tag-dropdown-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-dark);
+    font-size: var(--font-body-md);
     font-weight: 900;
 }
 
-.record-tag-picker-header h3 {
-    margin: 2px 0 4px;
-    color: var(--text-dark);
-    font-size: clamp(1.2rem, 4vw, 1.42rem);
-    line-height: 1.25;
+.record-tag-dropdown-main svg {
+    width: 17px;
+    height: 17px;
+    color: var(--primary-color);
 }
 
-.record-tag-picker-header p,
+.record-tag-dropdown-count,
 .record-tag-feedback {
     margin: 0;
     color: var(--text-light);
@@ -1186,17 +1262,11 @@
     font-weight: 800;
 }
 
-.record-tag-picker-close {
-    flex: 0 0 auto;
-    width: 34px;
-    height: 34px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(var(--primary-rgb), 0.1);
-    color: var(--text-dark);
-    font-size: 1.35rem;
-    line-height: 1;
-    cursor: pointer;
+.record-tag-dropdown-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 13px 14px 14px;
 }
 
 .record-tag-picker-groups {
@@ -1255,12 +1325,6 @@
 
 .record-tag-option input {
     accent-color: var(--primary-color);
-}
-
-.record-tag-picker-done {
-    width: 100%;
-    min-height: 46px;
-    border-radius: 16px;
 }
 
 .record-image-strip {
@@ -1391,8 +1455,8 @@
     }
 
     .record-preview-row {
-        flex-direction: column;
         gap: 10px;
+        padding: 11px 12px;
     }
 
     .record-preview-actions {
@@ -1408,6 +1472,6 @@
     .records-photo-actions {
         width: 100%;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

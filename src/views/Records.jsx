@@ -469,6 +469,101 @@ const RecordTagList = ({ tags = [] }) => {
   );
 };
 
+const RecordTagDropdown = ({
+  feedback,
+  isOpen,
+  onOpenChange,
+  onToggleTag,
+  tags = []
+}) => (
+  <details
+    className="record-tag-dropdown"
+    open={isOpen}
+    onToggle={event => onOpenChange(event.currentTarget.open)}
+  >
+    <summary aria-label={`태그 선택 ${tags.length}개`}>
+      <span className="record-tag-dropdown-main">
+        <TagIcon />
+        <span>태그</span>
+      </span>
+      <span className="record-tag-dropdown-count">
+        {tags.length > 0 ? `${tags.length}/${MAX_RECORD_TAGS}개 선택` : '선택 안 함'}
+      </span>
+    </summary>
+
+    <div className="record-tag-dropdown-panel">
+      <div className="record-tag-picker-groups">
+        {HAPPINESS_TAG_GROUPS.map(group => (
+          <section key={group.label} className="record-tag-picker-group">
+            <strong>{group.label}</strong>
+            <div className="record-tag-options">
+              {group.tags.map(tag => {
+                const isChecked = tags.includes(tag);
+                const isDisabled = !isChecked && tags.length >= MAX_RECORD_TAGS;
+
+                return (
+                  <label key={tag} className={`record-tag-option ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      disabled={isDisabled}
+                      onChange={() => onToggleTag(tag)}
+                    />
+                    <span>{tag}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+
+      {feedback && <p className="record-tag-feedback">{feedback}</p>}
+    </div>
+  </details>
+);
+
+const RecordPreviewThumb = ({ images = [] }) => {
+  const previewImage = Array.isArray(images) ? images[0] : null;
+  const [src, setSrc] = useState('');
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadImage = async () => {
+      if (!previewImage) {
+        setSrc('');
+        return;
+      }
+
+      const nextSrc = await getMemoImageSrc({
+        image: previewImage,
+        supabase
+      });
+
+      if (isMounted) {
+        setSrc(nextSrc);
+      }
+    };
+
+    void loadImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [previewImage]);
+
+  if (!previewImage) {
+    return null;
+  }
+
+  return (
+    <div className="record-preview-thumb" aria-hidden="true">
+      {src ? <img src={src} alt="" loading="lazy" /> : <span />}
+    </div>
+  );
+};
+
 const RecordImageThumb = ({ image, onRemove, onOpen }) => {
   const [src, setSrc] = useState('');
   const imageId = image.id;
@@ -578,6 +673,11 @@ const Records = () => {
   const [recordText, setRecordText] = useState('');
   const [recordImages, setRecordImages] = useState([]);
   const [recordTags, setRecordTags] = useState([]);
+  const [recordValidation, setRecordValidation] = useState({
+    title: false,
+    content: false,
+    pulse: 0
+  });
   const [editingRecordId, setEditingRecordId] = useState(null);
   const [activeRecordId, setActiveRecordId] = useState(null);
   const [activeMemoItem, setActiveMemoItem] = useState(null);
@@ -668,6 +768,7 @@ const Records = () => {
     setRecordText('');
     setRecordImages([]);
     setRecordTags([]);
+    setRecordValidation({ title: false, content: false, pulse: 0 });
     setDraftRecordId(createDraftRecordId());
     setIsTagPickerOpen(false);
     setTagFeedback('');
@@ -956,6 +1057,18 @@ const Records = () => {
   };
 
   const handleSaveRecord = () => {
+    const isTitleMissing = !recordTitle.trim();
+    const isContentMissing = !recordText.trim();
+
+    if (isTitleMissing || isContentMissing) {
+      setRecordValidation(prev => ({
+        title: isTitleMissing,
+        content: isContentMissing,
+        pulse: prev.pulse + 1
+      }));
+      return;
+    }
+
     const savedRecord = editingRecordId
       ? updateFreeRecord(editingRecordId, recordText, recordImages, { title: recordTitle, tags: recordTags })
       : addFreeRecord(recordText, recordImages, { id: draftRecordId, title: recordTitle, tags: recordTags });
@@ -1156,7 +1269,7 @@ const Records = () => {
                 <article key={record.recordKey || record.id} className="record-preview-row">
                   <button
                     type="button"
-                    className="record-preview-open"
+                    className={`record-preview-open ${record.images?.length > 0 ? 'has-image' : ''}`}
                     onClick={() => openTimelineEntry(record)}
                     aria-label={`${getTimelineEntryTitle(record)} ${activeTabLabel} 전체 보기`}
                   >
@@ -1166,6 +1279,7 @@ const Records = () => {
                       <p>{getRecordSnippet(record.content)}</p>
                       <RecordTagList tags={record.tags} />
                     </div>
+                    <RecordPreviewThumb images={record.images} />
                   </button>
                 </article>
               ))}
@@ -1501,21 +1615,44 @@ const Records = () => {
             </div>
 
             <input
-              className="record-note-title-input"
+              className={`record-note-title-input ${recordValidation.title ? `record-field-prompt ${recordValidation.pulse % 2 === 0 ? 'pulse-even' : 'pulse-odd'}` : ''}`}
               value={recordTitle}
-              onChange={event => setRecordTitle(event.target.value)}
-              placeholder="제목"
+              onChange={event => {
+                const nextValue = event.target.value;
+                setRecordTitle(nextValue);
+                if (nextValue.trim()) {
+                  setRecordValidation(prev => ({ ...prev, title: false }));
+                }
+              }}
+              placeholder={recordValidation.title ? '제목을 적어주세요' : '제목'}
               maxLength={48}
               autoFocus
             />
 
             <textarea
+              className={recordValidation.content ? `record-field-prompt ${recordValidation.pulse % 2 === 0 ? 'pulse-even' : 'pulse-odd'}` : ''}
               value={recordText}
-              onChange={event => setRecordText(event.target.value)}
-              placeholder="짧은 한 줄도 좋고, 길게 쓰는 일기도 좋아요."
+              onChange={event => {
+                const nextValue = event.target.value;
+                setRecordText(nextValue);
+                if (nextValue.trim()) {
+                  setRecordValidation(prev => ({ ...prev, content: false }));
+                }
+              }}
+              placeholder={recordValidation.content ? '내용을 적어주세요' : '짧은 한 줄도 좋고, 길게 쓰는 일기도 좋아요.'}
               rows={9}
               maxLength={1600}
             />
+
+            <RecordTagDropdown
+              feedback={tagFeedback}
+              isOpen={isTagPickerOpen}
+              onOpenChange={setIsTagPickerOpen}
+              onToggleTag={handleToggleRecordTag}
+              tags={recordTags}
+            />
+
+            <RecordTagList tags={recordTags} />
 
             <RecordImageStrip
               images={recordImages}
@@ -1545,94 +1682,16 @@ const Records = () => {
                   </button>
                   </>
                 )}
-                <button
-                  type="button"
-                  className="records-tag-action"
-                  onClick={() => setIsTagPickerOpen(true)}
-                  aria-label={`태그 선택 ${recordTags.length}개`}
-                >
-                  <TagIcon />
-                  <span>태그 {recordTags.length > 0 ? recordTags.length : ''}</span>
-                </button>
               </div>
-
-              <RecordTagList tags={recordTags} />
 
               <button
                 type="button"
                 className="btn-primary record-note-save"
                 onClick={handleSaveRecord}
-                disabled={!recordTitle.trim() && !recordText.trim() && recordImages.length === 0}
               >
                 {isEditingRecord ? '기록 수정하기' : '기록 저장하기'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {isTagPickerOpen && (
-        <div
-          className="record-tag-picker-overlay"
-          data-block-pull-refresh="true"
-          onClick={() => setIsTagPickerOpen(false)}
-        >
-          <div
-            className="record-tag-picker-modal"
-            data-block-pull-refresh="true"
-            onClick={event => event.stopPropagation()}
-          >
-            <div className="record-tag-picker-header">
-              <div>
-                <span>TAG</span>
-                <h3>태그 선택</h3>
-                <p>{recordTags.length}/{MAX_RECORD_TAGS}개 선택</p>
-              </div>
-              <button
-                type="button"
-                className="record-tag-picker-close"
-                onClick={() => setIsTagPickerOpen(false)}
-                aria-label="태그 선택 닫기"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="record-tag-picker-groups">
-              {HAPPINESS_TAG_GROUPS.map(group => (
-                <section key={group.label} className="record-tag-picker-group">
-                  <strong>{group.label}</strong>
-                  <div className="record-tag-options">
-                    {group.tags.map(tag => {
-                      const isChecked = recordTags.includes(tag);
-                      const isDisabled = !isChecked && recordTags.length >= MAX_RECORD_TAGS;
-
-                      return (
-                        <label key={tag} className={`record-tag-option ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            disabled={isDisabled}
-                            onChange={() => handleToggleRecordTag(tag)}
-                          />
-                          <span>{tag}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </section>
-              ))}
-            </div>
-
-            {tagFeedback && <p className="record-tag-feedback">{tagFeedback}</p>}
-
-            <button
-              type="button"
-              className="btn-primary record-tag-picker-done"
-              onClick={() => setIsTagPickerOpen(false)}
-            >
-              선택 완료
-            </button>
           </div>
         </div>
       )}
