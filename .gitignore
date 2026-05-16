@@ -28,3 +28,8 @@ supabase/.temp/
 
 # Local Apple signing material
 ios-signing/
+
+# Local Android signing material
+*.jks
+*.keystore
+android/keystore.properties
