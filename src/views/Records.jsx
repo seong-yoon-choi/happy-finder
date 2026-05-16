@@ -477,13 +477,18 @@ const RecordTagDropdown = ({
   onToggleTag,
   tags = []
 }) => (
-  <details
-    className={`record-tag-dropdown ${hasError ? 'has-error' : ''}`}
+  <div
+    className={`record-tag-dropdown ${isOpen ? 'is-open' : ''} ${hasError ? 'has-error' : ''}`}
     data-block-pull-refresh="true"
-    open={isOpen}
-    onToggle={event => onOpenChange(event.currentTarget.open)}
   >
-    <summary aria-label={`태그 선택 ${tags.length}개`}>
+    <button
+      type="button"
+      className="record-tag-dropdown-trigger"
+      aria-expanded={isOpen}
+      aria-controls="record-tag-dropdown-panel"
+      aria-label={`태그 선택 ${tags.length}개`}
+      onClick={() => onOpenChange(!isOpen)}
+    >
       <span className="record-tag-dropdown-main">
         <TagIcon />
         <span>태그</span>
@@ -494,38 +499,40 @@ const RecordTagDropdown = ({
         </span>
         <span className="record-tag-dropdown-arrow" aria-hidden="true" />
       </span>
-    </summary>
+    </button>
 
-    <div className="record-tag-dropdown-panel" data-block-pull-refresh="true">
-      {feedback && <p className="record-tag-feedback">{feedback}</p>}
+    {isOpen && (
+      <div id="record-tag-dropdown-panel" className="record-tag-dropdown-panel" data-block-pull-refresh="true">
+        {feedback && <p className="record-tag-feedback">{feedback}</p>}
 
-      <div className="record-tag-picker-groups">
-        {HAPPINESS_TAG_GROUPS.map(group => (
-          <section key={group.label} className="record-tag-picker-group">
-            <strong>{group.label}</strong>
-            <div className="record-tag-options">
-              {group.tags.map(tag => {
-                const isChecked = tags.includes(tag);
-                const isDisabled = !isChecked && tags.length >= MAX_RECORD_TAGS;
+        <div className="record-tag-picker-groups">
+          {HAPPINESS_TAG_GROUPS.map(group => (
+            <section key={group.label} className="record-tag-picker-group">
+              <strong>{group.label}</strong>
+              <div className="record-tag-options">
+                {group.tags.map(tag => {
+                  const isChecked = tags.includes(tag);
+                  const isDisabled = !isChecked && tags.length >= MAX_RECORD_TAGS;
 
-                return (
-                  <label key={tag} className={`record-tag-option ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      disabled={isDisabled}
-                      onChange={() => onToggleTag(tag)}
-                    />
-                    <span>{tag}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </section>
-        ))}
+                  return (
+                    <label key={tag} className={`record-tag-option ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        disabled={isDisabled}
+                        onChange={() => onToggleTag(tag)}
+                      />
+                      <span>{tag}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
-    </div>
-  </details>
+    )}
+  </div>
 );
 
 const RecordPreviewThumb = ({ images = [] }) => {

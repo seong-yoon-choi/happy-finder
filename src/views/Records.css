@@ -1012,17 +1012,22 @@
     inset: 0;
     z-index: 2600;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: calc(var(--native-safe-area-top) + 18px) var(--screen-side-padding) calc(var(--native-safe-area-bottom) + 18px);
     background: rgba(19, 37, 23, 0.38);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
 }
 
 .record-note-modal {
     width: min(100%, 520px);
-    max-height: min(88vh, 720px);
+    max-height: none;
+    margin-block: auto;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -1034,10 +1039,7 @@
         repeating-linear-gradient(180deg, transparent 0, transparent 35px, rgba(var(--secondary-rgb), 0.15) 36px),
         var(--white);
     box-shadow: 0 22px 56px rgba(23, 48, 31, 0.18);
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    overflow: visible;
 }
 
 .dark-theme .record-note-modal {
@@ -1229,22 +1231,23 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-.record-tag-dropdown summary {
+.record-tag-dropdown-trigger {
+    width: 100%;
     min-height: 46px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    border: none;
+    background: transparent;
+    color: inherit;
     padding: 0 14px;
-    list-style: none;
     cursor: pointer;
+    font: inherit;
+    text-align: left;
 }
 
-.record-tag-dropdown summary::-webkit-details-marker {
-    display: none;
-}
-
-.record-tag-dropdown[open] summary {
+.record-tag-dropdown.is-open .record-tag-dropdown-trigger {
     border-bottom: 1px solid rgba(var(--primary-rgb), 0.12);
 }
 
@@ -1292,7 +1295,7 @@
     transition: transform 0.18s ease;
 }
 
-.record-tag-dropdown[open] .record-tag-dropdown-arrow {
+.record-tag-dropdown.is-open .record-tag-dropdown-arrow {
     transform: translateY(2px) rotate(225deg);
 }
 

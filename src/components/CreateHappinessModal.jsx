@@ -20,6 +20,29 @@ const VISIBILITY_OPTIONS = [
   { value: 'public', label: '공개하기' }
 ];
 
+const CreateTagIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path
+      d="M5.5 7H18.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M8.5 12H15.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <path
+      d="M10.5 17H13.5"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const createDraftHappinessId = () => `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 const getCreateImageErrorMessage = code => {
@@ -270,25 +293,27 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
         <div className="create-modal-form-shell">
           <form onSubmit={handleSubmit} className="modal-form create-modal-form">
             <div className="form-group">
-              <label htmlFor="custom-happiness-title">제목</label>
               <input
                 id="custom-happiness-title"
+                className="create-note-title-input"
                 type="text"
                 value={title}
                 onChange={event => setTitle(event.target.value)}
                 placeholder="행복의 이름을 적어주세요"
+                aria-label="행복 제목"
                 maxLength={20}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="custom-happiness-description">상세 내용</label>
               <textarea
                 id="custom-happiness-description"
+                className="create-note-description-input"
                 value={description}
                 onChange={event => setDescription(event.target.value)}
                 placeholder="어떤 행복인지 짧게 설명해주세요"
+                aria-label="행복 상세 내용"
                 rows={4}
                 maxLength={100}
                 required
@@ -297,18 +322,6 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
 
             {isImageEnabled && (
               <div className="form-group">
-                <div className="create-form-label-row">
-                  <label>대표 사진</label>
-                  {previewImage && (
-                    <button
-                      type="button"
-                      className="create-image-remove-btn"
-                      onClick={handleRemovePreviewImage}
-                    >
-                      제거
-                    </button>
-                  )}
-                </div>
                 {previewImage && <CreatePreviewImage image={previewImage} />}
                 <div className="create-image-actions">
                   <button
@@ -325,69 +338,85 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
                   >
                     {imageBusyTarget === 'create:gallery' ? '선택 중...' : '앨범'}
                   </button>
+                  {previewImage && (
+                    <button
+                      type="button"
+                      className="create-image-remove-btn"
+                      onClick={handleRemovePreviewImage}
+                    >
+                      제거
+                    </button>
+                  )}
                 </div>
                 {imageFeedback && <p className="form-helper create-image-feedback">{imageFeedback}</p>}
               </div>
             )}
 
             <div className="form-group">
-              <div className="create-form-label-row">
-                <label>태그</label>
-                <span>{selectedTags.length}/{MAX_RECORD_TAGS}</span>
-              </div>
-              <details
-                className={`create-tag-dropdown ${selectedTags.length > 0 ? 'has-tags' : ''} ${tagError ? 'has-error' : ''}`}
+              <div
+                className={`create-tag-dropdown ${isTagPickerOpen ? 'is-open' : ''} ${selectedTags.length > 0 ? 'has-tags' : ''} ${tagError ? 'has-error' : ''}`}
                 data-block-pull-refresh="true"
-                open={isTagPickerOpen}
-                onToggle={event => setIsTagPickerOpen(event.currentTarget.open)}
               >
-                <summary>
-                  <span>{selectedTags.length > 0 ? `${selectedTags.length}개 선택됨` : '태그 선택하기'}</span>
-                  <span className="create-tag-dropdown-arrow" aria-hidden="true" />
-                </summary>
+                <button
+                  type="button"
+                  className="create-tag-dropdown-trigger"
+                  aria-expanded={isTagPickerOpen}
+                  aria-controls="create-tag-dropdown-panel"
+                  onClick={() => setIsTagPickerOpen(prev => !prev)}
+                >
+                  <span className="create-tag-dropdown-main">
+                    <CreateTagIcon />
+                    <span>태그</span>
+                  </span>
+                  <span className="create-tag-dropdown-meta">
+                    <span className="create-tag-dropdown-count">
+                      {selectedTags.length > 0 ? `${selectedTags.length}/${MAX_RECORD_TAGS}개 선택` : '선택 안 함'}
+                    </span>
+                    <span className="create-tag-dropdown-arrow" aria-hidden="true" />
+                  </span>
+                </button>
 
-                <div className="create-tag-dropdown-panel" data-block-pull-refresh="true">
-                  {tagError && <p className="form-error create-tag-error">{tagError}</p>}
+                {isTagPickerOpen && (
+                  <div id="create-tag-dropdown-panel" className="create-tag-dropdown-panel" data-block-pull-refresh="true">
+                    {tagError && <p className="form-error create-tag-error">{tagError}</p>}
 
-                  <div className="create-tag-picker-groups">
-                    {HAPPINESS_TAG_GROUPS.map(group => (
-                      <section key={group.label} className="create-tag-picker-group">
-                        <h4>{group.label}</h4>
-                        <div className="create-tag-option-grid">
-                          {group.tags.map(tag => {
-                            const isSelected = selectedTags.includes(tag);
-                            const isDisabled = !isSelected && selectedTags.length >= MAX_RECORD_TAGS;
+                    <div className="create-tag-picker-groups">
+                      {HAPPINESS_TAG_GROUPS.map(group => (
+                        <section key={group.label} className="create-tag-picker-group">
+                          <h4>{group.label}</h4>
+                          <div className="create-tag-option-grid">
+                            {group.tags.map(tag => {
+                              const isSelected = selectedTags.includes(tag);
+                              const isDisabled = !isSelected && selectedTags.length >= MAX_RECORD_TAGS;
 
-                            return (
-                              <label
-                                key={tag}
-                                className={`create-tag-option ${isSelected ? 'is-selected' : ''} ${isDisabled ? 'is-disabled' : ''}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  disabled={isDisabled}
-                                  onChange={() => handleTagToggle(tag)}
-                                />
-                                <span>{tag}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </section>
-                    ))}
+                              return (
+                                <label
+                                  key={tag}
+                                  className={`create-tag-option ${isSelected ? 'is-selected' : ''} ${isDisabled ? 'is-disabled' : ''}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    disabled={isDisabled}
+                                    onChange={() => handleTagToggle(tag)}
+                                  />
+                                  <span>{tag}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </details>
+                )}
+              </div>
               {selectedTags.length > 0 && (
                 <span className="create-selected-tags">
                   {selectedTags.map(tag => (
                     <span key={tag} className="create-selected-tag">{tag}</span>
                   ))}
                 </span>
-              )}
-              {!tagError && (
-                <p className="form-helper">검색과 필터에 쓰일 태그를 최대 3개 선택할 수 있어요.</p>
               )}
             </div>
 
