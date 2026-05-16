@@ -351,6 +351,33 @@ const CalendarIcon = () => (
   </svg>
 );
 
+const WriteIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M5.25 18.75H18.75"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.8"
+    />
+    <path
+      d="M6.3 15.55L7.05 12.25L15.85 3.45C16.45 2.85 17.42 2.85 18.02 3.45L20.55 5.98C21.15 6.58 21.15 7.55 20.55 8.15L11.75 16.95L8.45 17.7C7.12 18 6 16.88 6.3 15.55Z"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    />
+    <path
+      d="M14.65 4.65L19.35 9.35"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.8"
+    />
+  </svg>
+);
+
 const EditIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
@@ -1052,7 +1079,8 @@ const Records = () => {
           </div>
           {activeRecordsTab === 'records' && (
             <button type="button" className="records-write-btn" onClick={openCreateComposer}>
-              기록 남기기
+              <WriteIcon />
+              <span>기록 남기기</span>
             </button>
           )}
         </div>

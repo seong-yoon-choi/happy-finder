@@ -31,7 +31,7 @@
 .records-heading-tab {
     border: none;
     background: transparent;
-    color: rgba(var(--primary-rgb), 0.42);
+    color: rgba(17, 17, 17, 0.42);
     padding: 0;
     font: inherit;
     font-size: var(--font-title-lg);
@@ -45,6 +45,14 @@
 .records-heading-tab.active {
     color: var(--text-dark);
     opacity: 1;
+}
+
+.dark-theme .records-heading-tab {
+    color: rgba(240, 240, 240, 0.48);
+}
+
+.dark-theme .records-heading-tab.active {
+    color: var(--text-dark);
 }
 
 .records-header p {
@@ -67,6 +75,17 @@
     box-shadow: 0 12px 24px rgba(95, 188, 68, 0.2);
     cursor: pointer;
     transform: translateY(6px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.records-write-btn svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
 }
 
 .records-sections {
