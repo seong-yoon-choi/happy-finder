@@ -38,6 +38,14 @@
     display: block;
 }
 
+.happiness-card-preview-placeholder {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background:
+        linear-gradient(135deg, rgba(var(--primary-rgb), 0.12), rgba(var(--secondary-rgb), 0.14));
+}
+
 .card-top-row {
     display: flex;
     align-items: flex-start;

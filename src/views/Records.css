@@ -1034,6 +1034,10 @@
         repeating-linear-gradient(180deg, transparent 0, transparent 35px, rgba(var(--secondary-rgb), 0.15) 36px),
         var(--white);
     box-shadow: 0 22px 56px rgba(23, 48, 31, 0.18);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
 }
 
 .dark-theme .record-note-modal {
@@ -1216,6 +1220,11 @@
     overflow: hidden;
 }
 
+.record-tag-dropdown.has-error {
+    border-color: rgba(214, 91, 104, 0.52);
+    box-shadow: 0 0 0 3px rgba(214, 91, 104, 0.12);
+}
+
 .dark-theme .record-tag-dropdown {
     background: rgba(255, 255, 255, 0.08);
 }
@@ -1254,6 +1263,12 @@
     color: var(--primary-color);
 }
 
+.record-tag-dropdown-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .record-tag-dropdown-count,
 .record-tag-feedback {
     margin: 0;
@@ -1262,11 +1277,31 @@
     font-weight: 800;
 }
 
+.record-tag-dropdown.has-error .record-tag-dropdown-count,
+.record-tag-dropdown.has-error .record-tag-feedback {
+    color: #c84f5c;
+}
+
+.record-tag-dropdown-arrow {
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    color: var(--text-light);
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.18s ease;
+}
+
+.record-tag-dropdown[open] .record-tag-dropdown-arrow {
+    transform: translateY(2px) rotate(225deg);
+}
+
 .record-tag-dropdown-panel {
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 13px 14px 14px;
+    overflow: visible;
 }
 
 .record-tag-picker-groups {

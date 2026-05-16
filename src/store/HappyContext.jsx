@@ -986,6 +986,7 @@ const normalizeItem = (item, savedStamps = {}) => {
   const itemTags = Array.isArray(item.tags) && item.tags.length > 0
     ? item.tags
     : initialDefaults.tags;
+  const previewImageRef = normalizeMemoImages(item.previewImageRef ? [item.previewImageRef] : [])[0] || null;
   const ownCount = getStampCountFromData(savedStamps[item.id]);
   const baseCount = Number.isFinite(item.totalEnjoyCount)
     ? item.totalEnjoyCount
@@ -999,6 +1000,7 @@ const normalizeItem = (item, savedStamps = {}) => {
     category: normalizeCategoryName(item.category),
     creatorId: item.creatorId || (item.isCustom && item.creator === 'user' ? getGuestLocalCreatorId() : undefined),
     previewImage: item.previewImage || initialDefaults.previewImage || '',
+    previewImageRef,
     tags: normalizeVisibleTags(itemTags || []),
     totalEnjoyCount: Math.max(baseCount, ownCount)
   };
@@ -1021,6 +1023,8 @@ const normalizeRemoteCatalogItem = (item, localItemMap = new Map()) => {
     creatorId: typeof item.owner_user_id === 'string' ? item.owner_user_id : undefined,
     isPublic: item.source === 'system' || item.is_public === true,
     isCloudBacked: true,
+    previewImage: matchedLocalItem?.previewImage || '',
+    previewImageRef: matchedLocalItem?.previewImageRef || null,
     tags: preservedTags,
     totalEnjoyCount: Number.isFinite(matchedLocalItem?.totalEnjoyCount)
       ? matchedLocalItem.totalEnjoyCount
@@ -2526,6 +2530,17 @@ export const HappyProvider = ({ children }) => {
       });
     });
 
+    items.map(item => normalizeItem(item, latestSnapshotStateRef.current?.userStamps)).forEach(item => {
+      if (item.previewImageRef?.storageType === 'local') {
+        localImageJobs.push({
+          itemId: item.id,
+          memoId: 'preview',
+          image: item.previewImageRef,
+          target: 'itemPreview'
+        });
+      }
+    });
+
     freeRecords.map(normalizeFreeRecord).forEach(record => {
       record.images
         .filter(image => image.storageType === 'local')
@@ -2607,6 +2622,28 @@ export const HappyProvider = ({ children }) => {
         return didChange ? nextMemoMap : prev;
       });
 
+      setItems(prev => {
+        let didChange = false;
+        const nextItems = prev.map(item => {
+          const normalizedItem = normalizeItem(item, latestSnapshotStateRef.current?.userStamps);
+          const migratedImage = normalizedItem.previewImageRef
+            ? migratedImageMap.get(`${normalizedItem.id}:preview:${normalizedItem.previewImageRef.id}`)
+            : null;
+
+          if (!migratedImage) {
+            return item;
+          }
+
+          didChange = true;
+          return {
+            ...normalizedItem,
+            previewImageRef: migratedImage
+          };
+        });
+
+        return didChange ? nextItems : prev;
+      });
+
       setFreeRecords(prev => {
         let didChange = false;
         const nextRecords = prev.map(record => {
@@ -2644,7 +2681,7 @@ export const HappyProvider = ({ children }) => {
     return () => {
       isCancelled = true;
     };
-  }, [authUser?.id, userMemos, freeRecords]);
+  }, [authUser?.id, items, userMemos, freeRecords]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id || !hasBootstrappedCloudRef.current || isApplyingCloudSnapshotRef.current) {
@@ -2885,17 +2922,18 @@ export const HappyProvider = ({ children }) => {
     reminderSettings.reminders
   ]);
 
-  const addCustomItem = async (title, description, category, visibility = 'private', tags = []) => {
+  const addCustomItem = async (title, description, category, visibility = 'private', tags = [], options = {}) => {
     const isPublic = visibility === 'public';
     const canSyncToCloud = Boolean(supabase && authUser?.id);
     const normalizedTags = normalizeVisibleTags(tags, MAX_RECORD_TAGS);
+    const normalizedPreviewImageRef = normalizeMemoImages(options.previewImageRef ? [options.previewImageRef] : [])[0] || null;
 
     if (isPublic && !canSyncToCloud) {
       return { success: false, code: 'AUTH_REQUIRED' };
     }
 
     const newItem = {
-      id: createCustomItemId(),
+      id: typeof options.id === 'string' && options.id.trim() ? options.id.trim() : createCustomItemId(),
       title,
       description,
       category: normalizeCategoryName(category),
@@ -2904,6 +2942,7 @@ export const HappyProvider = ({ children }) => {
       creatorId: authUser?.id || getGuestLocalCreatorId(),
       isPublic,
       isCloudBacked: false,
+      previewImageRef: normalizedPreviewImageRef,
       tags: normalizedTags,
       totalEnjoyCount: 0
     };
@@ -3080,12 +3119,14 @@ export const HappyProvider = ({ children }) => {
       }
     }
 
+    const itemPreviewImagesForCleanup = targetItem.previewImageRef ? [targetItem.previewImageRef] : [];
     const memoImagesForCleanup = Array.isArray(userMemos[itemId])
       ? userMemos[itemId].flatMap(memo => normalizeMemo(memo).images)
       : [];
+    const imagesForCleanup = [...itemPreviewImagesForCleanup, ...memoImagesForCleanup];
 
-    if (memoImagesForCleanup.length > 0) {
-      void deleteMemoStoredImages({ images: memoImagesForCleanup, supabase });
+    if (imagesForCleanup.length > 0) {
+      void deleteMemoStoredImages({ images: imagesForCleanup, supabase });
     }
 
     setItems(prev => prev.filter(item => item.id !== itemId));
@@ -4688,4 +4729,3 @@ export const HappyProvider = ({ children }) => {
     </HappyContext.Provider>
   );
 };
-

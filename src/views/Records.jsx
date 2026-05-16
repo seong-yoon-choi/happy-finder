@@ -471,13 +471,15 @@ const RecordTagList = ({ tags = [] }) => {
 
 const RecordTagDropdown = ({
   feedback,
+  hasError = false,
   isOpen,
   onOpenChange,
   onToggleTag,
   tags = []
 }) => (
   <details
-    className="record-tag-dropdown"
+    className={`record-tag-dropdown ${hasError ? 'has-error' : ''}`}
+    data-block-pull-refresh="true"
     open={isOpen}
     onToggle={event => onOpenChange(event.currentTarget.open)}
   >
@@ -486,12 +488,17 @@ const RecordTagDropdown = ({
         <TagIcon />
         <span>태그</span>
       </span>
-      <span className="record-tag-dropdown-count">
-        {tags.length > 0 ? `${tags.length}/${MAX_RECORD_TAGS}개 선택` : '선택 안 함'}
+      <span className="record-tag-dropdown-meta">
+        <span className="record-tag-dropdown-count">
+          {tags.length > 0 ? `${tags.length}/${MAX_RECORD_TAGS}개 선택` : '선택 안 함'}
+        </span>
+        <span className="record-tag-dropdown-arrow" aria-hidden="true" />
       </span>
     </summary>
 
-    <div className="record-tag-dropdown-panel">
+    <div className="record-tag-dropdown-panel" data-block-pull-refresh="true">
+      {feedback && <p className="record-tag-feedback">{feedback}</p>}
+
       <div className="record-tag-picker-groups">
         {HAPPINESS_TAG_GROUPS.map(group => (
           <section key={group.label} className="record-tag-picker-group">
@@ -517,8 +524,6 @@ const RecordTagDropdown = ({
           </section>
         ))}
       </div>
-
-      {feedback && <p className="record-tag-feedback">{feedback}</p>}
     </div>
   </details>
 );
@@ -676,6 +681,7 @@ const Records = () => {
   const [recordValidation, setRecordValidation] = useState({
     title: false,
     content: false,
+    tags: false,
     pulse: 0
   });
   const [editingRecordId, setEditingRecordId] = useState(null);
@@ -768,7 +774,7 @@ const Records = () => {
     setRecordText('');
     setRecordImages([]);
     setRecordTags([]);
-    setRecordValidation({ title: false, content: false, pulse: 0 });
+    setRecordValidation({ title: false, content: false, tags: false, pulse: 0 });
     setDraftRecordId(createDraftRecordId());
     setIsTagPickerOpen(false);
     setTagFeedback('');
@@ -1052,6 +1058,7 @@ const Records = () => {
       }
 
       setTagFeedback('');
+      setRecordValidation(prev => ({ ...prev, tags: false }));
       return [...prevTags, tag];
     });
   };
@@ -1059,13 +1066,21 @@ const Records = () => {
   const handleSaveRecord = () => {
     const isTitleMissing = !recordTitle.trim();
     const isContentMissing = !recordText.trim();
+    const isTagMissing = recordTags.length === 0;
 
-    if (isTitleMissing || isContentMissing) {
+    if (isTitleMissing || isContentMissing || isTagMissing) {
       setRecordValidation(prev => ({
         title: isTitleMissing,
         content: isContentMissing,
+        tags: isTagMissing,
         pulse: prev.pulse + 1
       }));
+
+      if (isTagMissing) {
+        setTagFeedback('최소 한개의 태그를 선택해 주세요.');
+        setIsTagPickerOpen(true);
+      }
+
       return;
     }
 
@@ -1646,6 +1661,7 @@ const Records = () => {
 
             <RecordTagDropdown
               feedback={tagFeedback}
+              hasError={recordValidation.tags}
               isOpen={isTagPickerOpen}
               onOpenChange={setIsTagPickerOpen}
               onToggleTag={handleToggleRecordTag}

@@ -1,31 +1,121 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { HAPPINESS_TAG_GROUPS, MAX_RECORD_TAGS, normalizeVisibleTags } from '../lib/happinessTags';
+import {
+  chooseMemoPhoto,
+  deleteMemoStoredImages,
+  getMemoImageSrc,
+  isNativeMemoImageAvailable,
+  persistMemoImage,
+  takeMemoPhoto
+} from '../lib/memoImages';
+import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
 import './CreateHappinessModal.css';
 
 const DEFAULT_CUSTOM_CATEGORY = '소확행';
+const CREATE_HAPPINESS_PREVIEW_MEMO_ID = 'preview';
 const VISIBILITY_OPTIONS = [
   { value: 'private', label: '나만보기' },
   { value: 'public', label: '공개하기' }
 ];
 
+const createDraftHappinessId = () => `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const getCreateImageErrorMessage = code => {
+  switch (code) {
+    case 'CAMERA_PERMISSION_DENIED':
+      return '카메라 권한이 필요해요. 휴대폰 설정에서 권한을 허용해주세요.';
+    case 'PHOTO_PERMISSION_DENIED':
+      return '사진 접근 권한이 필요해요. 휴대폰 설정에서 권한을 허용해주세요.';
+    case 'PHOTO_PICK_CANCELLED':
+    case 'OS-PLUG-CAMR-0006':
+      return '';
+    default:
+      return '사진을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
+  }
+};
+
+const CreatePreviewImage = ({ image }) => {
+  const [src, setSrc] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadImage = async () => {
+      if (!image) {
+        setSrc('');
+        return;
+      }
+
+      const nextSrc = await getMemoImageSrc({
+        image,
+        supabase
+      });
+
+      if (isMounted) {
+        setSrc(nextSrc);
+      }
+    };
+
+    void loadImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [image]);
+
+  if (!image) {
+    return null;
+  }
+
+  return (
+    <div className="create-image-preview-media" aria-hidden="true">
+      {src ? <img src={src} alt="" loading="lazy" /> : <span />}
+    </div>
+  );
+};
+
 const CreateHappinessModal = ({ isOpen, onClose }) => {
-  const { addCustomItem, authUser } = useHappy();
+  const { addCustomItem, authUser, isReviewAuthUser } = useHappy();
+  const isImageEnabled = isNativeMemoImageAvailable();
+  const cloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
+  const [draftItemId, setDraftItemId] = useState(() => createDraftHappinessId());
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [visibility, setVisibility] = useState(VISIBILITY_OPTIONS[0].value);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
+  const [tagError, setTagError] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
+  const [imageFeedback, setImageFeedback] = useState('');
+  const [imageBusyTarget, setImageBusyTarget] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const resetForm = () => {
+  const cleanupPreviewImage = image => {
+    if (!image) {
+      return;
+    }
+
+    void deleteMemoStoredImages({ images: [image], supabase });
+  };
+
+  const resetForm = ({ shouldCleanupImage = true } = {}) => {
+    if (shouldCleanupImage) {
+      cleanupPreviewImage(previewImage);
+    }
+
+    setDraftItemId(createDraftHappinessId());
     setTitle('');
     setDescription('');
     setVisibility(VISIBILITY_OPTIONS[0].value);
     setSelectedTags([]);
     setIsTagPickerOpen(false);
+    setTagError('');
+    setPreviewImage(null);
+    setImageFeedback('');
+    setImageBusyTarget('');
     setSubmitError('');
     setIsSubmitting(false);
   };
@@ -51,14 +141,25 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (selectedTags.length === 0) {
+      setTagError('최소 한개의 태그를 선택해 주세요.');
+      setIsTagPickerOpen(true);
+      return;
+    }
+
     setSubmitError('');
+    setTagError('');
     setIsSubmitting(true);
     const result = await addCustomItem(
       trimmedTitle,
       trimmedDescription,
       DEFAULT_CUSTOM_CATEGORY,
       visibility,
-      selectedTags
+      selectedTags,
+      {
+        id: draftItemId,
+        previewImageRef: previewImage
+      }
     );
     setIsSubmitting(false);
 
@@ -72,7 +173,8 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    handleClose();
+    resetForm({ shouldCleanupImage: false });
+    onClose();
   };
 
   const handleTagToggle = tag => {
@@ -85,8 +187,52 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
         return prev;
       }
 
+      setTagError('');
       return normalizeVisibleTags([...prev, tag], MAX_RECORD_TAGS);
     });
+  };
+
+  const handleAttachImage = async source => {
+    if (!isImageEnabled || imageBusyTarget) {
+      return;
+    }
+
+    const busyKey = `create:${source}`;
+    setImageBusyTarget(busyKey);
+    setImageFeedback('');
+
+    const pickResult = source === 'camera'
+      ? await takeMemoPhoto()
+      : await chooseMemoPhoto();
+
+    if (!pickResult.success) {
+      setImageBusyTarget('');
+      setImageFeedback(getCreateImageErrorMessage(pickResult.code));
+      return;
+    }
+
+    try {
+      const persistedImage = await persistMemoImage({
+        supabase,
+        authUserId: cloudAuthUserId,
+        itemId: draftItemId,
+        memoId: CREATE_HAPPINESS_PREVIEW_MEMO_ID,
+        mediaResult: pickResult.photo
+      });
+
+      cleanupPreviewImage(previewImage);
+      setPreviewImage(persistedImage);
+    } catch {
+      setImageFeedback(getCreateImageErrorMessage('PERSIST_FAILED'));
+    } finally {
+      setImageBusyTarget('');
+    }
+  };
+
+  const handleRemovePreviewImage = () => {
+    cleanupPreviewImage(previewImage);
+    setPreviewImage(null);
+    setImageFeedback('');
   };
 
   if (!isOpen) {
@@ -149,27 +295,100 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
               />
             </div>
 
+            {isImageEnabled && (
+              <div className="form-group">
+                <div className="create-form-label-row">
+                  <label>대표 사진</label>
+                  {previewImage && (
+                    <button
+                      type="button"
+                      className="create-image-remove-btn"
+                      onClick={handleRemovePreviewImage}
+                    >
+                      제거
+                    </button>
+                  )}
+                </div>
+                {previewImage && <CreatePreviewImage image={previewImage} />}
+                <div className="create-image-actions">
+                  <button
+                    type="button"
+                    onClick={() => handleAttachImage('camera')}
+                    disabled={Boolean(imageBusyTarget)}
+                  >
+                    {imageBusyTarget === 'create:camera' ? '촬영 중...' : '카메라'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAttachImage('gallery')}
+                    disabled={Boolean(imageBusyTarget)}
+                  >
+                    {imageBusyTarget === 'create:gallery' ? '선택 중...' : '앨범'}
+                  </button>
+                </div>
+                {imageFeedback && <p className="form-helper create-image-feedback">{imageFeedback}</p>}
+              </div>
+            )}
+
             <div className="form-group">
               <div className="create-form-label-row">
                 <label>태그</label>
                 <span>{selectedTags.length}/{MAX_RECORD_TAGS}</span>
               </div>
-              <button
-                type="button"
-                className={`create-tag-selector ${selectedTags.length > 0 ? 'has-tags' : ''}`}
-                onClick={() => setIsTagPickerOpen(true)}
+              <details
+                className={`create-tag-dropdown ${selectedTags.length > 0 ? 'has-tags' : ''} ${tagError ? 'has-error' : ''}`}
+                data-block-pull-refresh="true"
+                open={isTagPickerOpen}
+                onToggle={event => setIsTagPickerOpen(event.currentTarget.open)}
               >
-                {selectedTags.length > 0 ? (
-                  <span className="create-selected-tags">
-                    {selectedTags.map(tag => (
-                      <span key={tag} className="create-selected-tag">{tag}</span>
+                <summary>
+                  <span>{selectedTags.length > 0 ? `${selectedTags.length}개 선택됨` : '태그 선택하기'}</span>
+                  <span className="create-tag-dropdown-arrow" aria-hidden="true" />
+                </summary>
+
+                <div className="create-tag-dropdown-panel" data-block-pull-refresh="true">
+                  {tagError && <p className="form-error create-tag-error">{tagError}</p>}
+
+                  <div className="create-tag-picker-groups">
+                    {HAPPINESS_TAG_GROUPS.map(group => (
+                      <section key={group.label} className="create-tag-picker-group">
+                        <h4>{group.label}</h4>
+                        <div className="create-tag-option-grid">
+                          {group.tags.map(tag => {
+                            const isSelected = selectedTags.includes(tag);
+                            const isDisabled = !isSelected && selectedTags.length >= MAX_RECORD_TAGS;
+
+                            return (
+                              <label
+                                key={tag}
+                                className={`create-tag-option ${isSelected ? 'is-selected' : ''} ${isDisabled ? 'is-disabled' : ''}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  disabled={isDisabled}
+                                  onChange={() => handleTagToggle(tag)}
+                                />
+                                <span>{tag}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </section>
                     ))}
-                  </span>
-                ) : (
-                  <span className="create-tag-placeholder">태그 선택하기</span>
-                )}
-              </button>
-              <p className="form-helper">검색과 필터에 쓰일 태그를 최대 3개 선택할 수 있어요.</p>
+                  </div>
+                </div>
+              </details>
+              {selectedTags.length > 0 && (
+                <span className="create-selected-tags">
+                  {selectedTags.map(tag => (
+                    <span key={tag} className="create-selected-tag">{tag}</span>
+                  ))}
+                </span>
+              )}
+              {!tagError && (
+                <p className="form-helper">검색과 필터에 쓰일 태그를 최대 3개 선택할 수 있어요.</p>
+              )}
             </div>
 
             <div className="form-group">
@@ -203,57 +422,6 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
           </form>
         </div>
       </div>
-
-      {isTagPickerOpen && (
-        <div
-          className="create-tag-picker-overlay"
-          onClick={event => {
-            event.stopPropagation();
-            setIsTagPickerOpen(false);
-          }}
-        >
-          <div className="create-tag-picker-modal" onClick={event => event.stopPropagation()}>
-            <div className="create-tag-picker-header">
-              <div>
-                <h3>태그 선택</h3>
-                <p>{selectedTags.length}/{MAX_RECORD_TAGS}개 선택됨</p>
-              </div>
-              <button type="button" className="create-tag-picker-close" onClick={() => setIsTagPickerOpen(false)}>
-                완료
-              </button>
-            </div>
-
-            <div className="create-tag-picker-groups">
-              {HAPPINESS_TAG_GROUPS.map(group => (
-                <section key={group.label} className="create-tag-picker-group">
-                  <h4>{group.label}</h4>
-                  <div className="create-tag-option-grid">
-                    {group.tags.map(tag => {
-                      const isSelected = selectedTags.includes(tag);
-                      const isDisabled = !isSelected && selectedTags.length >= MAX_RECORD_TAGS;
-
-                      return (
-                        <label
-                          key={tag}
-                          className={`create-tag-option ${isSelected ? 'is-selected' : ''} ${isDisabled ? 'is-disabled' : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            disabled={isDisabled}
-                            onChange={() => handleTagToggle(tag)}
-                          />
-                          <span>{tag}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </section>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

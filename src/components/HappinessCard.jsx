@@ -1,4 +1,6 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
+import { getMemoImageSrc } from '../lib/memoImages';
+import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
 import './HappinessCard.css';
 
@@ -28,8 +30,44 @@ const HappinessCard = ({ item, onClick }) => {
   const isOwner = isItemOwnedByCurrentUser(item.id);
   const memoCount = getItemMemos(item.id).length;
   const hasMemo = memoCount > 0;
-  const hasPreviewImage = typeof item.previewImage === 'string' && item.previewImage.trim();
+  const staticPreviewImage = typeof item.previewImage === 'string' ? item.previewImage.trim() : '';
+  const previewImageRef = item.previewImageRef;
+  const [resolvedPreviewImage, setResolvedPreviewImage] = useState(staticPreviewImage);
+  const hasPreviewImage = Boolean(previewImageRef?.path || staticPreviewImage || resolvedPreviewImage);
   const visibleTags = Array.isArray(item.tags) ? item.tags.slice(0, 3) : [];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPreviewImage = async () => {
+      if (!previewImageRef?.path) {
+        setResolvedPreviewImage(staticPreviewImage);
+        return;
+      }
+
+      const nextSrc = await getMemoImageSrc({
+        image: previewImageRef,
+        supabase
+      });
+
+      if (isMounted) {
+        setResolvedPreviewImage(nextSrc || staticPreviewImage);
+      }
+    };
+
+    void loadPreviewImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    previewImageRef,
+    previewImageRef?.contentType,
+    previewImageRef?.id,
+    previewImageRef?.path,
+    previewImageRef?.storageType,
+    staticPreviewImage
+  ]);
 
   return (
     <div
@@ -57,7 +95,11 @@ const HappinessCard = ({ item, onClick }) => {
         </div>
         {hasPreviewImage && (
           <div className="happiness-card-preview" aria-hidden="true">
-            <img src={item.previewImage} alt="" loading="lazy" />
+            {resolvedPreviewImage ? (
+              <img src={resolvedPreviewImage} alt="" loading="lazy" />
+            ) : (
+              <span className="happiness-card-preview-placeholder" />
+            )}
           </div>
         )}
       </div>
