@@ -44,6 +44,35 @@ android {
     }
 }
 
+def webProjectDir = rootProject.projectDir.parentFile
+def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+
+tasks.register('syncWebAssetsForAndroid', Exec) {
+    group = 'build'
+    description = 'Builds the web app and copies Capacitor assets before Android builds.'
+    workingDir webProjectDir
+
+    if (isWindows) {
+        commandLine 'cmd', '/c', 'npm run build && npx cap copy android'
+    } else {
+        commandLine 'sh', '-c', 'npm run build && npx cap copy android'
+    }
+
+    inputs.dir(new File(webProjectDir, 'src'))
+    inputs.dir(new File(webProjectDir, 'public'))
+    inputs.file(new File(webProjectDir, 'index.html'))
+    inputs.file(new File(webProjectDir, 'package.json'))
+    inputs.file(new File(webProjectDir, 'package-lock.json'))
+    inputs.file(new File(webProjectDir, 'vite.config.js'))
+    inputs.file(new File(webProjectDir, 'capacitor.config.json'))
+    outputs.dir(file('src/main/assets/public'))
+    outputs.file(file('src/main/assets/capacitor.config.json'))
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('syncWebAssetsForAndroid')
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
