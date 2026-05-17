@@ -33,3 +33,4 @@ ios-signing/
 *.jks
 *.keystore
 android/keystore.properties
+android/gradle/gradle-daemon-jvm.properties

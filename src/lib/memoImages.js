@@ -103,6 +103,10 @@ export const requestMemoCameraPermission = async () => {
 };
 
 export const requestMemoPhotoPermission = async () => {
+  if (Capacitor.getPlatform() === 'android') {
+    return true;
+  }
+
   const permissions = await Camera.requestPermissions({ permissions: ['photos'] });
   return permissions.photos === 'granted' || permissions.photos === 'limited';
 };
