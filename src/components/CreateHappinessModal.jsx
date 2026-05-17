@@ -320,38 +320,6 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
               />
             </div>
 
-            {isImageEnabled && (
-              <div className="form-group">
-                {previewImage && <CreatePreviewImage image={previewImage} />}
-                <div className="create-image-actions">
-                  <button
-                    type="button"
-                    onClick={() => handleAttachImage('camera')}
-                    disabled={Boolean(imageBusyTarget)}
-                  >
-                    {imageBusyTarget === 'create:camera' ? '촬영 중...' : '카메라'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAttachImage('gallery')}
-                    disabled={Boolean(imageBusyTarget)}
-                  >
-                    {imageBusyTarget === 'create:gallery' ? '선택 중...' : '앨범'}
-                  </button>
-                  {previewImage && (
-                    <button
-                      type="button"
-                      className="create-image-remove-btn"
-                      onClick={handleRemovePreviewImage}
-                    >
-                      제거
-                    </button>
-                  )}
-                </div>
-                {imageFeedback && <p className="form-helper create-image-feedback">{imageFeedback}</p>}
-              </div>
-            )}
-
             <div className="form-group">
               <div
                 className={`create-tag-dropdown ${isTagPickerOpen ? 'is-open' : ''} ${selectedTags.length > 0 ? 'has-tags' : ''} ${tagError ? 'has-error' : ''}`}
@@ -419,6 +387,38 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
                 </span>
               )}
             </div>
+
+            {isImageEnabled && (
+              <div className="form-group">
+                {previewImage && <CreatePreviewImage image={previewImage} />}
+                <div className="create-image-actions">
+                  <button
+                    type="button"
+                    onClick={() => handleAttachImage('camera')}
+                    disabled={Boolean(imageBusyTarget)}
+                  >
+                    {imageBusyTarget === 'create:camera' ? '촬영 중...' : '카메라'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAttachImage('gallery')}
+                    disabled={Boolean(imageBusyTarget)}
+                  >
+                    {imageBusyTarget === 'create:gallery' ? '선택 중...' : '앨범'}
+                  </button>
+                  {previewImage && (
+                    <button
+                      type="button"
+                      className="create-image-remove-btn"
+                      onClick={handleRemovePreviewImage}
+                    >
+                      제거
+                    </button>
+                  )}
+                </div>
+                {imageFeedback && <p className="form-helper create-image-feedback">{imageFeedback}</p>}
+              </div>
+            )}
 
             <div className="form-group">
               <label>공개 범위</label>
