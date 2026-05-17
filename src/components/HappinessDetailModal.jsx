@@ -444,7 +444,8 @@ const HappinessDetailModal = ({
         authUserId: memoCloudAuthUserId,
         itemId: currentItem.id,
         memoId,
-        mediaResult: pickResult.photo
+        mediaResult: pickResult.photo,
+        source
       });
 
       if (target === 'edit') {
@@ -469,7 +470,7 @@ const HappinessDetailModal = ({
   };
 
   const handleSaveActiveImageToGallery = async () => {
-    if (!activeMemoImage?.image || gallerySaveState.isSaving) {
+    if (!activeMemoImage?.image || activeMemoImage.image.source !== 'camera' || gallerySaveState.isSaving) {
       return;
     }
 
@@ -1152,7 +1153,8 @@ const HappinessDetailModal = ({
               &times;
             </button>
             {activeMemoImage.src && <img src={activeMemoImage.src} alt="" />}
-            <div className="memo-image-viewer-actions">
+            {activeMemoImage.image?.source === 'camera' && (
+              <div className="memo-image-viewer-actions">
               <button
                 type="button"
                 className="btn-primary memo-image-save-btn"
@@ -1164,7 +1166,8 @@ const HappinessDetailModal = ({
               {gallerySaveState.message && (
                 <p className="memo-image-save-feedback">{gallerySaveState.message}</p>
               )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -7,6 +7,7 @@ import {
   getMemoImageSrc,
   isNativeMemoImageAvailable,
   persistMemoImage,
+  saveMemoImageToGallery,
   takeMemoPhoto
 } from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
@@ -59,7 +60,7 @@ const getCreateImageErrorMessage = code => {
   }
 };
 
-const CreatePreviewImage = ({ image }) => {
+const CreatePreviewImage = ({ image, onOpen, onRemove }) => {
   const [src, setSrc] = useState('');
 
   useEffect(() => {
@@ -93,8 +94,24 @@ const CreatePreviewImage = ({ image }) => {
   }
 
   return (
-    <div className="create-image-preview-media" aria-hidden="true">
-      {src ? <img src={src} alt="" loading="lazy" /> : <span />}
+    <div className="create-image-preview-media">
+      <button
+        type="button"
+        className="create-image-preview-open"
+        onClick={() => onOpen?.(image, src)}
+        disabled={!src}
+        aria-label="첨부 사진 크게 보기"
+      >
+        {src ? <img src={src} alt="" loading="lazy" /> : <span />}
+      </button>
+      <button
+        type="button"
+        className="create-image-preview-remove"
+        onClick={() => onRemove?.(image)}
+        aria-label="첨부 사진 제거"
+      >
+        &times;
+      </button>
     </div>
   );
 };
@@ -111,6 +128,11 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
   const [tagError, setTagError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
+  const [activePreviewImage, setActivePreviewImage] = useState(null);
+  const [gallerySaveState, setGallerySaveState] = useState({
+    isSaving: false,
+    message: ''
+  });
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
   const [submitError, setSubmitError] = useState('');
@@ -137,6 +159,11 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     setIsTagPickerOpen(false);
     setTagError('');
     setPreviewImage(null);
+    setActivePreviewImage(null);
+    setGallerySaveState({
+      isSaving: false,
+      message: ''
+    });
     setImageFeedback('');
     setImageBusyTarget('');
     setSubmitError('');
@@ -152,6 +179,20 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     isOpen,
     onClose: handleClose,
     historyKey: 'create-happiness'
+  });
+
+  const closePreviewImage = () => {
+    setActivePreviewImage(null);
+    setGallerySaveState({
+      isSaving: false,
+      message: ''
+    });
+  };
+
+  const requestClosePreviewImage = useModalBackNavigation({
+    isOpen: isOpen && Boolean(activePreviewImage),
+    onClose: closePreviewImage,
+    historyKey: 'create-image-viewer'
   });
 
   const handleSubmit = async event => {
@@ -240,7 +281,8 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
         authUserId: cloudAuthUserId,
         itemId: draftItemId,
         memoId: CREATE_HAPPINESS_PREVIEW_MEMO_ID,
-        mediaResult: pickResult.photo
+        mediaResult: pickResult.photo,
+        source
       });
 
       cleanupPreviewImage(previewImage);
@@ -255,7 +297,43 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   const handleRemovePreviewImage = () => {
     cleanupPreviewImage(previewImage);
     setPreviewImage(null);
+    setActivePreviewImage(null);
     setImageFeedback('');
+  };
+
+  const openPreviewImage = (image, src) => {
+    if (!image) {
+      return;
+    }
+
+    setActivePreviewImage({ image, src: src || '' });
+    setGallerySaveState({
+      isSaving: false,
+      message: ''
+    });
+  };
+
+  const handleSaveActivePreviewImageToGallery = async () => {
+    if (!activePreviewImage?.image || activePreviewImage.image.source !== 'camera' || gallerySaveState.isSaving) {
+      return;
+    }
+
+    setGallerySaveState({
+      isSaving: true,
+      message: ''
+    });
+
+    const result = await saveMemoImageToGallery({
+      image: activePreviewImage.image,
+      supabase
+    });
+
+    setGallerySaveState({
+      isSaving: false,
+      message: result.success
+        ? '앨범에 저장했어요.'
+        : getCreateImageErrorMessage(result.code)
+    });
   };
 
   if (!isOpen) {
@@ -390,7 +468,13 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
 
             {isImageEnabled && (
               <div className="form-group">
-                {previewImage && <CreatePreviewImage image={previewImage} />}
+                {previewImage && (
+                  <CreatePreviewImage
+                    image={previewImage}
+                    onOpen={openPreviewImage}
+                    onRemove={handleRemovePreviewImage}
+                  />
+                )}
                 <div className="create-image-actions">
                   <button
                     type="button"
@@ -406,15 +490,6 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
                   >
                     {imageBusyTarget === 'create:gallery' ? '선택 중...' : '앨범'}
                   </button>
-                  {previewImage && (
-                    <button
-                      type="button"
-                      className="create-image-remove-btn"
-                      onClick={handleRemovePreviewImage}
-                    >
-                      제거
-                    </button>
-                  )}
                 </div>
                 {imageFeedback && <p className="form-helper create-image-feedback">{imageFeedback}</p>}
               </div>
@@ -451,6 +526,44 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
           </form>
         </div>
       </div>
+
+      {activePreviewImage && (
+        <div
+          className="create-image-viewer-overlay"
+          onClick={event => {
+            event.stopPropagation();
+            requestClosePreviewImage();
+          }}
+        >
+          <div
+            className="create-image-viewer"
+            onClick={event => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="create-image-viewer-close"
+              onClick={() => requestClosePreviewImage()}
+              aria-label="사진 닫기"
+            >
+              &times;
+            </button>
+            {activePreviewImage.src && <img src={activePreviewImage.src} alt="" />}
+            {activePreviewImage.image?.source === 'camera' && (
+              <div className="create-image-viewer-actions">
+                <button
+                  type="button"
+                  className="btn-primary create-image-save-btn"
+                  onClick={handleSaveActivePreviewImageToGallery}
+                  disabled={gallerySaveState.isSaving}
+                >
+                  {gallerySaveState.isSaving ? '저장 중...' : '앨범에 저장'}
+                </button>
+                {gallerySaveState.message && <p>{gallerySaveState.message}</p>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -25,10 +25,9 @@
 }
 
 .detail-top-actions {
-    position: absolute;
+    position: sticky;
     top: 14px;
-    left: 14px;
-    right: 14px;
+    margin: 14px 14px -46px;
     display: flex;
     align-items: center;
     justify-content: space-between;

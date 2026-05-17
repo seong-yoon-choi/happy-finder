@@ -504,10 +504,15 @@
 }
 
 .record-detail-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
+    padding-bottom: 8px;
+    background: var(--white);
 }
 
 .record-detail-header time {
@@ -653,17 +658,27 @@
 }
 
 .record-month-picker-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
+    padding-bottom: 8px;
+    background: var(--white);
 }
 
 .record-calendar-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    padding-bottom: 8px;
+    background: var(--white);
 }
 
 .record-month-picker-header h3 {
@@ -1050,10 +1065,15 @@
 }
 
 .record-note-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
+    padding-bottom: 8px;
+    background: transparent;
 }
 
 .record-note-header h3 {
@@ -1473,6 +1493,13 @@
 
 .record-image-save-btn {
     width: 100%;
+}
+
+.record-image-viewer-actions p {
+    margin: 0;
+    color: #ffffff;
+    font-size: var(--font-body-sm);
+    text-align: center;
 }
 
 .record-image-viewer-actions p {

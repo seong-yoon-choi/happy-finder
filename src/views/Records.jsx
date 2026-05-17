@@ -850,6 +850,14 @@ const Records = () => {
     });
   };
 
+  const closeImage = () => {
+    setActiveImage(null);
+    setGallerySaveState({
+      isSaving: false,
+      message: ''
+    });
+  };
+
   const openCalendar = () => {
     const nextPreviewDate = getWeekDisplayDate(visibleWeekStartDate, selectedRecordDate);
 
@@ -1029,7 +1037,8 @@ const Records = () => {
         authUserId: cloudAuthUserId,
         itemId: FREE_RECORD_IMAGE_ITEM_ID,
         memoId: recordId,
-        mediaResult: pickResult.photo
+        mediaResult: pickResult.photo,
+        source
       });
 
       setRecordImages(prev => [...prev, persistedImage]);
@@ -1152,7 +1161,7 @@ const Records = () => {
   };
 
   const handleSaveActiveImageToGallery = async () => {
-    if (!activeImage?.image || gallerySaveState.isSaving) {
+    if (!activeImage?.image || activeImage.image.source !== 'camera' || gallerySaveState.isSaving) {
       return;
     }
 
@@ -1720,18 +1729,19 @@ const Records = () => {
       )}
 
       {activeImage && (
-        <div className="record-image-viewer-overlay" onClick={() => setActiveImage(null)}>
+        <div className="record-image-viewer-overlay" onClick={closeImage}>
           <div className="record-image-viewer" onClick={event => event.stopPropagation()}>
             <button
               type="button"
               className="record-image-viewer-close"
-              onClick={() => setActiveImage(null)}
+              onClick={closeImage}
               aria-label="사진 닫기"
             >
               &times;
             </button>
             {activeImage.src && <img src={activeImage.src} alt="" />}
-            <div className="record-image-viewer-actions">
+            {activeImage.image?.source === 'camera' && (
+              <div className="record-image-viewer-actions">
               <button
                 type="button"
                 className="btn-primary record-image-save-btn"
@@ -1741,7 +1751,8 @@ const Records = () => {
                 {gallerySaveState.isSaving ? '저장 중...' : '휴대폰에 저장'}
               </button>
               {gallerySaveState.message && <p>{gallerySaveState.message}</p>}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

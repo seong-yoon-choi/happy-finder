@@ -177,7 +177,8 @@ export const persistMemoImage = async ({
   authUserId,
   itemId,
   memoId,
-  mediaResult
+  mediaResult,
+  source
 }) => {
   const imageId = createMemoImageId();
   const format = normalizeImageFormat(mediaResult?.metadata?.format);
@@ -186,6 +187,7 @@ export const persistMemoImage = async ({
   const nowIso = new Date().toISOString();
   const size = Number.isFinite(mediaResult?.metadata?.size) ? mediaResult.metadata.size : null;
   const resolution = typeof mediaResult?.metadata?.resolution === 'string' ? mediaResult.metadata.resolution : null;
+  const normalizedSource = source === 'camera' || source === 'gallery' ? source : null;
 
   if (supabase && authUserId) {
     const path = getCloudMemoImagePath({
@@ -215,6 +217,7 @@ export const persistMemoImage = async ({
       contentType,
       size,
       resolution,
+      source: normalizedSource,
       createdAt: nowIso
     };
   }
@@ -240,6 +243,7 @@ export const persistMemoImage = async ({
     contentType,
     size,
     resolution,
+    source: normalizedSource,
     createdAt: nowIso
   };
 };

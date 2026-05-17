@@ -27,6 +27,7 @@
 }
 
 .create-modal-content {
+    --create-modal-close-right: max(calc(var(--screen-side-padding) + 16px), calc((100vw - 520px) / 2 + 16px));
     width: min(100%, 520px);
     max-width: none;
     max-height: none;
@@ -54,9 +55,9 @@
 }
 
 .create-modal-top-actions {
-    position: absolute;
-    top: 16px;
-    right: 16px;
+    position: fixed;
+    top: calc(var(--native-safe-area-top) + 22px);
+    right: var(--create-modal-close-right);
     z-index: 10;
 }
 
@@ -189,8 +190,7 @@
     gap: 8px;
 }
 
-.create-image-actions button,
-.create-image-remove-btn {
+.create-image-actions button {
     min-height: 48px;
     border: 1px solid rgba(var(--primary-rgb), 0.24);
     border-radius: 16px;
@@ -208,19 +208,28 @@
     cursor: default;
 }
 
-.create-image-remove-btn {
-    grid-column: 1 / -1;
-    border-color: rgba(255, 95, 115, 0.26);
-    color: #d65b68;
-}
-
 .create-image-preview-media {
+    position: relative;
     width: 100%;
     aspect-ratio: 16 / 9;
     border: 1px solid rgba(var(--primary-rgb), 0.2);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.66);
     overflow: hidden;
+}
+
+.create-image-preview-open {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.create-image-preview-open:disabled {
+    cursor: default;
 }
 
 .create-image-preview-media img,
@@ -239,6 +248,21 @@
         linear-gradient(135deg, rgba(var(--primary-rgb), 0.12), rgba(var(--secondary-rgb), 0.14));
 }
 
+.create-image-preview-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(23, 48, 31, 0.76);
+    color: #ffffff;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
 .create-image-feedback {
     color: var(--danger);
 }
@@ -255,10 +279,76 @@
 }
 
 .dark-theme .create-image-actions button,
-.dark-theme .create-image-remove-btn,
 .dark-theme .create-image-preview-media,
 .dark-theme .create-tag-dropdown {
     background: rgba(255, 255, 255, 0.08);
+}
+
+.create-image-viewer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.78);
+}
+
+.create-image-viewer {
+    position: relative;
+    width: min(100%, 420px);
+    max-height: 88dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.create-image-viewer img {
+    max-width: 100%;
+    max-height: 70dvh;
+    border-radius: 18px;
+    object-fit: contain;
+    background: #000000;
+}
+
+.create-image-viewer-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.86);
+    color: #111111;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.create-image-viewer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.create-image-save-btn {
+    width: 100%;
+    min-height: 46px;
+    border-radius: 18px;
+}
+
+.create-image-save-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.create-image-viewer-actions p {
+    margin: 0;
+    color: #ffffff;
+    font-size: var(--font-body-sm);
+    text-align: center;
 }
 
 .create-tag-dropdown.has-error {
