@@ -1,4 +1,4 @@
-import React, { lazy, useCallback, useRef, useState } from 'react';
+import React, { lazy, useCallback, useState } from 'react';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import {
   chooseMemoPhoto,
@@ -19,23 +19,19 @@ const loadHappinessDetailModal = () => import('../components/HappinessDetailModa
 const HappinessDetailModal = lazy(loadHappinessDetailModal);
 
 const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
-const RECORD_PREVIEW_LIMIT = 3;
 const RECORD_MIN_MONTH_DATE = new Date(2026, 0, 1);
+const RECORD_VIEW_MODES = [
+  { value: 'day', label: '일로보기' },
+  { value: 'month', label: '달로보기' },
+  { value: 'all', label: '모아보기' }
+];
 
 const recordDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   hour: '2-digit',
   minute: '2-digit'
 });
 
-const calendarPreviewDateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  month: 'long',
-  day: 'numeric',
-  weekday: 'short'
-});
-
 const calendarWeekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
-const CALENDAR_SWIPE_THRESHOLD = 42;
-const CALENDAR_WHEEL_COOLDOWN_MS = 360;
 const KOREAN_PUBLIC_HOLIDAY_KEYS = new Set([
   '2026-01-01',
   '2026-02-16',
@@ -249,30 +245,6 @@ const getSelectableMonths = (year, maxMonthDate) => {
   );
 };
 
-const getCalendarDays = monthDate => {
-  const year = monthDate.getFullYear();
-  const month = monthDate.getMonth();
-  const firstDate = new Date(year, month, 1);
-  const lastDate = new Date(year, month + 1, 0);
-  const leadingBlankCount = firstDate.getDay();
-  const trailingBlankCount = 6 - lastDate.getDay();
-  const dayCells = [];
-
-  for (let index = 0; index < leadingBlankCount; index += 1) {
-    dayCells.push(null);
-  }
-
-  for (let day = 1; day <= lastDate.getDate(); day += 1) {
-    dayCells.push(new Date(year, month, day));
-  }
-
-  for (let index = 0; index < trailingBlankCount; index += 1) {
-    dayCells.push(null);
-  }
-
-  return dayCells;
-};
-
 const getWeekStart = value => {
   const date = value instanceof Date ? value : new Date(value);
   const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
@@ -314,36 +286,6 @@ const getWeekDisplayDate = (weekStartDate, selectedDate) => {
 };
 
 const formatRecordDateTime = record => recordDateTimeFormatter.format(getRecordDate(record));
-
-const formatCalendarPreviewDate = date => calendarPreviewDateFormatter.format(date);
-
-const getDefaultCalendarPreviewDate = monthDate => {
-  const maxDate = getRecordMaxDate();
-  const monthStart = clampRecordMonthDate(monthDate);
-  const isMaxMonth = (
-    monthStart.getFullYear() === maxDate.getFullYear()
-    && monthStart.getMonth() === maxDate.getMonth()
-  );
-
-  return isMaxMonth ? clampRecordDate(maxDate) : clampRecordDate(monthStart);
-};
-
-const isCalendarPreviewEvent = event => Boolean(
-  event.target?.closest?.('.record-calendar-preview')
-);
-
-const CalendarIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path
-      d="M7 4.75V7.25M17 4.75V7.25M5.75 9.25H18.25M7.25 6H16.75C18.2688 6 19.5 7.23122 19.5 8.75V17.25C19.5 18.7688 18.2688 20 16.75 20H7.25C5.73122 20 4.5 18.7688 4.5 17.25V8.75C4.5 7.23122 5.73122 6 7.25 6Z"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 const WriteIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -565,9 +507,7 @@ const Records = () => {
 
   const [selectedRecordDate, setSelectedRecordDate] = useState(() => clampRecordDate(new Date()));
   const [calendarMonthDate, setCalendarMonthDate] = useState(() => getMonthStart(clampRecordDate(new Date())));
-  const [calendarPreviewDate, setCalendarPreviewDate] = useState(() => clampRecordDate(new Date()));
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [visibleWeekStartDate, setVisibleWeekStartDate] = useState(() => getWeekStart(clampRecordDate(new Date())));
   const [monthPickerYear, setMonthPickerYear] = useState(() => clampRecordMonthDate(new Date()).getFullYear());
   const [draftRecordId, setDraftRecordId] = useState(() => createDraftRecordId());
@@ -585,7 +525,7 @@ const Records = () => {
   const [activeMemoItem, setActiveMemoItem] = useState(null);
   const [activeMemoFocusId, setActiveMemoFocusId] = useState('');
   const [activeRecordsTab, setActiveRecordsTab] = useState('records');
-  const [showAllRecords, setShowAllRecords] = useState(false);
+  const [recordViewMode, setRecordViewMode] = useState('day');
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
   const [recordShareFeedback, setRecordShareFeedback] = useState({
@@ -598,15 +538,12 @@ const Records = () => {
     isSaving: false,
     message: ''
   });
-  const calendarTouchStartYRef = useRef(null);
-  const lastCalendarWheelAtRef = useRef(0);
 
   const maxMonthDate = getRecordMaxMonthDate();
   const availableYears = getSelectableYears(maxMonthDate);
   const availableMonths = getSelectableMonths(monthPickerYear, maxMonthDate);
   const visibleWeekDays = getWeekDays(visibleWeekStartDate);
   const visibleWeekMonthDate = getMonthStart(getWeekDisplayDate(visibleWeekStartDate, selectedRecordDate));
-  const calendarDays = getCalendarDays(calendarMonthDate);
   const activeTimelineRecords = activeRecordsTab === 'memos' ? happinessMemoRecords : records;
   const activeTabLabel = activeRecordsTab === 'memos' ? '행복 메모' : '기록';
   const recordsByDate = activeTimelineRecords.reduce((recordMap, record) => {
@@ -617,18 +554,33 @@ const Records = () => {
     return recordMap;
   }, new Map());
   const selectedDateRecords = recordsByDate.get(getDateKey(selectedRecordDate)) || [];
-  const calendarPreviewRecords = recordsByDate.get(getDateKey(calendarPreviewDate)) || [];
-  const visibleRecords = showAllRecords
+  const selectedMonthRecords = activeTimelineRecords.filter(record => (
+    getMonthIndex(getMonthStart(getRecordDate(record))) === getMonthIndex(calendarMonthDate)
+  ));
+  const visibleRecords = recordViewMode === 'day'
     ? selectedDateRecords
-    : selectedDateRecords.slice(0, RECORD_PREVIEW_LIMIT);
+    : recordViewMode === 'month'
+      ? selectedMonthRecords
+      : activeTimelineRecords;
   const minWeekStartDate = getWeekStart(RECORD_MIN_MONTH_DATE);
   const maxWeekStartDate = getWeekStart(getRecordMaxDate());
   const canMoveToPreviousWeek = getDateKey(visibleWeekStartDate) > getDateKey(minWeekStartDate);
   const canMoveToNextWeek = getDateKey(visibleWeekStartDate) < getDateKey(maxWeekStartDate);
-  const canMoveToPreviousCalendarMonth = getMonthIndex(calendarMonthDate) > getMonthIndex(RECORD_MIN_MONTH_DATE);
-  const canMoveToNextCalendarMonth = getMonthIndex(calendarMonthDate) < getMonthIndex(maxMonthDate);
+  const canMoveToPreviousMonth = getMonthIndex(calendarMonthDate) > getMonthIndex(RECORD_MIN_MONTH_DATE);
+  const canMoveToNextMonth = getMonthIndex(calendarMonthDate) < getMonthIndex(maxMonthDate);
   const activeRecord = activeRecordId ? records.find(record => record.id === activeRecordId) : null;
   const isEditingRecord = Boolean(editingRecordId);
+  const emptyTimelineMessage = activeRecordsTab === 'memos'
+    ? recordViewMode === 'day'
+      ? '이 날에는 아직 남긴 행복 메모가 없어요.'
+      : recordViewMode === 'month'
+        ? '이 달에는 아직 남긴 행복 메모가 없어요.'
+        : '아직 남긴 행복 메모가 없어요.'
+    : recordViewMode === 'day'
+      ? '이 날에는 아직 남긴 기록이 없어요.'
+      : recordViewMode === 'month'
+        ? '이 달에는 아직 남긴 기록이 없어요.'
+        : '아직 남긴 기록이 없어요.';
 
   const cleanupImages = useCallback(images => {
     if (!Array.isArray(images) || images.length === 0) {
@@ -741,20 +693,11 @@ const Records = () => {
     });
   };
 
-  const openCalendar = () => {
-    const nextPreviewDate = getWeekDisplayDate(visibleWeekStartDate, selectedRecordDate);
-
-    setCalendarMonthDate(visibleWeekMonthDate);
-    setCalendarPreviewDate(nextPreviewDate);
-    setIsCalendarOpen(true);
-  };
-
   const applySelectedRecordDate = date => {
     const nextDate = clampRecordDate(date);
 
     setSelectedRecordDate(nextDate);
     setVisibleWeekStartDate(getWeekStart(nextDate));
-    setShowAllRecords(false);
 
     return nextDate;
   };
@@ -772,7 +715,7 @@ const Records = () => {
     setVisibleWeekStartDate(nextWeekStartDate);
   };
 
-  const handleMoveCalendarMonth = amount => {
+  const handleMoveMonth = amount => {
     const nextMonthDate = clampRecordMonthDate(addMonths(calendarMonthDate, amount));
 
     if (getMonthIndex(nextMonthDate) === getMonthIndex(calendarMonthDate)) {
@@ -780,59 +723,7 @@ const Records = () => {
     }
 
     setCalendarMonthDate(nextMonthDate);
-    setCalendarPreviewDate(getDefaultCalendarPreviewDate(nextMonthDate));
     setMonthPickerYear(nextMonthDate.getFullYear());
-  };
-
-  const handleCalendarWheel = event => {
-    if (isCalendarPreviewEvent(event)) {
-      return;
-    }
-
-    if (Math.abs(event.deltaY) < 28) {
-      return;
-    }
-
-    const now = Date.now();
-
-    if (now - lastCalendarWheelAtRef.current < CALENDAR_WHEEL_COOLDOWN_MS) {
-      return;
-    }
-
-    lastCalendarWheelAtRef.current = now;
-    handleMoveCalendarMonth(event.deltaY > 0 ? 1 : -1);
-  };
-
-  const handleCalendarTouchStart = event => {
-    if (isCalendarPreviewEvent(event)) {
-      calendarTouchStartYRef.current = null;
-      return;
-    }
-
-    calendarTouchStartYRef.current = event.touches?.[0]?.clientY ?? null;
-  };
-
-  const handleCalendarTouchEnd = event => {
-    const startY = calendarTouchStartYRef.current;
-    calendarTouchStartYRef.current = null;
-
-    if (typeof startY !== 'number') {
-      return;
-    }
-
-    const endY = event.changedTouches?.[0]?.clientY;
-
-    if (typeof endY !== 'number') {
-      return;
-    }
-
-    const distance = startY - endY;
-
-    if (Math.abs(distance) < CALENDAR_SWIPE_THRESHOLD) {
-      return;
-    }
-
-    handleMoveCalendarMonth(distance > 0 ? 1 : -1);
   };
 
   const openMonthPicker = () => {
@@ -853,7 +744,6 @@ const Records = () => {
 
     setMonthPickerYear(nextMonthDate.getFullYear());
     setCalendarMonthDate(nextMonthDate);
-    setCalendarPreviewDate(getDefaultCalendarPreviewDate(nextMonthDate));
   };
 
   const handleChangeMonthPickerMonth = event => {
@@ -861,32 +751,15 @@ const Records = () => {
 
     setMonthPickerYear(nextMonthDate.getFullYear());
     setCalendarMonthDate(nextMonthDate);
-    setCalendarPreviewDate(getDefaultCalendarPreviewDate(nextMonthDate));
   };
 
-  const handleSelectRecordDate = (date, { shouldCloseCalendar = false } = {}) => {
+  const handleSelectRecordDate = date => {
     if (!date || !isSelectableRecordDate(date)) {
       return;
     }
 
     const nextDate = applySelectedRecordDate(date);
     setCalendarMonthDate(getMonthStart(nextDate));
-
-    if (shouldCloseCalendar) {
-      setIsCalendarOpen(false);
-    }
-  };
-
-  const handlePreviewCalendarDate = date => {
-    if (!date || !isSelectableRecordDate(date)) {
-      return;
-    }
-
-    setCalendarPreviewDate(clampRecordDate(date));
-  };
-
-  const handleUseCalendarPreviewDate = () => {
-    handleSelectRecordDate(calendarPreviewDate, { shouldCloseCalendar: true });
   };
 
   const handleAttachImage = async source => {
@@ -1053,10 +926,7 @@ const Records = () => {
                 className={`records-heading-tab ${activeRecordsTab === 'records' ? 'active' : ''}`}
                 role="tab"
                 aria-selected={activeRecordsTab === 'records'}
-                onClick={() => {
-                  setActiveRecordsTab('records');
-                  setShowAllRecords(false);
-                }}
+                onClick={() => setActiveRecordsTab('records')}
               >
                 기록
               </button>
@@ -1065,10 +935,7 @@ const Records = () => {
                 className={`records-heading-tab ${activeRecordsTab === 'memos' ? 'active' : ''}`}
                 role="tab"
                 aria-selected={activeRecordsTab === 'memos'}
-                onClick={() => {
-                  setActiveRecordsTab('memos');
-                  setShowAllRecords(false);
-                }}
+                onClick={() => setActiveRecordsTab('memos')}
               >
                 행복 메모
               </button>
@@ -1079,78 +946,122 @@ const Records = () => {
                 : '지금 행복한 감정을 기록해 보세요.'}
             </p>
           </div>
-          {activeRecordsTab === 'records' && (
-            <button type="button" className="records-write-btn" onClick={openCreateComposer}>
-              <WriteIcon />
-              <span>기록 남기기</span>
-            </button>
-          )}
+          <div className="records-view-mode-tabs" role="tablist" aria-label="보기 방식">
+            {RECORD_VIEW_MODES.map(mode => (
+              <button
+                key={mode.value}
+                type="button"
+                className={`records-view-mode-tab ${recordViewMode === mode.value ? 'active' : ''}`}
+                role="tab"
+                aria-selected={recordViewMode === mode.value}
+                onClick={() => setRecordViewMode(mode.value)}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
       <main className="records-sections">
         <section className="records-overview-section records-month-section">
-          <div className="records-month-nav" aria-label="기록 주 선택">
-            <button
-              type="button"
-              className="records-month-shift-btn"
-              onClick={() => handleMoveWeek(-1)}
-              disabled={!canMoveToPreviousWeek}
-              aria-label="이전 주 기록 보기"
-            >
-              &lt;
-            </button>
-            <div
-              className="records-month-display"
-              aria-label={`${getMonthLabel(visibleWeekMonthDate)} 기록 주`}
-            >
-              <strong>{getMonthLabel(visibleWeekMonthDate)}</strong>
-            </div>
-            <button
-              type="button"
-              className="records-calendar-open-btn"
-              onClick={openCalendar}
-              aria-label={`${getMonthLabel(visibleWeekMonthDate)} 달력 보기`}
-            >
-              <CalendarIcon />
-            </button>
-            <button
-              type="button"
-              className="records-month-shift-btn"
-              onClick={() => handleMoveWeek(1)}
-              disabled={!canMoveToNextWeek}
-              aria-label="다음 주 기록 보기"
-            >
-              &gt;
-            </button>
-          </div>
-
-          <div className="record-week-strip" aria-label={`${getMonthLabel(visibleWeekMonthDate)} 주간 ${activeTabLabel} 달력`}>
-            {visibleWeekDays.map(date => {
-              const dateKey = getDateKey(date);
-              const dayRecords = recordsByDate.get(dateKey) || [];
-              const isToday = isSameDay(date, new Date());
-              const isSelected = isSameDay(date, selectedRecordDate);
-              const isDisabled = !isSelectableRecordDate(date);
-              const dayToneClass = getDayToneClass(date);
-              const holidayLabel = isPublicHoliday(date) ? ' 공휴일' : '';
-
-              return (
+          {recordViewMode === 'day' && (
+            <>
+              <div className="records-month-nav" aria-label="기록 주 선택">
                 <button
-                  key={dateKey}
                   type="button"
-                  className={`record-week-day${dayToneClass}${dayRecords.length > 0 ? ' has-records' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}`}
-                  onClick={() => handleSelectRecordDate(date)}
-                  disabled={isDisabled}
-                  aria-label={`${date.getDate()}일${holidayLabel} ${activeTabLabel} ${dayRecords.length}개 보기`}
+                  className="records-month-shift-btn"
+                  onClick={() => handleMoveWeek(-1)}
+                  disabled={!canMoveToPreviousWeek}
+                  aria-label="이전 주 기록 보기"
                 >
-                  <span>{calendarWeekdayLabels[date.getDay()]}</span>
-                  <strong>{date.getDate()}</strong>
-                  {dayRecords.length > 0 && <i aria-hidden="true" />}
+                  &lt;
                 </button>
-              );
-            })}
-          </div>
+                <div
+                  className="records-month-display"
+                  aria-label={`${getMonthLabel(visibleWeekMonthDate)} 기록 주`}
+                >
+                  <strong>{getMonthLabel(visibleWeekMonthDate)}</strong>
+                </div>
+                <button
+                  type="button"
+                  className="records-month-shift-btn"
+                  onClick={() => handleMoveWeek(1)}
+                  disabled={!canMoveToNextWeek}
+                  aria-label="다음 주 기록 보기"
+                >
+                  &gt;
+                </button>
+              </div>
+
+              <div className="record-week-strip" aria-label={`${getMonthLabel(visibleWeekMonthDate)} 주간 ${activeTabLabel} 달력`}>
+                {visibleWeekDays.map(date => {
+                  const dateKey = getDateKey(date);
+                  const dayRecords = recordsByDate.get(dateKey) || [];
+                  const isToday = isSameDay(date, new Date());
+                  const isSelected = isSameDay(date, selectedRecordDate);
+                  const isDisabled = !isSelectableRecordDate(date);
+                  const dayToneClass = getDayToneClass(date);
+                  const holidayLabel = isPublicHoliday(date) ? ' 공휴일' : '';
+
+                  return (
+                    <button
+                      key={dateKey}
+                      type="button"
+                      className={`record-week-day${dayToneClass}${dayRecords.length > 0 ? ' has-records' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}`}
+                      onClick={() => handleSelectRecordDate(date)}
+                      disabled={isDisabled}
+                      aria-label={`${date.getDate()}일${holidayLabel} ${activeTabLabel} ${dayRecords.length}개 보기`}
+                    >
+                      <span>{calendarWeekdayLabels[date.getDay()]}</span>
+                      <strong>{date.getDate()}</strong>
+                      {dayRecords.length > 0 && <i aria-hidden="true" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {recordViewMode === 'month' && (
+            <div className="records-month-nav records-month-nav-standalone" aria-label="기록 월 선택">
+              <button
+                type="button"
+                className="records-month-shift-btn"
+                onClick={() => handleMoveMonth(-1)}
+                disabled={!canMoveToPreviousMonth}
+                aria-label="이전 달 기록 보기"
+              >
+                &lt;
+              </button>
+              <button
+                type="button"
+                className="records-month-display records-month-display-button"
+                onClick={openMonthPicker}
+                aria-label={`${getMonthLabel(calendarMonthDate)} 선택 변경`}
+              >
+                <strong>{getMonthLabel(calendarMonthDate)}</strong>
+              </button>
+              <button
+                type="button"
+                className="records-month-shift-btn"
+                onClick={() => handleMoveMonth(1)}
+                disabled={!canMoveToNextMonth}
+                aria-label="다음 달 기록 보기"
+              >
+                &gt;
+              </button>
+            </div>
+          )}
+
+          {activeRecordsTab === 'records' && (
+            <div className="records-write-slot">
+              <button type="button" className="records-write-btn" onClick={openCreateComposer}>
+                <WriteIcon />
+                <span>기록 남기기</span>
+              </button>
+            </div>
+          )}
 
           {visibleRecords.length > 0 ? (
             <div className="record-preview-list">
@@ -1174,20 +1085,8 @@ const Records = () => {
             </div>
           ) : (
             <p className="record-section-empty">
-              {activeRecordsTab === 'memos'
-                ? '이 날에는 아직 남긴 행복 메모가 없어요.'
-                : '이 날에는 아직 남긴 기록이 없어요.'}
+              {emptyTimelineMessage}
             </p>
-          )}
-
-          {selectedDateRecords.length > RECORD_PREVIEW_LIMIT && (
-            <button
-              type="button"
-              className="record-view-all-btn"
-              onClick={() => setShowAllRecords(prev => !prev)}
-            >
-              {showAllRecords ? '접기' : '전체 보기'}
-            </button>
           )}
         </section>
       </main>
@@ -1251,148 +1150,6 @@ const Records = () => {
                 </select>
               </label>
             </div>
-          </div>
-        </div>
-      )}
-
-      {isCalendarOpen && (
-        <div
-          className="record-calendar-overlay"
-          data-block-pull-refresh="true"
-          onClick={() => setIsCalendarOpen(false)}
-        >
-          <div
-            className="record-calendar-modal"
-            data-block-pull-refresh="true"
-            onWheel={handleCalendarWheel}
-            onTouchStart={handleCalendarTouchStart}
-            onTouchEnd={handleCalendarTouchEnd}
-            onClick={event => event.stopPropagation()}
-          >
-            <div className="record-calendar-header">
-              <div className="record-calendar-month-nav">
-                <button
-                  type="button"
-                  className="record-calendar-shift-btn"
-                  onClick={() => handleMoveCalendarMonth(-1)}
-                  disabled={!canMoveToPreviousCalendarMonth}
-                  aria-label="이전 달 보기"
-                >
-                  &lt;
-                </button>
-                <button
-                  type="button"
-                  className="record-calendar-month-btn"
-                  onClick={openMonthPicker}
-                  aria-label={`${getMonthLabel(calendarMonthDate)} 선택 변경`}
-                >
-                  {getMonthLabel(calendarMonthDate)}
-                </button>
-                <button
-                  type="button"
-                  className="record-calendar-shift-btn"
-                  onClick={() => handleMoveCalendarMonth(1)}
-                  disabled={!canMoveToNextCalendarMonth}
-                  aria-label="다음 달 보기"
-                >
-                  &gt;
-                </button>
-              </div>
-              <button
-                type="button"
-                className="record-calendar-close"
-                onClick={() => setIsCalendarOpen(false)}
-                aria-label="달력 닫기"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="record-calendar-weekdays" aria-hidden="true">
-              {calendarWeekdayLabels.map((label, index) => (
-                <span
-                  key={label}
-                  className={index === 0 ? 'sunday' : index === 6 ? 'saturday' : ''}
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-
-            <div className="record-calendar-grid" aria-label={`${getMonthLabel(calendarMonthDate)} 날짜 선택`}>
-              {calendarDays.map((date, index) => {
-                if (!date) {
-                  return <span key={`blank-${index}`} className="record-calendar-blank" />;
-                }
-
-                const dateKey = getDateKey(date);
-                const dayRecords = recordsByDate.get(dateKey) || [];
-                const isToday = isSameDay(date, new Date());
-                const isSelected = isSameDay(date, calendarPreviewDate);
-                const isDisabled = !isSelectableRecordDate(date);
-                const dayToneClass = getDayToneClass(date);
-                const holidayLabel = isPublicHoliday(date) ? ' 공휴일' : '';
-
-                return (
-                  <button
-                    key={dateKey}
-                    type="button"
-                    className={`record-calendar-day${dayToneClass}${dayRecords.length > 0 ? ' has-records' : ''}${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}`}
-                    onClick={() => handlePreviewCalendarDate(date)}
-                    disabled={isDisabled}
-                    aria-label={`${date.getDate()}일${holidayLabel} ${activeTabLabel} ${dayRecords.length}개 보기`}
-                  >
-                    <span>{date.getDate()}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <section className="record-calendar-preview" aria-label={`${formatCalendarPreviewDate(calendarPreviewDate)} ${activeTabLabel} 미리보기`}>
-              <div className="record-calendar-preview-head">
-                <div>
-                  <strong>{formatCalendarPreviewDate(calendarPreviewDate)} {activeTabLabel}</strong>
-                  <span>
-                    {calendarPreviewRecords.length > 0
-                      ? `${calendarPreviewRecords.length}개`
-                      : `${activeTabLabel} 없음`}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleUseCalendarPreviewDate}
-                >
-                  이 날짜 보기
-                </button>
-              </div>
-
-              {calendarPreviewRecords.length > 0 ? (
-                <div className="record-calendar-preview-list">
-                  {calendarPreviewRecords.map(record => (
-                    <button
-                      key={record.recordKey || record.id}
-                      type="button"
-                      className={`record-calendar-preview-row ${record.images?.length > 0 ? 'has-image' : ''}`}
-                      onClick={() => openTimelineEntry(record)}
-                      aria-label={`${getTimelineEntryTitle(record)} ${activeTabLabel} 전체 보기`}
-                    >
-                      <div className="record-calendar-preview-content">
-                        <time>{formatRecordDateTime(record)}</time>
-                        <strong>{getTimelineEntryTitle(record)}</strong>
-                        <p>{getRecordSnippet(record.content)}</p>
-                      </div>
-                      <RecordPreviewThumb images={record.images} />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="record-calendar-preview-empty">
-                  {activeRecordsTab === 'memos'
-                    ? '행복 메모가 없습니다.'
-                    : '기록이 없습니다.'}
-                </p>
-              )}
-            </section>
           </div>
         </div>
       )}
@@ -1486,6 +1243,7 @@ const Records = () => {
             canDelete={false}
             autoOpenMemoComposer={false}
             focusMemoId={activeMemoFocusId}
+            overlayClassName="record-memo-detail-overlay"
           />
         </LazyLoadBoundary>
       )}

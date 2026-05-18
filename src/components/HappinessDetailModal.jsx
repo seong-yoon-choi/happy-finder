@@ -276,7 +276,8 @@ const HappinessDetailModal = ({
   onClose,
   canDelete = false,
   autoOpenMemoComposer = false,
-  focusMemoId = ''
+  focusMemoId = '',
+  overlayClassName = ''
 }) => {
   const {
     items,
@@ -870,7 +871,11 @@ const HappinessDetailModal = ({
   }
 
   return (
-    <div className="modal-overlay detail-modal-overlay" data-block-pull-refresh="true" onClick={() => requestClose()}>
+    <div
+      className={`modal-overlay detail-modal-overlay${overlayClassName ? ` ${overlayClassName}` : ''}`}
+      data-block-pull-refresh="true"
+      onClick={() => requestClose()}
+    >
       <div
         className="glass-panel detail-modal-content"
         data-block-pull-refresh="true"

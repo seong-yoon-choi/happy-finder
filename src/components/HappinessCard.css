@@ -64,10 +64,10 @@
 .card-note-indicator {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     color: var(--primary-color);
-    font-size: var(--font-body-sm);
-    font-weight: 800;
+    font-size: var(--font-body-md);
+    font-weight: 850;
     line-height: 1;
 }
 
@@ -75,13 +75,13 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    min-height: 20px;
-    margin-top: -2px;
+    min-height: 24px;
+    margin-top: 0;
 }
 
 .card-note-indicator svg {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
     flex: 0 0 auto;
 }
 
