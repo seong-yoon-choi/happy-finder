@@ -940,11 +940,6 @@ const Records = () => {
                 행복 메모
               </button>
             </div>
-            <p>
-              {activeRecordsTab === 'memos'
-                ? '행복 리스트에 남긴 메모를 모아보세요.'
-                : '지금 행복한 감정을 기록해 보세요.'}
-            </p>
           </div>
           <div className="records-header-actions">
             <div className="records-view-mode-tabs" role="tablist" aria-label="보기 방식">

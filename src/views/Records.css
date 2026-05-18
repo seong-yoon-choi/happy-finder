@@ -17,10 +17,9 @@
 .records-header-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     column-gap: 14px;
-    row-gap: 4px;
 }
 
 .records-header-copy {
@@ -63,15 +62,6 @@
     color: var(--text-dark);
 }
 
-.records-header p {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    max-width: none;
-    font-size: var(--font-body-md);
-    line-height: 1.38;
-    margin: 0;
-}
-
 .records-header-actions {
     grid-column: 2;
     grid-row: 1;
@@ -85,11 +75,11 @@
 .records-view-mode-tabs {
     flex: 0 0 auto;
     display: grid;
-    grid-template-columns: 30px 30px 42px;
-    gap: 3px;
-    padding: 3px;
+    grid-template-columns: 38px 38px 54px;
+    gap: 4px;
+    padding: 4px;
     border: 1px solid rgba(var(--primary-rgb), 0.16);
-    border-radius: 15px;
+    border-radius: 18px;
     background: rgba(255, 255, 255, 0.62);
     box-shadow: 0 10px 20px rgba(26, 51, 31, 0.06);
 }
@@ -99,14 +89,14 @@
 }
 
 .records-view-mode-tab {
-    min-height: 32px;
+    min-height: 40px;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     background: transparent;
     color: var(--text-light);
     padding: 0;
     font: inherit;
-    font-size: var(--font-body-sm);
+    font-size: var(--font-body-md);
     font-weight: 900;
     line-height: 1;
     white-space: nowrap;
@@ -1419,11 +1409,12 @@
     }
 
     .records-view-mode-tabs {
-        grid-template-columns: 28px 28px 38px;
+        grid-template-columns: 36px 36px 50px;
     }
 
     .records-view-mode-tab {
-        font-size: 0.82rem;
+        min-height: 38px;
+        font-size: var(--font-body-sm);
     }
 
     .records-floating-write-btn {
