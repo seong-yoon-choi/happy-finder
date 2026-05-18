@@ -11,7 +11,6 @@ import {
   takeMemoPhoto
 } from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
-import { HAPPINESS_TAG_GROUPS, MAX_RECORD_TAGS } from '../lib/happinessTags';
 import { shareTextContent } from '../lib/share';
 import { useHappy } from '../store/HappyContext';
 import './Records.css';
@@ -114,13 +113,8 @@ const getShareFeedbackMessage = result => {
 };
 
 const getRecordShareText = record => {
-  const tagText = Array.isArray(record?.tags) && record.tags.length > 0
-    ? `태그: ${record.tags.join(', ')}`
-    : '';
-
   return [
     getRecordDetailContent(record?.content),
-    tagText,
     'Happy Finder'
   ]
     .filter(value => typeof value === 'string' && value.trim())
@@ -432,109 +426,6 @@ const ShareIcon = () => (
   </svg>
 );
 
-const TagIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-    <path
-      d="M5.5 7H18.5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path
-      d="M8.5 12H15.5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <path
-      d="M10.5 17H13.5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const RecordTagList = ({ tags = [] }) => {
-  if (!Array.isArray(tags) || tags.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="record-tag-list" aria-label="태그">
-      {tags.map(tag => (
-        <span key={tag}>{tag}</span>
-      ))}
-    </div>
-  );
-};
-
-const RecordTagDropdown = ({
-  feedback,
-  hasError = false,
-  isOpen,
-  onOpenChange,
-  onToggleTag,
-  tags = []
-}) => (
-  <div
-    className={`record-tag-dropdown ${isOpen ? 'is-open' : ''} ${hasError ? 'has-error' : ''}`}
-    data-block-pull-refresh="true"
-  >
-    <button
-      type="button"
-      className="record-tag-dropdown-trigger"
-      aria-expanded={isOpen}
-      aria-controls="record-tag-dropdown-panel"
-      aria-label={`태그 선택 ${tags.length}개`}
-      onClick={() => onOpenChange(!isOpen)}
-    >
-      <span className="record-tag-dropdown-main">
-        <TagIcon />
-        <span>태그</span>
-      </span>
-      <span className="record-tag-dropdown-meta">
-        <span className="record-tag-dropdown-count">
-          {tags.length > 0 ? `${tags.length}/${MAX_RECORD_TAGS}개 선택` : '선택 안 함'}
-        </span>
-        <span className="record-tag-dropdown-arrow" aria-hidden="true" />
-      </span>
-    </button>
-
-    {isOpen && (
-      <div id="record-tag-dropdown-panel" className="record-tag-dropdown-panel" data-block-pull-refresh="true">
-        {feedback && <p className="record-tag-feedback">{feedback}</p>}
-
-        <div className="record-tag-picker-groups">
-          {HAPPINESS_TAG_GROUPS.map(group => (
-            <section key={group.label} className="record-tag-picker-group">
-              <strong>{group.label}</strong>
-              <div className="record-tag-options">
-                {group.tags.map(tag => {
-                  const isChecked = tags.includes(tag);
-                  const isDisabled = !isChecked && tags.length >= MAX_RECORD_TAGS;
-
-                  return (
-                    <label key={tag} className={`record-tag-option ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        disabled={isDisabled}
-                        onChange={() => onToggleTag(tag)}
-                      />
-                      <span>{tag}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-);
-
 const RecordPreviewThumb = ({ images = [] }) => {
   const previewImage = Array.isArray(images) ? images[0] : null;
   const [src, setSrc] = useState('');
@@ -684,11 +575,9 @@ const Records = () => {
   const [recordTitle, setRecordTitle] = useState('');
   const [recordText, setRecordText] = useState('');
   const [recordImages, setRecordImages] = useState([]);
-  const [recordTags, setRecordTags] = useState([]);
   const [recordValidation, setRecordValidation] = useState({
     title: false,
     content: false,
-    tags: false,
     pulse: 0
   });
   const [editingRecordId, setEditingRecordId] = useState(null);
@@ -697,8 +586,6 @@ const Records = () => {
   const [activeMemoFocusId, setActiveMemoFocusId] = useState('');
   const [activeRecordsTab, setActiveRecordsTab] = useState('records');
   const [showAllRecords, setShowAllRecords] = useState(false);
-  const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
-  const [tagFeedback, setTagFeedback] = useState('');
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
   const [recordShareFeedback, setRecordShareFeedback] = useState({
@@ -780,11 +667,8 @@ const Records = () => {
     setRecordTitle('');
     setRecordText('');
     setRecordImages([]);
-    setRecordTags([]);
-    setRecordValidation({ title: false, content: false, tags: false, pulse: 0 });
+    setRecordValidation({ title: false, content: false, pulse: 0 });
     setDraftRecordId(createDraftRecordId());
-    setIsTagPickerOpen(false);
-    setTagFeedback('');
     setImageFeedback('');
     setImageBusyTarget('');
   }, [cleanupUncommittedComposerImages]);
@@ -800,7 +684,6 @@ const Records = () => {
     setRecordTitle(record.title || '');
     setRecordText(record.content);
     setRecordImages(Array.isArray(record.images) ? record.images : []);
-    setRecordTags(Array.isArray(record.tags) ? record.tags : []);
     setActiveRecordId(null);
     setRecordShareFeedback({
       type: 'idle',
@@ -1061,48 +944,23 @@ const Records = () => {
     }
   };
 
-  const handleToggleRecordTag = tag => {
-    setRecordTags(prevTags => {
-      if (prevTags.includes(tag)) {
-        setTagFeedback('');
-        return prevTags.filter(savedTag => savedTag !== tag);
-      }
-
-      if (prevTags.length >= MAX_RECORD_TAGS) {
-        setTagFeedback(`태그는 최대 ${MAX_RECORD_TAGS}개까지 선택할 수 있어요.`);
-        return prevTags;
-      }
-
-      setTagFeedback('');
-      setRecordValidation(prev => ({ ...prev, tags: false }));
-      return [...prevTags, tag];
-    });
-  };
-
   const handleSaveRecord = () => {
     const isTitleMissing = !recordTitle.trim();
     const isContentMissing = !recordText.trim();
-    const isTagMissing = recordTags.length === 0;
 
-    if (isTitleMissing || isContentMissing || isTagMissing) {
+    if (isTitleMissing || isContentMissing) {
       setRecordValidation(prev => ({
         title: isTitleMissing,
         content: isContentMissing,
-        tags: isTagMissing,
         pulse: prev.pulse + 1
       }));
-
-      if (isTagMissing) {
-        setTagFeedback('최소 한개의 태그를 선택해 주세요.');
-        setIsTagPickerOpen(true);
-      }
 
       return;
     }
 
     const savedRecord = editingRecordId
-      ? updateFreeRecord(editingRecordId, recordText, recordImages, { title: recordTitle, tags: recordTags })
-      : addFreeRecord(recordText, recordImages, { id: draftRecordId, title: recordTitle, tags: recordTags });
+      ? updateFreeRecord(editingRecordId, recordText, recordImages, { title: recordTitle })
+      : addFreeRecord(recordText, recordImages, { id: draftRecordId, title: recordTitle });
 
     if (!savedRecord) {
       return;
@@ -1308,7 +1166,6 @@ const Records = () => {
                       <time>{formatRecordDateTime(record)}</time>
                       <h3>{getTimelineEntryTitle(record)}</h3>
                       <p>{getRecordSnippet(record.content)}</p>
-                      <RecordTagList tags={record.tags} />
                     </div>
                     <RecordPreviewThumb images={record.images} />
                   </button>
@@ -1515,14 +1372,16 @@ const Records = () => {
                     <button
                       key={record.recordKey || record.id}
                       type="button"
-                      className="record-calendar-preview-row"
+                      className={`record-calendar-preview-row ${record.images?.length > 0 ? 'has-image' : ''}`}
                       onClick={() => openTimelineEntry(record)}
                       aria-label={`${getTimelineEntryTitle(record)} ${activeTabLabel} 전체 보기`}
                     >
-                      <time>{formatRecordDateTime(record)}</time>
-                      <strong>{getTimelineEntryTitle(record)}</strong>
-                      <p>{getRecordSnippet(record.content)}</p>
-                      <RecordTagList tags={record.tags} />
+                      <div className="record-calendar-preview-content">
+                        <time>{formatRecordDateTime(record)}</time>
+                        <strong>{getTimelineEntryTitle(record)}</strong>
+                        <p>{getRecordSnippet(record.content)}</p>
+                      </div>
+                      <RecordPreviewThumb images={record.images} />
                     </button>
                   ))}
                 </div>
@@ -1591,7 +1450,6 @@ const Records = () => {
             </div>
 
             <p className="record-detail-content">{getRecordDetailContent(activeRecord.content)}</p>
-            <RecordTagList tags={activeRecord.tags} />
 
             {recordShareFeedback.message && (
               <div className={`record-detail-share-feedback ${recordShareFeedback.type === 'error' ? 'error' : 'success'}`}>
@@ -1674,17 +1532,6 @@ const Records = () => {
               rows={9}
               maxLength={1600}
             />
-
-            <RecordTagDropdown
-              feedback={tagFeedback}
-              hasError={recordValidation.tags}
-              isOpen={isTagPickerOpen}
-              onOpenChange={setIsTagPickerOpen}
-              onToggleTag={handleToggleRecordTag}
-              tags={recordTags}
-            />
-
-            <RecordTagList tags={recordTags} />
 
             <RecordImageStrip
               images={recordImages}

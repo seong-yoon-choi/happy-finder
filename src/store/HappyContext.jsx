@@ -3342,7 +3342,6 @@ export const HappyProvider = ({ children }) => {
     const trimmedContent = typeof content === 'string' ? content.trim() : '';
     const trimmedTitle = typeof options.title === 'string' ? options.title.trim() : '';
     const normalizedImages = normalizeMemoImages(images);
-    const normalizedTags = normalizeVisibleTags(options.tags, MAX_RECORD_TAGS);
 
     if (!trimmedTitle && !trimmedContent && normalizedImages.length === 0) {
       return null;
@@ -3354,7 +3353,7 @@ export const HappyProvider = ({ children }) => {
       title: trimmedTitle,
       content: trimmedContent,
       images: normalizedImages,
-      tags: normalizedTags,
+      tags: [],
       createdAt: nowIso,
       updatedAt: nowIso
     };
@@ -3369,7 +3368,6 @@ export const HappyProvider = ({ children }) => {
     const trimmedTitle = typeof options.title === 'string' ? options.title.trim() : '';
     const hasNextImages = Array.isArray(images);
     const normalizedImages = hasNextImages ? normalizeMemoImages(images) : null;
-    const normalizedTags = normalizeVisibleTags(options.tags, MAX_RECORD_TAGS);
 
     if (!trimmedTitle && !trimmedContent && (!hasNextImages || normalizedImages.length === 0)) {
       return false;
@@ -3397,7 +3395,7 @@ export const HappyProvider = ({ children }) => {
           title: trimmedTitle,
           content: trimmedContent,
           images: nextImages,
-          tags: normalizedTags,
+          tags: [],
           updatedAt: new Date().toISOString()
         };
       });
