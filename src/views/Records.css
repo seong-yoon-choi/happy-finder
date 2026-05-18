@@ -119,27 +119,30 @@
     box-shadow: 0 8px 16px rgba(95, 188, 68, 0.16);
 }
 
-.records-write-icon-btn {
-    flex: 0 0 auto;
-    width: 40px;
-    height: 40px;
+.records-floating-write-btn {
+    position: fixed;
+    right: max(var(--screen-side-padding), calc((100vw - 480px) / 2 + var(--screen-side-padding)));
+    bottom: calc(var(--native-safe-area-bottom) + 104px);
+    z-index: 1100;
+    width: 56px;
+    height: 56px;
     border: 1px solid rgba(104, 191, 67, 0.42);
-    border-radius: 15px;
+    border-radius: 50%;
     background: linear-gradient(135deg, #5fbc44 0%, #a9d94f 100%);
     color: #ffffff;
     padding: 0;
     font: inherit;
-    box-shadow: 0 12px 24px rgba(95, 188, 68, 0.2);
+    box-shadow: 0 16px 30px rgba(95, 188, 68, 0.28);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
-.records-write-icon-btn svg {
-    width: 18px;
-    height: 18px;
-    flex: 0 0 18px;
+.records-floating-write-btn svg {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
 }
 
 .records-sections {
@@ -1423,10 +1426,16 @@
         font-size: 0.82rem;
     }
 
-    .records-write-icon-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 14px;
+    .records-floating-write-btn {
+        width: 52px;
+        height: 52px;
+        bottom: calc(var(--native-safe-area-bottom) + 100px);
+    }
+
+    .records-floating-write-btn svg {
+        width: 22px;
+        height: 22px;
+        flex-basis: 22px;
     }
 
     .record-preview-row {
