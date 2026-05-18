@@ -29,9 +29,11 @@
 .create-modal-content {
     width: min(100%, 520px);
     max-width: none;
-    max-height: none;
+    max-height: calc(100dvh - var(--native-safe-area-top) - var(--native-safe-area-bottom) - 36px);
     margin-block: auto;
-    overflow: visible;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: clamp(18px, 4.6vw, 22px);
     position: relative;
     border-radius: 22px;
@@ -55,10 +57,12 @@
 
 .create-modal-top-actions {
     position: sticky;
-    top: calc(var(--native-safe-area-top) + 12px);
+    top: 0;
     z-index: 30;
-    height: 0;
+    min-height: 38px;
+    margin-bottom: -38px;
     display: flex;
+    align-items: flex-start;
     justify-content: flex-end;
     pointer-events: none;
 }
@@ -374,9 +378,11 @@
     font: inherit;
     font-weight: 900;
     text-align: left;
+    overflow: hidden;
 }
 
 .create-tag-dropdown-main {
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -392,6 +398,7 @@
 }
 
 .create-tag-dropdown-meta {
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -437,6 +444,7 @@
     gap: 12px;
     padding: 13px 14px 14px;
     overflow: visible;
+    min-width: 0;
 }
 
 .create-tag-dropdown.has-tags {

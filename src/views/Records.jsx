@@ -1375,10 +1375,7 @@ const Records = () => {
                       key={record.recordKey || record.id}
                       type="button"
                       className="record-calendar-preview-row"
-                      onClick={() => {
-                        setIsCalendarOpen(false);
-                        openTimelineEntry(record);
-                      }}
+                      onClick={() => openTimelineEntry(record)}
                     >
                       <div className="record-calendar-preview-content">
                         <time>{formatRecordDateTime(record)}</time>
