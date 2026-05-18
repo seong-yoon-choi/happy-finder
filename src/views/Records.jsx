@@ -21,9 +21,9 @@ const HappinessDetailModal = lazy(loadHappinessDetailModal);
 const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
 const RECORD_MIN_MONTH_DATE = new Date(2026, 0, 1);
 const RECORD_VIEW_MODES = [
-  { value: 'day', label: '일로보기' },
-  { value: 'month', label: '달로보기' },
-  { value: 'all', label: '모아보기' }
+  { value: 'day', label: '일' },
+  { value: 'month', label: '달' },
+  { value: 'all', label: '모두' }
 ];
 
 const recordDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -919,7 +919,7 @@ const Records = () => {
       <header className="records-header">
         <div className="records-brand" aria-label="Happy Finder 로고">Happy Finder</div>
         <div className="records-header-row">
-          <div>
+          <div className="records-header-copy">
             <div className="records-heading-tabs" role="tablist" aria-label="기록 탭">
               <button
                 type="button"
@@ -946,19 +946,31 @@ const Records = () => {
                 : '지금 행복한 감정을 기록해 보세요.'}
             </p>
           </div>
-          <div className="records-view-mode-tabs" role="tablist" aria-label="보기 방식">
-            {RECORD_VIEW_MODES.map(mode => (
+          <div className="records-header-actions">
+            <div className="records-view-mode-tabs" role="tablist" aria-label="보기 방식">
+              {RECORD_VIEW_MODES.map(mode => (
+                <button
+                  key={mode.value}
+                  type="button"
+                  className={`records-view-mode-tab ${recordViewMode === mode.value ? 'active' : ''}`}
+                  role="tab"
+                  aria-selected={recordViewMode === mode.value}
+                  onClick={() => setRecordViewMode(mode.value)}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+            {activeRecordsTab === 'records' && (
               <button
-                key={mode.value}
                 type="button"
-                className={`records-view-mode-tab ${recordViewMode === mode.value ? 'active' : ''}`}
-                role="tab"
-                aria-selected={recordViewMode === mode.value}
-                onClick={() => setRecordViewMode(mode.value)}
+                className="records-write-icon-btn"
+                onClick={openCreateComposer}
+                aria-label="기록 남기기"
               >
-                {mode.label}
+                <WriteIcon />
               </button>
-            ))}
+            )}
           </div>
         </div>
       </header>
@@ -1050,15 +1062,6 @@ const Records = () => {
                 aria-label="다음 달 기록 보기"
               >
                 &gt;
-              </button>
-            </div>
-          )}
-
-          {activeRecordsTab === 'records' && (
-            <div className="records-write-slot">
-              <button type="button" className="records-write-btn" onClick={openCreateComposer}>
-                <WriteIcon />
-                <span>기록 남기기</span>
               </button>
             </div>
           )}
