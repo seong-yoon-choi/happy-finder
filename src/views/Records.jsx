@@ -947,6 +947,16 @@ const Records = () => {
             </p>
           </div>
           <div className="records-header-actions">
+            {activeRecordsTab === 'records' && (
+              <button
+                type="button"
+                className="records-write-icon-btn"
+                onClick={openCreateComposer}
+                aria-label="기록 남기기"
+              >
+                <WriteIcon />
+              </button>
+            )}
             <div className="records-view-mode-tabs" role="tablist" aria-label="보기 방식">
               {RECORD_VIEW_MODES.map(mode => (
                 <button
@@ -961,16 +971,6 @@ const Records = () => {
                 </button>
               ))}
             </div>
-            {activeRecordsTab === 'records' && (
-              <button
-                type="button"
-                className="records-write-icon-btn"
-                onClick={openCreateComposer}
-                aria-label="기록 남기기"
-              >
-                <WriteIcon />
-              </button>
-            )}
           </div>
         </div>
       </header>
