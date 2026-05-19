@@ -166,7 +166,7 @@ const Home = () => {
     <div className="view-container home-view">
       <header className="home-header">
         <h1>Happy Finder</h1>
-        <p>오늘 {viewerPossessiveLabel} 행복은 무엇인가요?</p>
+        <p>오늘 {viewerPossessiveLabel} 일상에 어떤 행복을 가져와 볼까요?</p>
       </header>
 
       <div className="home-tools" aria-label="행복 목록 도구">

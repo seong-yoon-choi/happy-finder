@@ -1,5 +1,5 @@
-export const DEFAULT_REMINDER_NOTIFICATION_TITLE = '행복을 찾을 시간이에요!';
-export const DEFAULT_REMINDER_NOTIFICATION_BODY = '오늘 행복을 이어가세요.';
+export const DEFAULT_REMINDER_NOTIFICATION_TITLE = '오늘의 행복을 남길 시간이에요!';
+export const DEFAULT_REMINDER_NOTIFICATION_BODY = '오늘 행복했던 순간을 짧게 기록해보세요.';
 export const REMINDER_NOTIFICATION_TITLE_MAX_LENGTH = 60;
 export const REMINDER_NOTIFICATION_BODY_MAX_LENGTH = 140;
 
