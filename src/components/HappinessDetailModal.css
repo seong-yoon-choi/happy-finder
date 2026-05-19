@@ -232,12 +232,6 @@
     height: 19px;
 }
 
-.detail-empathy-count {
-    color: var(--text-light);
-    font-size: var(--font-body-sm);
-    font-weight: 750;
-}
-
 .detail-inline-feedback {
     margin: 0 20px 18px;
     padding: 12px 14px;

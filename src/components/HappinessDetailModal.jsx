@@ -378,9 +378,6 @@ const HappinessDetailModal = ({
   const canReportItem = Boolean(currentItem?.isCloudBacked === true);
   const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
   const isEmpathized = Boolean(currentItem && userEmpathies[currentItem.id]);
-  const empathyCount = currentItem && Number.isFinite(currentItem.totalEmpathyCount)
-    ? currentItem.totalEmpathyCount
-    : 0;
   const shouldCheckReportStatus = Boolean(isOpen && canReportItem && reportStatusKey);
   const hasReportStatusForCurrentItem = reportStatus.key === reportStatusKey;
   const hasReportedCurrentItem = shouldCheckReportStatus && hasReportStatusForCurrentItem && reportStatus.hasReported;
@@ -976,9 +973,6 @@ const HappinessDetailModal = ({
             <EmpathyIcon />
             <span>{isEmpathized ? '공감했어요' : '공감해요'}</span>
           </button>
-          <span className="detail-empathy-count">
-            {empathyCount > 0 ? `공감의 흔적 ${empathyCount}개` : '첫 공감의 흔적을 남겨보세요'}
-          </span>
         </div>
 
         {reportFeedback.message && (
