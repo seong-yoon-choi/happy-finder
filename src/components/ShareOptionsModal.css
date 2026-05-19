@@ -1,0 +1,130 @@
+.share-options-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--native-safe-area-top) + 18px) var(--screen-side-padding) calc(var(--native-safe-area-bottom) + 18px);
+    background: rgba(20, 24, 28, 0.42);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.share-options-modal {
+    width: min(100%, 380px);
+    padding: 22px;
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
+}
+
+.dark-theme .share-options-modal {
+    background: linear-gradient(135deg, #2a2a35 0%, #1e1e28 100%);
+}
+
+.share-options-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.share-options-header span {
+    display: block;
+    color: var(--primary-color);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.14em;
+}
+
+.share-options-header h3 {
+    margin-top: 6px;
+    font-size: 1.22rem;
+    line-height: 1.25;
+}
+
+.share-options-close {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.74);
+    color: var(--text-dark);
+    font-size: 1.45rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.dark-theme .share-options-close {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.share-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.share-option-btn {
+    min-height: 64px;
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-dark);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.dark-theme .share-option-btn {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.share-option-btn:disabled {
+    opacity: 0.64;
+    cursor: default;
+}
+
+.share-option-icon {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.share-option-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.share-option-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.share-option-copy strong {
+    color: var(--text-dark);
+    font-size: var(--font-body-md);
+    line-height: 1.25;
+}
+
+.share-option-copy small {
+    color: var(--text-light);
+    font-size: var(--font-body-sm);
+    line-height: 1.35;
+}

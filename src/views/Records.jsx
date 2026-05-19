@@ -1,5 +1,6 @@
 import React, { lazy, useCallback, useState } from 'react';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
+import ShareOptionsModal from '../components/ShareOptionsModal';
 import {
   chooseMemoPhoto,
   deleteMemoStoredImages,
@@ -11,7 +12,7 @@ import {
   takeMemoPhoto
 } from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
-import { shareTextContent } from '../lib/share';
+import { APP_PATH, getPublicWebUrl } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './Records.css';
 
@@ -102,6 +103,10 @@ const getRecordDetailContent = content => {
 
 const getShareFeedbackMessage = result => {
   if (result?.success) {
+    if (result.method === 'twitter') {
+      return '공유 작성창을 열었어요.';
+    }
+
     return result.method === 'clipboard'
       ? '공유할 내용을 복사했어요.'
       : '공유를 열었어요.';
@@ -591,6 +596,7 @@ const Records = () => {
     message: ''
   });
   const [isSharingRecord, setIsSharingRecord] = useState(false);
+  const [isRecordShareOptionsOpen, setIsRecordShareOptionsOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
   const [gallerySaveState, setGallerySaveState] = useState({
     isSaving: false,
@@ -699,6 +705,7 @@ const Records = () => {
     setRecordText(record.content);
     setRecordImages(Array.isArray(record.images) ? record.images : []);
     setActiveRecordId(null);
+    setIsRecordShareOptionsOpen(false);
     setRecordShareFeedback({
       type: 'idle',
       message: ''
@@ -713,6 +720,7 @@ const Records = () => {
     }
 
     setActiveRecordId(record.id);
+    setIsRecordShareOptionsOpen(false);
     setRecordShareFeedback({
       type: 'idle',
       message: ''
@@ -964,6 +972,7 @@ const Records = () => {
 
   const closeRecordDetail = () => {
     setActiveRecordId(null);
+    setIsRecordShareOptionsOpen(false);
     setRecordShareFeedback({
       type: 'idle',
       message: ''
@@ -971,21 +980,19 @@ const Records = () => {
     setIsSharingRecord(false);
   };
 
-  const handleShareActiveRecord = async () => {
+  const handleShareActiveRecord = () => {
     if (!activeRecord || isSharingRecord) {
       return;
     }
 
-    setIsSharingRecord(true);
     setRecordShareFeedback({
       type: 'idle',
       message: ''
     });
+    setIsRecordShareOptionsOpen(true);
+  };
 
-    const result = await shareTextContent({
-      title: getRecordTitle(activeRecord),
-      text: getRecordShareText(activeRecord)
-    });
+  const handleRecordShareResult = result => {
     const message = getShareFeedbackMessage(result);
 
     setIsSharingRecord(false);
@@ -1461,6 +1468,20 @@ const Records = () => {
             )}
           </div>
         </div>
+      )}
+
+      {activeRecord && (
+        <ShareOptionsModal
+          isOpen={isRecordShareOptionsOpen}
+          title="기록 공유하기"
+          shareData={{
+            title: getRecordTitle(activeRecord),
+            text: getRecordShareText(activeRecord),
+            url: getPublicWebUrl(APP_PATH)
+          }}
+          onClose={() => setIsRecordShareOptionsOpen(false)}
+          onResult={handleRecordShareResult}
+        />
       )}
 
       {activeMemoItem && (

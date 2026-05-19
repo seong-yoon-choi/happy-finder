@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
+import ShareOptionsModal from './ShareOptionsModal';
 import {
   createHappinessItemReport,
   hasExistingHappinessItemReport,
@@ -16,8 +17,8 @@ import {
   saveMemoImageToGallery,
   takeMemoPhoto
 } from '../lib/memoImages';
-import { shareTextContent } from '../lib/share';
 import { supabase } from '../lib/supabase';
+import { APP_PATH, getPublicWebUrl } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import './HappinessDetailModal.css';
 
@@ -175,6 +176,10 @@ const getReportSuccessMessage = duplicate => {
 
 const getShareFeedbackMessage = result => {
   if (result?.success) {
+    if (result.method === 'twitter') {
+      return '공유 작성창을 열었어요.';
+    }
+
     return result.method === 'clipboard'
       ? '공유할 내용을 복사했어요.'
       : '공유를 열었어요.';
@@ -352,6 +357,7 @@ const HappinessDetailModal = ({
     type: 'idle',
     message: ''
   });
+  const [isShareOptionsOpen, setIsShareOptionsOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [reportStatus, setReportStatus] = useState({
     key: '',
@@ -558,6 +564,7 @@ const HappinessDetailModal = ({
       type: 'idle',
       message: ''
     });
+    setIsShareOptionsOpen(false);
     setIsSharing(false);
     setReportStatus({
       key: '',
@@ -718,16 +725,14 @@ const HappinessDetailModal = ({
       return;
     }
 
-    setIsSharing(true);
     setShareFeedback({
       type: 'idle',
       message: ''
     });
+    setIsShareOptionsOpen(true);
+  };
 
-    const result = await shareTextContent({
-      title: currentItem.title,
-      text: getItemShareText(currentItem)
-    });
+  const handleShareResult = result => {
     const message = getShareFeedbackMessage(result);
 
     setIsSharing(false);
@@ -1224,6 +1229,20 @@ const HappinessDetailModal = ({
             )}
           </div>
         </div>
+      )}
+
+      {currentItem && (
+        <ShareOptionsModal
+          isOpen={isShareOptionsOpen}
+          title="행복 공유하기"
+          shareData={{
+            title: currentItem.title,
+            text: getItemShareText(currentItem),
+            url: getPublicWebUrl(APP_PATH)
+          }}
+          onClose={() => setIsShareOptionsOpen(false)}
+          onResult={handleShareResult}
+        />
       )}
 
       {confirmDialog && (

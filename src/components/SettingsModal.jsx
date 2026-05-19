@@ -18,14 +18,9 @@ import './SettingsModal.css';
 
 const DEFAULT_REMINDER_TIME = '12:00';
 
-const PERIOD_OPTIONS = [
-  { value: 'AM', label: '오전' },
-  { value: 'PM', label: '오후' }
-];
-
-const HOUR_OPTIONS = Array.from({ length: 12 }, (_, index) => {
-  const value = String(index + 1).padStart(2, '0');
-  return { value, label: `${index + 1}시` };
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, index) => {
+  const value = String(index).padStart(2, '0');
+  return { value, label: `${value}시` };
 });
 
 const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) => {
@@ -33,44 +28,37 @@ const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) => {
   return { value, label: `${value}분` };
 });
 
-const parseReminderTime = (timeValue) => {
-  const [rawHour = '12', rawMinute = '00'] = String(timeValue || DEFAULT_REMINDER_TIME).split(':');
-  const hour24 = Number(rawHour);
-  const minute = Number(rawMinute);
+const normalizeTimePart = (value, fallback, max) => {
+  const numberValue = Number(value);
 
-  if (!Number.isFinite(hour24) || !Number.isFinite(minute)) {
-    return {
-      period: 'PM',
-      hour: '12',
-      minute: '00'
-    };
+  if (!Number.isFinite(numberValue)) {
+    return fallback;
   }
 
-  const period = hour24 >= 12 ? 'PM' : 'AM';
-  const hour12 = hour24 % 12 || 12;
+  return Math.min(max, Math.max(0, numberValue));
+};
+
+const parseReminderTime = (timeValue) => {
+  const [rawHour = '12', rawMinute = '00'] = String(timeValue || DEFAULT_REMINDER_TIME).split(':');
+  const hour = normalizeTimePart(rawHour, 12, 23);
+  const minute = normalizeTimePart(rawMinute, 0, 59);
 
   return {
-    period,
-    hour: String(hour12).padStart(2, '0'),
+    hour: String(hour).padStart(2, '0'),
     minute: String(minute).padStart(2, '0')
   };
 };
 
-const toReminderTimeValue = ({ period, hour, minute }) => {
-  let hour24 = Number(hour);
+const toReminderTimeValue = ({ hour, minute }) => {
+  const hour24 = normalizeTimePart(hour, 12, 23);
+  const minuteValue = normalizeTimePart(minute, 0, 59);
 
-  if (period === 'AM') {
-    hour24 = hour24 === 12 ? 0 : hour24;
-  } else {
-    hour24 = hour24 === 12 ? 12 : hour24 + 12;
-  }
-
-  return `${String(hour24).padStart(2, '0')}:${minute}`;
+  return `${String(hour24).padStart(2, '0')}:${String(minuteValue).padStart(2, '0')}`;
 };
 
 const formatReminderTimeLabel = (timeValue) => {
-  const { period, hour, minute } = parseReminderTime(timeValue);
-  return `${period === 'AM' ? '오전' : '오후'} ${Number(hour)}시 ${minute}분`;
+  const { hour, minute } = parseReminderTime(timeValue);
+  return `${hour}시 ${minute}분`;
 };
 
 const getNextReminderTrigger = (timeValue, now = new Date()) => {
@@ -853,19 +841,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                   <p>{timeEditorDescription}</p>
                 </div>
                 <div className="settings-time-preview">{pickerPreviewText}</div>
-              </div>
-
-              <div className="settings-period-toggle" role="tablist" aria-label="오전 오후 선택">
-                {PERIOD_OPTIONS.map(option => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`settings-period-btn ${pickerTime.period === option.value ? 'active' : ''}`}
-                    onClick={() => setPickerTime(prev => ({ ...prev, period: option.value }))}
-                  >
-                    {option.label}
-                  </button>
-                ))}
               </div>
 
               <div className="settings-time-select-grid">
