@@ -12,31 +12,22 @@ const SHARE_OPTIONS = [
   {
     value: 'kakao',
     label: '카카오톡',
-    description: '기기 공유창에서 카카오톡을 선택해요.',
-    icon: 'talk'
+    icon: 'kakao'
   },
   {
     value: 'instagram',
     label: '인스타그램',
-    description: '기기 공유창에서 인스타그램을 선택해요.',
-    icon: 'smile'
+    icon: 'instagram'
   },
   {
     value: 'twitter',
     label: 'X / 트위터',
-    description: '작성창을 열어 바로 공유해요.',
     icon: 'x'
-  },
-  {
-    value: 'copy',
-    label: '링크 복사',
-    description: '공유할 내용을 클립보드에 복사해요.',
-    icon: 'copy'
   }
 ];
 
 const ShareTargetIcon = ({ type }) => {
-  if (type === 'talk') {
+  if (type === 'kakao') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path
@@ -50,30 +41,28 @@ const ShareTargetIcon = ({ type }) => {
     );
   }
 
-  if (type === 'x') {
+  if (type === 'instagram') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path
-          d="M6 5.5L18 18.5M18 5.5L6 18.5"
+        <rect
+          x="5"
+          y="5"
+          width="14"
+          height="14"
+          rx="4.2"
           fill="none"
           stroke="currentColor"
-          strokeLinecap="round"
-          strokeWidth="2"
+          strokeWidth="1.9"
         />
-      </svg>
-    );
-  }
-
-  if (type === 'copy') {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path
-          d="M8.5 8.25V6.75C8.5 5.65 9.4 4.75 10.5 4.75H17.25C18.35 4.75 19.25 5.65 19.25 6.75V13.5C19.25 14.6 18.35 15.5 17.25 15.5H15.75M6.75 8.5H13.5C14.6 8.5 15.5 9.4 15.5 10.5V17.25C15.5 18.35 14.6 19.25 13.5 19.25H6.75C5.65 19.25 4.75 18.35 4.75 17.25V10.5C4.75 9.4 5.65 8.5 6.75 8.5Z"
+        <circle
+          cx="12"
+          cy="12"
+          r="3.1"
           fill="none"
           stroke="currentColor"
-          strokeLinejoin="round"
-          strokeWidth="1.8"
+          strokeWidth="1.9"
         />
+        <circle cx="16.2" cy="7.8" r="1.1" fill="currentColor" />
       </svg>
     );
   }
@@ -81,22 +70,46 @@ const ShareTargetIcon = ({ type }) => {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path
-        d="M8.25 10.2C8.65 9.75 9.35 9.75 9.75 10.2M14.25 10.2C14.65 9.75 15.35 9.75 15.75 10.2M8.8 13.55C10.2 15.45 13.8 15.45 15.2 13.55"
+        d="M6 5.5L18 18.5M18 5.5L6 18.5"
         fill="none"
         stroke="currentColor"
         strokeLinecap="round"
-        strokeWidth="1.8"
-      />
-      <circle
-        cx="12"
-        cy="12"
-        r="8.25"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth="2"
       />
     </svg>
   );
+};
+
+const LinkIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M9.25 14.75L14.75 9.25"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.9"
+    />
+    <path
+      d="M10.45 7.1L11.55 6C13 4.55 15.35 4.55 16.8 6C18.25 7.45 18.25 9.8 16.8 11.25L15.7 12.35M13.55 16.9L12.45 18C11 19.45 8.65 19.45 7.2 18C5.75 16.55 5.75 14.2 7.2 12.75L8.3 11.65"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.9"
+    />
+  </svg>
+);
+
+const getShareLinkPreview = shareData => {
+  const shareUrl = typeof shareData?.url === 'string' ? shareData.url.trim() : '';
+
+  if (shareUrl) {
+    return shareUrl;
+  }
+
+  const shareTitle = typeof shareData?.title === 'string' ? shareData.title.trim() : '';
+
+  return shareTitle || 'Happy Finder';
 };
 
 const buildTwitterIntentUrl = shareData => {
@@ -113,7 +126,6 @@ const buildTwitterIntentUrl = shareData => {
 
 const ShareOptionsModal = ({
   isOpen,
-  title = '공유하기',
   shareData,
   onClose,
   onResult
@@ -128,6 +140,9 @@ const ShareOptionsModal = ({
   if (!isOpen) {
     return null;
   }
+
+  const shareLinkPreview = getShareLinkPreview(shareData);
+  const isBusy = Boolean(activeTarget);
 
   const handleShareTarget = async target => {
     if (activeTarget) {
@@ -170,10 +185,6 @@ const ShareOptionsModal = ({
         onClick={event => event.stopPropagation()}
       >
         <div className="share-options-header">
-          <div>
-            <span>SHARE</span>
-            <h3>{title}</h3>
-          </div>
           <button
             type="button"
             className="share-options-close"
@@ -184,26 +195,36 @@ const ShareOptionsModal = ({
           </button>
         </div>
 
-        <div className="share-options-list">
+        <div className="share-options-list" aria-label="공유 앱 선택">
           {SHARE_OPTIONS.map(option => (
             <button
               key={option.value}
               type="button"
-              className="share-option-btn"
+              className={`share-option-btn ${option.icon}`}
               onClick={() => handleShareTarget(option.value)}
-              disabled={Boolean(activeTarget)}
+              disabled={isBusy}
+              aria-label={option.label}
             >
               <span className="share-option-icon">
                 <ShareTargetIcon type={option.icon} />
               </span>
-              <span className="share-option-copy">
-                <strong>{option.label}</strong>
-                <small>
-                  {activeTarget === option.value ? '준비 중...' : option.description}
-                </small>
-              </span>
             </button>
           ))}
+        </div>
+
+        <div className="share-link-row">
+          <span className="share-link-icon">
+            <LinkIcon />
+          </span>
+          <span className="share-link-text">{shareLinkPreview}</span>
+          <button
+            type="button"
+            className="share-link-copy-btn"
+            onClick={() => handleShareTarget('copy')}
+            disabled={isBusy}
+          >
+            (복사)
+          </button>
         </div>
       </div>
     </div>
