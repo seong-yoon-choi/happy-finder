@@ -105,6 +105,7 @@ const APP_STORAGE_KEYS = [
   'happy_items',
   'happy_stamps',
   'happy_favorites',
+  'happy_empathies',
   'happy_memos',
   'happy_free_records',
   'happy_theme',
@@ -991,6 +992,9 @@ const normalizeItem = (item, savedStamps = {}) => {
   const baseCount = Number.isFinite(item.totalEnjoyCount)
     ? item.totalEnjoyCount
     : (initialItemCountMap[item.id] || 0);
+  const baseEmpathyCount = Number.isFinite(item.totalEmpathyCount)
+    ? item.totalEmpathyCount
+    : (Number.isFinite(initialDefaults.totalEmpathyCount) ? initialDefaults.totalEmpathyCount : 0);
   const isCustom = item.isCustom === true;
 
   return {
@@ -1002,7 +1006,8 @@ const normalizeItem = (item, savedStamps = {}) => {
     previewImage: item.previewImage || initialDefaults.previewImage || '',
     previewImageRef,
     tags: normalizeVisibleTags(itemTags || []),
-    totalEnjoyCount: Math.max(baseCount, ownCount)
+    totalEnjoyCount: Math.max(baseCount, ownCount),
+    totalEmpathyCount: Math.max(0, baseEmpathyCount)
   };
 };
 
@@ -1028,6 +1033,9 @@ const normalizeRemoteCatalogItem = (item, localItemMap = new Map()) => {
     tags: preservedTags,
     totalEnjoyCount: Number.isFinite(matchedLocalItem?.totalEnjoyCount)
       ? matchedLocalItem.totalEnjoyCount
+      : undefined,
+    totalEmpathyCount: Number.isFinite(matchedLocalItem?.totalEmpathyCount)
+      ? matchedLocalItem.totalEmpathyCount
       : undefined
   };
 };
@@ -1170,10 +1178,25 @@ const normalizeFreeRecords = (value) => {
     ));
 };
 
+const normalizeFlagMap = (value) => {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.entries(value).reduce((acc, [key, isActive]) => {
+    if (typeof key === 'string' && key.trim() && isActive === true) {
+      acc[key] = true;
+    }
+
+    return acc;
+  }, {});
+};
+
 const createCloudSnapshotPayload = ({
   items,
   userStamps,
   userFavorites,
+  userEmpathies,
   userMemos,
   freeRecords,
   isDarkMode,
@@ -1184,6 +1207,7 @@ const createCloudSnapshotPayload = ({
   items,
   userStamps,
   userFavorites,
+  userEmpathies,
   userMemos,
   freeRecords,
   isDarkMode,
@@ -1197,7 +1221,8 @@ const normalizeCloudSnapshot = (payload) => {
   return {
     items: mergeItemsWithInitialItems(Array.isArray(payload?.items) ? payload.items : initialItems, nextUserStamps),
     userStamps: nextUserStamps,
-    userFavorites: isRecord(payload?.userFavorites) ? payload.userFavorites : {},
+    userFavorites: normalizeFlagMap(payload?.userFavorites),
+    userEmpathies: normalizeFlagMap(payload?.userEmpathies),
     userMemos: normalizeMemoMap(payload?.userMemos),
     freeRecords: normalizeFreeRecords(payload?.freeRecords),
     isDarkMode: Boolean(payload?.isDarkMode),
@@ -1471,6 +1496,10 @@ const mergeCloudSnapshotsForAuthenticatedUser = ({
         ...normalizedCloudSnapshot.userFavorites,
         ...normalizedLocalSnapshot.userFavorites
       },
+      userEmpathies: {
+        ...normalizedCloudSnapshot.userEmpathies,
+        ...normalizedLocalSnapshot.userEmpathies
+      },
       userMemos: mergeMemoMap(
         normalizedCloudSnapshot.userMemos,
         normalizedLocalSnapshot.userMemos
@@ -1509,7 +1538,12 @@ export const HappyProvider = ({ children }) => {
 
   const [userFavorites, setUserFavorites] = useState(() => {
     const savedFavorites = readStoredJson('happy_favorites', {});
-    return isRecord(savedFavorites) ? savedFavorites : {};
+    return normalizeFlagMap(savedFavorites);
+  });
+
+  const [userEmpathies, setUserEmpathies] = useState(() => {
+    const savedEmpathies = readStoredJson('happy_empathies', {});
+    return normalizeFlagMap(savedEmpathies);
   });
 
   const [userMemos, setUserMemos] = useState(() => {
@@ -2186,13 +2220,14 @@ export const HappyProvider = ({ children }) => {
       items,
       userStamps,
       userFavorites,
+      userEmpathies,
       userMemos,
       freeRecords,
       isDarkMode,
       globalStreak,
       reminderSettings
     };
-  }, [items, userStamps, userFavorites, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userEmpathies, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   const syncRemoteCatalogItems = useEffectEvent(async () => {
     if (!supabase) {
@@ -2241,6 +2276,7 @@ export const HappyProvider = ({ children }) => {
     setItems(snapshot.items);
     setUserStamps(snapshot.userStamps);
     setUserFavorites(snapshot.userFavorites);
+    setUserEmpathies(snapshot.userEmpathies);
     setUserMemos(snapshot.userMemos);
     setFreeRecords(snapshot.freeRecords);
     setIsDarkMode(snapshot.isDarkMode);
@@ -2254,7 +2290,7 @@ export const HappyProvider = ({ children }) => {
     }
 
     isApplyingCloudSnapshotRef.current = false;
-  }, [items, userStamps, userFavorites, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userEmpathies, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id) {
@@ -2470,6 +2506,10 @@ export const HappyProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('happy_favorites', JSON.stringify(userFavorites));
   }, [userFavorites]);
+
+  useEffect(() => {
+    localStorage.setItem('happy_empathies', JSON.stringify(userEmpathies));
+  }, [userEmpathies]);
 
   useEffect(() => {
     localStorage.setItem('happy_memos', JSON.stringify(userMemos));
@@ -2699,6 +2739,7 @@ export const HappyProvider = ({ children }) => {
         items,
         userStamps,
         userFavorites,
+        userEmpathies,
         userMemos,
         freeRecords,
         isDarkMode,
@@ -2739,7 +2780,7 @@ export const HappyProvider = ({ children }) => {
         cloudSyncTimeoutRef.current = null;
       }
     };
-  }, [authUser?.id, items, userStamps, userFavorites, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [authUser?.id, items, userStamps, userFavorites, userEmpathies, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!isNativeNotificationPlatform()) {
@@ -2944,7 +2985,8 @@ export const HappyProvider = ({ children }) => {
       isCloudBacked: false,
       previewImageRef: normalizedPreviewImageRef,
       tags: normalizedTags,
-      totalEnjoyCount: 0
+      totalEnjoyCount: 0,
+      totalEmpathyCount: 0
     };
 
     if (canSyncToCloud) {
@@ -3444,6 +3486,40 @@ export const HappyProvider = ({ children }) => {
     });
   };
 
+  const toggleEmpathy = (itemId) => {
+    if (!itemId) {
+      return;
+    }
+
+    const isEmpathized = Boolean(userEmpathies[itemId]);
+    const countDelta = isEmpathized ? -1 : 1;
+
+    setUserEmpathies(prev => {
+      if (prev[itemId]) {
+        const nextState = { ...prev };
+        delete nextState[itemId];
+        return nextState;
+      }
+
+      return { ...prev, [itemId]: true };
+    });
+
+    setItems(prev => prev.map(item => {
+      if (item.id !== itemId) {
+        return item;
+      }
+
+      const currentCount = Number.isFinite(item.totalEmpathyCount)
+        ? item.totalEmpathyCount
+        : 0;
+
+      return {
+        ...item,
+        totalEmpathyCount: Math.max(0, currentCount + countDelta)
+      };
+    }));
+  };
+
   const clearAuthFeedback = () => {
     setAuthFeedback(defaultAuthFeedback);
   };
@@ -3466,6 +3542,7 @@ export const HappyProvider = ({ children }) => {
     setItems(mergeItemsWithInitialItems(initialItems, emptyProgress));
     setUserStamps(emptyProgress);
     setUserFavorites({});
+    setUserEmpathies({});
     setUserMemos({});
     setFreeRecords([]);
     setIsDarkMode(false);
@@ -4660,6 +4737,7 @@ export const HappyProvider = ({ children }) => {
     <HappyContext.Provider value={{
       items,
       userFavorites,
+      userEmpathies,
       addCustomItem,
       updateCustomItemVisibility,
       deleteCustomItem,
@@ -4676,6 +4754,7 @@ export const HappyProvider = ({ children }) => {
       getMyItems,
       getFavoriteItems,
       toggleFavorite,
+      toggleEmpathy,
       isDarkMode,
       toggleTheme,
       isSupabaseConfigured,

@@ -76,6 +76,33 @@ const ShareIcon = () => (
   </svg>
 );
 
+const EmpathyIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <circle
+      cx="12"
+      cy="12"
+      r="8.25"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    />
+    <path
+      d="M8.25 10.2C8.65 9.75 9.35 9.75 9.75 10.2M14.25 10.2C14.65 9.75 15.35 9.75 15.75 10.2"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.8"
+    />
+    <path
+      d="M8.8 13.55C10.2 15.45 13.8 15.45 15.2 13.55"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.8"
+    />
+  </svg>
+);
+
 const MemoEditIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
@@ -282,7 +309,9 @@ const HappinessDetailModal = ({
   const {
     items,
     userFavorites,
+    userEmpathies,
     toggleFavorite,
+    toggleEmpathy,
     deleteCustomItem,
     updateCustomItemVisibility,
     isItemOwnedByCurrentUser,
@@ -342,6 +371,10 @@ const HappinessDetailModal = ({
   const memoCloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
   const canReportItem = Boolean(currentItem?.isCloudBacked === true);
   const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
+  const isEmpathized = Boolean(currentItem && userEmpathies[currentItem.id]);
+  const empathyCount = currentItem && Number.isFinite(currentItem.totalEmpathyCount)
+    ? currentItem.totalEmpathyCount
+    : 0;
   const shouldCheckReportStatus = Boolean(isOpen && canReportItem && reportStatusKey);
   const hasReportStatusForCurrentItem = reportStatus.key === reportStatusKey;
   const hasReportedCurrentItem = shouldCheckReportStatus && hasReportStatusForCurrentItem && reportStatus.hasReported;
@@ -926,6 +959,22 @@ const HappinessDetailModal = ({
         <h2 className="detail-title">{currentItem.title}</h2>
         <p className="detail-desc">{currentItem.description}</p>
         <DetailTagList tags={currentItem.tags} />
+
+        <div className="detail-empathy-section">
+          <button
+            type="button"
+            className={`detail-empathy-trigger ${isEmpathized ? 'active' : ''}`}
+            onClick={() => toggleEmpathy(currentItem.id)}
+            aria-label={isEmpathized ? '공감 취소' : '공감 남기기'}
+            aria-pressed={isEmpathized}
+          >
+            <EmpathyIcon />
+            <span>{isEmpathized ? '공감했어요' : '공감해요'}</span>
+          </button>
+          <span className="detail-empathy-count">
+            {empathyCount > 0 ? `공감의 흔적 ${empathyCount}개` : '첫 공감의 흔적을 남겨보세요'}
+          </span>
+        </div>
 
         {reportFeedback.message && (
           <div className={`detail-inline-feedback ${reportFeedback.type === 'error' ? 'error' : 'success'}`}>
