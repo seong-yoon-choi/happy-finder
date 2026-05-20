@@ -377,7 +377,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
                 type="text"
                 value={title}
                 onChange={event => setTitle(event.target.value)}
-                placeholder="행복했던 일을 짧게 적어주세요"
+                placeholder="행복의 이름을 적어주세요"
                 aria-label="행복 제목"
                 maxLength={20}
                 required
@@ -390,7 +390,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
                 className="create-note-description-input"
                 value={description}
                 onChange={event => setDescription(event.target.value)}
-                placeholder="언제, 왜 행복했는지 짧게 들려주세요"
+                placeholder="어떤 행복인지 짧게 설명해주세요"
                 aria-label="행복 상세 내용"
                 rows={4}
                 maxLength={100}

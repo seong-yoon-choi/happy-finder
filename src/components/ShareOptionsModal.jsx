@@ -222,8 +222,9 @@ const ShareOptionsModal = ({
             className="share-link-copy-btn"
             onClick={() => handleShareTarget('copy')}
             disabled={isBusy}
+            aria-label="링크 복사"
           >
-            (복사)
+            복사
           </button>
         </div>
       </div>

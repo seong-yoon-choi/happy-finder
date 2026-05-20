@@ -215,8 +215,8 @@ const clearStoredReviewAdminAuthUser = () => {
 const initialItems = [
   {
     id: 'h21',
-    title: '일기 쓰기',
-    description: '일기를 다 쓰고 다시 훑어보니 하루를 멋지게 끝냈다는 느낌이 들어 행복했어요.',
+    title: '일기를 쓰고 하루를 다시 읽어봤어요',
+    description: '잠들기 전에 오늘 있었던 일을 몇 줄 적고 다시 읽어봤어요. 별일 없던 하루도 내가 잘 지나왔다는 느낌이 남아서, 하루를 조용히 닫고 싶을 때 추천해요.',
     previewImage: '/happiness-sample-journal.svg',
     category: '소확행',
     isCustom: false,
@@ -225,8 +225,8 @@ const initialItems = [
   },
   {
     id: 'h22',
-    title: '좋아하는 양말 신고 하루 시작하기',
-    description: '좋아하는 양말을 신고 하루를 시작하니 작은 취향 하나로도 기분이 산뜻해져 행복했어요.',
+    title: '좋아하는 양말을 신고 나갔어요',
+    description: '아침에 좋아하는 양말을 고르는 것만으로도 오늘을 내 취향으로 시작하는 기분이 들었어요. 티 나지 않는 작은 선택인데 하루 종일 은근히 기분을 받쳐줘서 좋았어요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -234,8 +234,8 @@ const initialItems = [
   },
   {
     id: 'h23',
-    title: '셀프 칭찬 한마디 하기',
-    description: '아침에 스스로에게 칭찬 한마디를 건네니 하루를 조금 더 다정하게 시작할 수 있어 행복했어요.',
+    title: '아침에 나를 칭찬해봤어요',
+    description: '거창한 말 말고 “어제도 잘 버텼다” 정도로 나에게 한마디 해봤어요. 하루를 시작하기 전에 내 편을 하나 만든 것 같아서 마음이 조금 든든해졌어요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -243,8 +243,8 @@ const initialItems = [
   },
   {
     id: 'h24',
-    title: '휴대폰 배경화면 바꾸기',
-    description: '휴대폰을 켤 때마다 마음에 드는 화면이 보이니 하루 중 작은 순간마다 기분이 좋아졌어요.',
+    title: '휴대폰 배경을 내 취향으로 바꿨어요',
+    description: '자주 보는 화면을 좋아하는 색이나 사진으로 바꿨더니 휴대폰을 켤 때마다 작은 환기가 됐어요. 기분전환은 하고 싶은데 큰 에너지는 없을 때 하기 좋아요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -252,8 +252,8 @@ const initialItems = [
   },
   {
     id: 'h25',
-    title: '빗소리 듣기',
-    description: '비가 올 때 빗소리에 집중하면서 일을 하니 마음이 차분해져 행복했어요.',
+    title: '비 오는 날 빗소리에 집중해봤어요',
+    description: '비가 오는 날 일부러 음악을 끄고 빗소리만 들으며 일을 해봤어요. 마음이 천천히 가라앉고 공간이 조용해지는 느낌이 들어서, 복잡한 날에 한 번 해보면 좋아요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -261,8 +261,8 @@ const initialItems = [
   },
   {
     id: 'h26',
-    title: '핸드크림 바르고 향 맡기',
-    description: '손에 남은 좋은 향을 천천히 맡다 보니 바쁜 중에도 잠깐 나를 챙긴 느낌이 들어 행복했어요.',
+    title: '핸드크림 향으로 잠깐 쉬었어요',
+    description: '일하다가 손이 건조해서 핸드크림을 바르고 향을 천천히 맡아봤어요. 1분도 안 걸리지만 잠깐 나를 챙긴 느낌이 들어서 책상 앞 작은 휴식으로 좋았어요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -270,8 +270,8 @@ const initialItems = [
   },
   {
     id: 'h27',
-    title: '옷 사기',
-    description: '입고 싶던 옷을 고르고 나니 다음 외출이 기다려져서 기분 좋은 설렘이 생겼어요.',
+    title: '입고 싶던 옷을 골라봤어요',
+    description: '계속 눈에 들어오던 옷을 고르고 나니 다음 외출이 조금 기다려졌어요. 물건을 산다는 느낌보다 앞으로의 하루를 상상하게 해줘서 기분이 좋아졌어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -279,8 +279,8 @@ const initialItems = [
   },
   {
     id: 'h28',
-    title: '보고 싶었던 영화 보기',
-    description: '미뤄뒀던 영화를 보는 동안 잠깐 다른 세계에 다녀온 것 같아 마음이 환기됐어요.',
+    title: '미뤄둔 영화를 드디어 봤어요',
+    description: '보고 싶다고 저장만 해둔 영화를 날 잡고 틀어봤어요. 두 시간 동안 다른 세계에 다녀온 것처럼 머리가 환기돼서, 쉬어도 쉰 것 같지 않은 날에 잘 맞았어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -288,8 +288,8 @@ const initialItems = [
   },
   {
     id: 'h29',
-    title: '노래방 가기',
-    description: '마음껏 노래를 부르고 나니 쌓여 있던 감정이 시원하게 빠져나가 행복했어요.',
+    title: '노래방에서 감정을 털어냈어요',
+    description: '잘 부르려고 하기보다 부르고 싶은 노래를 크게 불러봤어요. 쌓여 있던 감정이 목소리랑 같이 빠져나가는 느낌이라, 답답한 날에는 꽤 확실한 기분전환이 됐어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -297,8 +297,8 @@ const initialItems = [
   },
   {
     id: 'h30',
-    title: '쉬는 날 계획하기',
-    description: '쉬는 날에 하고 싶은 일을 적어두니 그날이 오기 전부터 기다리는 재미가 생겼어요.',
+    title: '쉬는 날을 미리 상상해봤어요',
+    description: '쉬는 날에 먹고 싶은 것, 가고 싶은 곳, 그냥 누워 있고 싶은 시간까지 적어봤어요. 아직 쉬는 날이 오지 않았는데도 기다릴 일이 생긴 것 같아 설렜어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -306,8 +306,8 @@ const initialItems = [
   },
   {
     id: 'h31',
-    title: '서점에서 책 구경하기',
-    description: '서점에서 표지와 제목을 천천히 둘러보니 마음이 가는 이야기를 만나는 시간이 행복했어요.',
+    title: '서점에서 제목들을 천천히 구경했어요',
+    description: '책을 꼭 사지 않아도 된다고 생각하고 서점 통로를 천천히 걸어봤어요. 표지와 제목을 구경하다 보면 지금 내 마음이 어디에 끌리는지 보이는 느낌이라 좋았어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -315,8 +315,8 @@ const initialItems = [
   },
   {
     id: 'h32',
-    title: '사고 싶었던 물건 사기',
-    description: '계속 눈에 밟히던 물건을 사고 나니 오래 고민한 만큼 만족감이 크게 느껴졌어요.',
+    title: '오래 고민한 물건을 샀어요',
+    description: '계속 눈에 밟히던 물건을 충분히 고민한 뒤 샀더니 충동구매보다 만족감이 컸어요. 내 필요와 취향을 제대로 인정해준 것 같아서 기분이 오래 남았어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -324,8 +324,8 @@ const initialItems = [
   },
   {
     id: 'h33',
-    title: '공연 보러 가기',
-    description: '공연장에서만 느껴지는 소리와 분위기 속에 있으니 몸까지 살아나는 느낌이 들어 행복했어요.',
+    title: '공연장에서 살아나는 기분을 느꼈어요',
+    description: '공연장에 앉아 조명이 어두워지고 소리가 시작되는 순간이 좋았어요. 화면으로 보는 것과 다르게 몸으로 분위기를 느낄 수 있어서, 기억에 남는 하루를 만들고 싶을 때 추천해요.',
     category: '제대로',
     isCustom: false,
     creator: 'system',
@@ -333,8 +333,8 @@ const initialItems = [
   },
   {
     id: 'h34',
-    title: '나만의 취미 만들기',
-    description: '나만의 취미를 조금씩 이어가니 혼자 보내는 시간이 더 단단하고 즐거워졌어요.',
+    title: '나만의 취미를 조금씩 키워봤어요',
+    description: '잘해야 하는 취미 말고, 혼자 천천히 해도 좋은 일을 하나 정해봤어요. 조금씩 이어가다 보니 혼자 보내는 시간이 비어 있는 시간이 아니라 나를 채우는 시간이 됐어요.',
     category: '제대로',
     isCustom: false,
     creator: 'system',
@@ -342,8 +342,8 @@ const initialItems = [
   },
   {
     id: 'h35',
-    title: '하고 싶은 공부 시작하기',
-    description: '배우고 싶던 주제의 첫 페이지를 열었을 뿐인데 나를 위해 움직였다는 느낌이 들어 뿌듯했어요.',
+    title: '배우고 싶던 걸 첫 페이지만 시작했어요',
+    description: '완벽하게 공부하려고 하지 않고 첫 페이지, 첫 영상만 열어봤어요. 아주 작게 시작했는데도 나를 위해 움직였다는 느낌이 들어서 뿌듯했어요.',
     category: '제대로',
     isCustom: false,
     creator: 'system',
@@ -351,8 +351,8 @@ const initialItems = [
   },
   {
     id: 'h36',
-    title: '방 정리하기',
-    description: '방을 정리하고 나니 공간뿐 아니라 마음까지 조금 가벼워진 것 같아 행복했어요.',
+    title: '방 한쪽만 정리했는데 마음이 가벼워졌어요',
+    description: '방 전체를 치우려고 하면 부담스러워서 책상 위나 침대 옆 한쪽만 정리했어요. 작은 공간이 깨끗해졌을 뿐인데 마음까지 조금 정돈되는 느낌이 들었어요.',
     category: '제대로',
     isCustom: false,
     creator: 'system',
@@ -360,8 +360,8 @@ const initialItems = [
   },
   {
     id: 'h37',
-    title: '혼자 놀기 계획하기',
-    description: '혼자 보낼 하루를 내 취향대로 상상하고 계획하니 나를 잘 대접하는 느낌이 들었어요.',
+    title: '혼자 노는 하루를 제대로 계획했어요',
+    description: '누구와 맞추지 않고 내가 먹고 싶은 것, 걷고 싶은 길, 쉬고 싶은 시간을 기준으로 하루를 짜봤어요. 나를 손님처럼 대접하는 느낌이라 생각보다 만족스러웠어요.',
     category: '제대로',
     isCustom: false,
     creator: 'system',
@@ -369,8 +369,8 @@ const initialItems = [
   },
   {
     id: 'h38',
-    title: '마음에 드는 문장 메모하기',
-    description: '마음에 들어온 문장 하나를 적어두니 오늘의 감정을 오래 붙잡아둔 것 같아 좋았어요.',
+    title: '마음에 들어온 문장을 적어뒀어요',
+    description: '책이나 영상에서 마음에 남는 문장을 그냥 넘기지 않고 메모해봤어요. 나중에 다시 읽으니 그날의 감정까지 같이 떠올라서, 작은 수집을 하는 기분이 들었어요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -378,8 +378,8 @@ const initialItems = [
   },
   {
     id: 'h39',
-    title: '옛 사진 보며 추억 떠올리기',
-    description: '오래된 사진을 보며 그때의 공기와 마음을 떠올리니 지나간 순간도 다시 행복하게 느껴졌어요.',
+    title: '오래된 사진을 보며 그때를 떠올렸어요',
+    description: '사진첩을 넘기다가 오래된 사진을 일부러 천천히 봤어요. 그때의 공기와 마음이 다시 떠올라서, 이미 지나간 순간도 다시 행복해질 수 있다는 생각이 들었어요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -387,8 +387,8 @@ const initialItems = [
   },
   {
     id: 'h40',
-    title: '길가에 피어 있는 꽃의 꽃말 찾아보기',
-    description: '길가에서 본 꽃의 이름과 꽃말을 찾아보니 그냥 지나칠 뻔한 장면이 특별해졌어요.',
+    title: '길가의 꽃 이름을 찾아봤어요',
+    description: '그냥 지나치던 꽃을 사진으로 찍고 이름과 꽃말을 찾아봤어요. 평범한 길이 갑자기 조금 다르게 보였고, 산책 중에 작은 발견을 한 기분이 들었어요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -396,8 +396,8 @@ const initialItems = [
   },
   {
     id: 'h41',
-    title: '자주 쓰는 소지품에 이름 지어주기',
-    description: '자주 쓰는 물건에 이름을 붙였더니 평범한 소지품도 조금 더 애틋하게 느껴졌어요.',
+    title: '자주 쓰는 물건에 이름을 붙여봤어요',
+    description: '매일 쓰는 컵이나 가방에 장난처럼 이름을 붙여봤어요. 별것 아닌 물건인데 조금 더 내 편처럼 느껴져서, 평범한 일상에 귀여운 애착이 생겼어요.',
     category: '소확행',
     isCustom: false,
     creator: 'system',
@@ -405,8 +405,8 @@ const initialItems = [
   },
   {
     id: 'h42',
-    title: '작은 소품 하나 사서 방 꾸미기',
-    description: '작은 소품 하나를 놓았을 뿐인데 방 분위기가 달라져 자꾸 바라보게 됐어요.',
+    title: '작은 소품 하나로 방 분위기를 바꿨어요',
+    description: '큰 인테리어 대신 작은 조명이나 엽서 하나를 놓아봤어요. 방 전체가 바뀐 건 아닌데 시선이 가는 자리가 생겨서, 집에 돌아오는 기분이 조금 좋아졌어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -414,8 +414,8 @@ const initialItems = [
   },
   {
     id: 'h43',
-    title: '주변 사람에게 작은 선물 건네기',
-    description: '작은 선물을 건넸을 때 상대가 웃는 모습을 보니 내 마음도 같이 따뜻해졌어요.',
+    title: '작은 선물을 건네고 같이 웃었어요',
+    description: '비싼 선물은 아니고 상대가 좋아할 만한 작은 걸 건네봤어요. 받는 사람이 웃는 순간 내 마음도 같이 따뜻해져서, 관계가 조금 부드러워지는 느낌이 들었어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -423,8 +423,8 @@ const initialItems = [
   },
   {
     id: 'h44',
-    title: '옛 물건 꺼내보기',
-    description: '예전에 아끼던 물건을 다시 꺼내 보니 그때의 내가 떠올라 괜히 반가웠어요.',
+    title: '예전에 아끼던 물건을 꺼내봤어요',
+    description: '서랍 속에 넣어둔 옛 물건을 다시 꺼내봤어요. 물건 자체보다 그걸 좋아하던 예전의 내가 떠올라서, 괜히 반갑고 다정한 시간이 됐어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -432,8 +432,8 @@ const initialItems = [
   },
   {
     id: 'h45',
-    title: '가사를 보며 노래를 천천히 음미하기',
-    description: '익숙한 노래도 가사를 따라가며 들으니 몰랐던 감정이 보여서 새롭게 좋았어요.',
+    title: '좋아하는 노래 가사를 천천히 읽었어요',
+    description: '늘 듣던 노래를 이번에는 가사를 보면서 천천히 들었어요. 익숙한 멜로디 안에 몰랐던 감정이 보여서, 같은 노래도 새로 만나는 느낌이 들었어요.',
     category: '기분전환',
     isCustom: false,
     creator: 'system',
@@ -441,8 +441,8 @@ const initialItems = [
   },
   {
     id: 'h46',
-    title: '평소보다 먼 거리를 걸어가 보기',
-    description: '평소보다 조금 더 멀리 걸었더니 생각이 정리되고 몸의 리듬이 돌아오는 느낌이 들었어요.',
+    title: '평소보다 조금 더 멀리 걸었어요',
+    description: '목적지보다 한 정거장 먼저 내려서 천천히 걸어봤어요. 몸을 움직이는 동안 생각이 정리되고 리듬이 돌아오는 느낌이라, 머리가 복잡한 날에 잘 맞았어요.',
     category: '제대로',
     isCustom: false,
     creator: 'system',
@@ -450,8 +450,8 @@ const initialItems = [
   },
   {
     id: 'h47',
-    title: '주변 사람이나 스스로에게 편지 쓰기',
-    description: '전하고 싶던 마음을 편지로 적다 보니 말로 못 한 감정까지 차분히 정리됐어요.',
+    title: '말로 못 한 마음을 편지로 적었어요',
+    description: '누군가에게 보내도 좋고, 보내지 않아도 괜찮다는 마음으로 편지를 써봤어요. 적다 보니 말로는 흐려졌던 감정이 차분히 정리돼서 마음이 놓였어요.',
     category: '제대로',
     isCustom: false,
     creator: 'system',
@@ -459,8 +459,8 @@ const initialItems = [
   },
   {
     id: 'h48',
-    title: '생각만 하던 일 실행해보기',
-    description: '생각만 하던 일을 작게라도 시작하니 내가 앞으로 나아가고 있다는 느낌이 들어 뿌듯했어요.',
+    title: '생각만 하던 일을 작게 시작했어요',
+    description: '계속 미뤄두던 일을 아주 작은 단위로 시작해봤어요. 완성하지 않아도 “드디어 움직였다”는 감각이 남아서, 스스로를 다시 믿게 되는 기분이 들었어요.',
     category: '제대로',
     isCustom: false,
     creator: 'system',
@@ -996,9 +996,12 @@ const normalizeItem = (item, savedStamps = {}) => {
     ? item.totalEmpathyCount
     : (Number.isFinite(initialDefaults.totalEmpathyCount) ? initialDefaults.totalEmpathyCount : 0);
   const isCustom = item.isCustom === true;
+  const shouldUseInitialDisplayCopy = !isCustom && Boolean(initialDefaults.id);
 
   return {
     ...item,
+    title: shouldUseInitialDisplayCopy ? initialDefaults.title : item.title,
+    description: shouldUseInitialDisplayCopy ? initialDefaults.description : item.description,
     isPublic: isCustom ? item.isPublic === true : true,
     isCloudBacked: item.isCloudBacked === true,
     category: normalizeCategoryName(item.category),

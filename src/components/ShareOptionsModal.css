@@ -113,7 +113,7 @@
     border-radius: 16px;
     background: rgba(247, 248, 248, 0.86);
     color: var(--text-dark);
-    padding: 0 12px;
+    padding: 0 8px 0 12px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -149,14 +149,21 @@
 
 .share-link-copy-btn {
     flex: 0 0 auto;
-    border: 0;
-    background: transparent;
+    min-height: 32px;
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.1);
     color: var(--primary-color);
-    padding: 4px 0;
+    padding: 0 13px;
     font: inherit;
     font-size: var(--font-body-sm);
     font-weight: 800;
+    line-height: 1;
     cursor: pointer;
+}
+
+.share-link-copy-btn:active {
+    transform: translateY(1px);
 }
 
 .share-link-copy-btn:disabled {
