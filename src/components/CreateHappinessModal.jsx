@@ -393,7 +393,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
                 placeholder="어떤 행복인지 짧게 설명해주세요"
                 aria-label="행복 상세 내용"
                 rows={4}
-                maxLength={100}
+                maxLength={70}
                 required
               />
             </div>
