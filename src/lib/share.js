@@ -1,3 +1,6 @@
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
+
 const normalizeSharePart = value => (
   typeof value === 'string' ? value.trim() : ''
 );
@@ -29,6 +32,47 @@ const copyTextWithTextarea = text => {
   }
 };
 
+const buildNativeSharePayload = ({ title = '', text = '', url = '' } = {}) => ({
+  ...(title ? { title } : {}),
+  ...(text ? { text } : {}),
+  ...(url ? { url } : {}),
+  dialogTitle: '공유하기'
+});
+
+const buildWebSharePayload = ({ title = '', text = '', url = '' } = {}) => ({
+  ...(title ? { title } : {}),
+  ...(text ? { text } : {}),
+  ...(url ? { url } : {})
+});
+
+const isShareCancelled = error => (
+  error?.name === 'AbortError'
+  || /cancel/i.test(error?.message || '')
+);
+
+const shareWithCapacitor = async payload => {
+  if (!Capacitor.isNativePlatform()) {
+    return null;
+  }
+
+  try {
+    const canShare = await Share.canShare();
+
+    if (!canShare?.value) {
+      return null;
+    }
+
+    await Share.share(payload);
+    return { success: true, method: 'capacitor-share' };
+  } catch (error) {
+    if (isShareCancelled(error)) {
+      return { success: false, code: 'CANCELLED' };
+    }
+  }
+
+  return null;
+};
+
 export const shareTextContent = async ({ title = '', text = '', url = '' } = {}) => {
   const normalizedTitle = normalizeSharePart(title);
   const normalizedText = normalizeSharePart(text);
@@ -43,17 +87,27 @@ export const shareTextContent = async ({ title = '', text = '', url = '' } = {})
     return { success: false, code: 'EMPTY' };
   }
 
+  const nativeResult = await shareWithCapacitor(buildNativeSharePayload({
+    title: normalizedTitle,
+    text: normalizedText,
+    url: normalizedUrl
+  }));
+
+  if (nativeResult) {
+    return nativeResult;
+  }
+
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
-      await navigator.share({
-        ...(normalizedTitle ? { title: normalizedTitle } : {}),
-        ...(normalizedText ? { text: normalizedText } : {}),
-        ...(normalizedUrl ? { url: normalizedUrl } : {})
-      });
+      await navigator.share(buildWebSharePayload({
+        title: normalizedTitle,
+        text: normalizedText,
+        url: normalizedUrl
+      }));
 
-      return { success: true, method: 'native' };
+      return { success: true, method: 'web-share' };
     } catch (error) {
-      if (error?.name === 'AbortError') {
+      if (isShareCancelled(error)) {
         return { success: false, code: 'CANCELLED' };
       }
     }
