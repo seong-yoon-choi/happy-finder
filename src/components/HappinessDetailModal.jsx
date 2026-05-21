@@ -77,27 +77,27 @@ const ShareIcon = () => (
   </svg>
 );
 
-const EmpathyIcon = () => (
+const EmpathyIcon = ({ isActive = false }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <circle
       cx="12"
       cy="12"
       r="8.25"
-      fill="none"
+      fill={isActive ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth="1.8"
     />
     <path
       d="M8.25 10.2C8.65 9.75 9.35 9.75 9.75 10.2M14.25 10.2C14.65 9.75 15.35 9.75 15.75 10.2"
       fill="none"
-      stroke="currentColor"
+      stroke={isActive ? 'var(--background-start)' : 'currentColor'}
       strokeLinecap="round"
       strokeWidth="1.8"
     />
     <path
       d="M8.8 13.55C10.2 15.45 13.8 15.45 15.2 13.55"
       fill="none"
-      stroke="currentColor"
+      stroke={isActive ? 'var(--background-start)' : 'currentColor'}
       strokeLinecap="round"
       strokeWidth="1.8"
     />
@@ -378,6 +378,13 @@ const HappinessDetailModal = ({
   const canReportItem = Boolean(currentItem?.isCloudBacked === true);
   const isFavorited = Boolean(currentItem && userFavorites[currentItem.id]);
   const isEmpathized = Boolean(currentItem && userEmpathies[currentItem.id]);
+  const empathyCount = Math.max(
+    0,
+    Number.isFinite(currentItem?.totalEmpathyCount) ? currentItem.totalEmpathyCount : 0
+  );
+  const empathyMessage = isEmpathized
+    ? `${empathyCount}명이 공감중 입니다.`
+    : '공감 버튼을 눌러 공감해 보세요';
   const shouldCheckReportStatus = Boolean(isOpen && canReportItem && reportStatusKey);
   const hasReportStatusForCurrentItem = reportStatus.key === reportStatusKey;
   const hasReportedCurrentItem = shouldCheckReportStatus && hasReportStatusForCurrentItem && reportStatus.hasReported;
@@ -970,9 +977,9 @@ const HappinessDetailModal = ({
             aria-label={isEmpathized ? '공감 취소' : '공감 남기기'}
             aria-pressed={isEmpathized}
           >
-            <EmpathyIcon />
-            <span>{isEmpathized ? '공감했어요' : '공감해요'}</span>
+            <EmpathyIcon isActive={isEmpathized} />
           </button>
+          <p className="detail-empathy-copy">{empathyMessage}</p>
         </div>
 
         {reportFeedback.message && (
