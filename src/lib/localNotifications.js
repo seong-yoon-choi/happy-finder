@@ -5,6 +5,7 @@ import { getReminderNotificationContent } from './reminderContent';
 const NATIVE_REMINDER_NOTIFICATION_STORAGE_KEY = 'happy_native_reminder_notification_ids';
 const NATIVE_REMINDER_NOTIFICATION_SMALL_ICON = 'ic_stat_happy_clover';
 const NATIVE_REMINDER_NOTIFICATION_ICON_COLOR = '#FFFFFF';
+const NATIVE_INTERACTION_NOTIFICATION_ID_OFFSET = 100000000;
 const AppNotificationSettings = registerPlugin('AppNotificationSettings');
 
 const normalizePermissionState = (value) => {
@@ -48,6 +49,20 @@ const createNativeReminderId = (reminderId) => {
   }
 
   return Math.abs(hash) || 1;
+};
+
+const createNativeInteractionNotificationId = (notificationId) => {
+  const normalizedId = typeof notificationId === 'string' && notificationId.trim()
+    ? notificationId.trim()
+    : `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  let hash = 0;
+
+  for (let index = 0; index < normalizedId.length; index += 1) {
+    hash = ((hash << 5) - hash) + normalizedId.charCodeAt(index);
+    hash |= 0;
+  }
+
+  return NATIVE_INTERACTION_NOTIFICATION_ID_OFFSET + (Math.abs(hash) % NATIVE_INTERACTION_NOTIFICATION_ID_OFFSET);
 };
 
 export const isNativeNotificationPlatform = () => Capacitor.isNativePlatform();
@@ -141,6 +156,61 @@ export const openNativeNotificationSettings = async () => {
 
   await AppNotificationSettings.open();
   return true;
+};
+
+export const showInteractionNotification = async ({ id = '', title = 'Happy Finder', body = '' } = {}) => {
+  const normalizedTitle = typeof title === 'string' && title.trim() ? title.trim() : 'Happy Finder';
+  const normalizedBody = typeof body === 'string' ? body.trim() : '';
+
+  if (!normalizedBody) {
+    return false;
+  }
+
+  if (isNativeNotificationPlatform()) {
+    try {
+      const permission = await checkNativeNotificationPermission();
+
+      if (permission !== 'granted') {
+        return false;
+      }
+
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: createNativeInteractionNotificationId(id),
+          title: normalizedTitle,
+          body: normalizedBody,
+          smallIcon: NATIVE_REMINDER_NOTIFICATION_SMALL_ICON,
+          iconColor: NATIVE_REMINDER_NOTIFICATION_ICON_COLOR,
+          schedule: {
+            at: new Date(Date.now() + 500),
+            allowWhileIdle: true
+          },
+          extra: {
+            interactionNotificationId: id
+          }
+        }]
+      });
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  if (
+    typeof window !== 'undefined'
+    && 'Notification' in window
+    && window.Notification.permission === 'granted'
+  ) {
+    try {
+      new window.Notification(normalizedTitle, { body: normalizedBody });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
 };
 
 export const syncNativeReminderNotifications = async (reminders, enabled, globalStreak, notificationContent) => {

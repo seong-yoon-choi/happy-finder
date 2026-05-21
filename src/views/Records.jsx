@@ -23,7 +23,7 @@ const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
 const RECORD_MIN_MONTH_DATE = new Date(2026, 0, 1);
 const RECORD_VIEW_MODES = [
   { value: 'day', label: '일' },
-  { value: 'month', label: '달' },
+  { value: 'month', label: '월' },
   { value: 'all', label: '모두' }
 ];
 

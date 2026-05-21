@@ -19,8 +19,15 @@ import {
   openNativeExactAlarmSettings,
   openNativeNotificationSettings,
   requestNativeNotificationPermission,
+  showInteractionNotification,
   syncNativeReminderNotifications
 } from '../lib/localNotifications';
+import {
+  createEmpathyNotification,
+  fetchUnreadHappinessNotifications,
+  markHappinessNotificationsRead,
+  subscribeToHappinessNotifications
+} from '../lib/happinessItemNotifications';
 import { supabase, isSupabaseConfigured, supabaseAuthStorageKey } from '../lib/supabase';
 import {
   deleteMemoStoredImages,
@@ -1619,6 +1626,7 @@ export const HappyProvider = ({ children }) => {
   const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
   const postSignOutFeedbackRef = useRef(null);
   const lastHandledNativeAuthCallbackRef = useRef(readLastHandledNativeAuthCallback());
+  const handledHappinessNotificationIdsRef = useRef(new Set());
   const effectiveAuthUser = reviewAuthUser || authUser;
   const isReviewAuthUser = Boolean(reviewAuthUser);
 
@@ -2023,6 +2031,87 @@ export const HappyProvider = ({ children }) => {
       isMounted = false;
     };
   }, [hasLoadedInitialNotificationPermission, notificationPermission]);
+
+  const handleHappinessNotification = useEffectEvent(async (notification) => {
+    const notificationId = typeof notification?.id === 'string' ? notification.id : '';
+
+    if (notificationId && handledHappinessNotificationIdsRef.current.has(notificationId)) {
+      return;
+    }
+
+    if (notificationId) {
+      handledHappinessNotificationIdsRef.current.add(notificationId);
+    }
+
+    const message = typeof notification?.message === 'string' && notification.message.trim()
+      ? notification.message.trim()
+      : '누군가가 내 행복에 공감을 했습니다.';
+
+    await showInteractionNotification({
+      id: notificationId,
+      title: 'Happy Finder',
+      body: message
+    });
+
+    if (notificationId) {
+      await markHappinessNotificationsRead({
+        supabase,
+        notificationIds: [notificationId]
+      });
+    }
+  });
+
+  useEffect(() => {
+    if (!supabase || !authUser?.id || isReviewAuthUser) {
+      handledHappinessNotificationIdsRef.current.clear();
+      return undefined;
+    }
+
+    let isMounted = true;
+    let appStateListener = null;
+
+    const loadUnreadNotifications = async () => {
+      const result = await fetchUnreadHappinessNotifications({
+        supabase,
+        recipientUserId: authUser.id
+      });
+
+      if (!isMounted || !result.success) {
+        return;
+      }
+
+      await Promise.all(result.notifications.map(notification => handleHappinessNotification(notification)));
+    };
+
+    void loadUnreadNotifications();
+
+    const channel = subscribeToHappinessNotifications({
+      supabase,
+      recipientUserId: authUser.id,
+      onNotification: notification => {
+        void handleHappinessNotification(notification);
+      }
+    });
+
+    if (Capacitor.isNativePlatform()) {
+      App.addListener('appStateChange', state => {
+        if (state?.isActive) {
+          void loadUnreadNotifications();
+        }
+      }).then(handle => {
+        appStateListener = handle;
+      });
+    }
+
+    return () => {
+      isMounted = false;
+      appStateListener?.remove();
+
+      if (channel) {
+        void supabase.removeChannel(channel);
+      }
+    };
+  }, [authUser?.id, isReviewAuthUser]);
 
   useEffect(() => {
     if (!supabase) {
@@ -3489,6 +3578,17 @@ export const HappyProvider = ({ children }) => {
     });
   };
 
+  const createEmpathyOwnerNotification = async (itemId) => {
+    if (!supabase || !authUser?.id || isReviewAuthUser || typeof itemId !== 'string' || !itemId.trim()) {
+      return;
+    }
+
+    await createEmpathyNotification({
+      supabase,
+      itemId
+    });
+  };
+
   const toggleEmpathy = (itemId) => {
     if (!itemId) {
       return;
@@ -3521,6 +3621,10 @@ export const HappyProvider = ({ children }) => {
         totalEmpathyCount: Math.max(0, currentCount + countDelta)
       };
     }));
+
+    if (!isEmpathized) {
+      void createEmpathyOwnerNotification(itemId);
+    }
   };
 
   const clearAuthFeedback = () => {
