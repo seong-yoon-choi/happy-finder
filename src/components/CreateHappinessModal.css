@@ -191,6 +191,64 @@
     min-height: 170px;
 }
 
+.create-note-title-input.create-field-prompt,
+.create-note-description-input.create-field-prompt {
+    border-color: rgba(214, 91, 104, 0.52);
+    color: var(--text-dark);
+    box-shadow: 0 0 0 3px rgba(214, 91, 104, 0.12);
+}
+
+.create-note-title-input.create-field-prompt::placeholder,
+.create-note-description-input.create-field-prompt::placeholder {
+    color: #c84f5c;
+    font-weight: 900;
+    opacity: 1;
+}
+
+.create-field-prompt.pulse-even {
+    animation: createFieldPromptBounceEven 0.42s ease;
+}
+
+.create-field-prompt.pulse-odd {
+    animation: createFieldPromptBounceOdd 0.42s ease;
+}
+
+@keyframes createFieldPromptBounceEven {
+    0% {
+        transform: translateY(0);
+    }
+
+    38% {
+        transform: translateY(-5px) scale(1.01);
+    }
+
+    68% {
+        transform: translateY(2px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@keyframes createFieldPromptBounceOdd {
+    0% {
+        transform: translateY(0);
+    }
+
+    38% {
+        transform: translateY(-5px) scale(1.01);
+    }
+
+    68% {
+        transform: translateY(2px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
 .create-image-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

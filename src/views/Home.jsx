@@ -162,6 +162,15 @@ const Home = () => {
     setSelectedTags([]);
   }, []);
 
+  const emptyStateTitle = normalizedSearchQuery
+    ? '검색에 맞는 결과가 존재하지 않아요'
+    : selectedTags.length > 0
+      ? '선택한 태그에 맞는 행복이 존재하지 않아요'
+      : '아직 행복이 존재하지 않아요';
+  const emptyStateDescription = hasActiveFilters
+    ? ''
+    : '나만의 행복을 만들어 보세요';
+
   return (
     <div className="view-container home-view">
       <header className="home-header">
@@ -234,13 +243,13 @@ const Home = () => {
           <div className="empty-state">
             <div className="empty-icon">🍀</div>
             <p>
-              {hasActiveFilters
-                ? '조건에 맞는 행복이 없어요.'
-                : '아직 행복이 없어요.'}
-              <br />
-              {hasActiveFilters
-                ? '검색어나 태그를 조금 줄여볼까요?'
-                : '직접 행복을 만들어볼까요?'}
+              {emptyStateTitle}
+              {emptyStateDescription && (
+                <>
+                  <br />
+                  {emptyStateDescription}
+                </>
+              )}
             </p>
           </div>
         )}

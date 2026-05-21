@@ -181,7 +181,7 @@ const getShareFeedbackMessage = result => {
     }
 
     return result.method === 'clipboard'
-      ? '공유할 내용을 복사했어요.'
+      ? '복사했어요.'
       : '공유를 열었어요.';
   }
 
@@ -189,7 +189,7 @@ const getShareFeedbackMessage = result => {
     return '';
   }
 
-  return '공유하지 못했어요. 잠시 후 다시 시도해주세요.';
+  return '공유하지 못했어요. 링크 복사를 사용해 주세요.';
 };
 
 const getItemShareText = item => {
@@ -207,9 +207,9 @@ const createDraftMemoId = () => `m_${Date.now()}_${Math.random().toString(36).sl
 const getMemoImageErrorMessage = code => {
   switch (code) {
     case 'CAMERA_PERMISSION_DENIED':
-      return '카메라 권한이 필요해요. 휴대폰 설정에서 권한을 허용해주세요.';
+      return '카메라 권한이 필요해요. 설정에서 권한을 허용해 주세요.';
     case 'PHOTO_PERMISSION_DENIED':
-      return '사진 접근 권한이 필요해요. 휴대폰 설정에서 권한을 허용해주세요.';
+      return '사진 접근 권한이 필요해요. 설정에서 권한을 허용해 주세요.';
     case 'PHOTO_PICK_CANCELLED':
     case 'OS-PLUG-CAMR-0006':
       return '';
@@ -217,7 +217,7 @@ const getMemoImageErrorMessage = code => {
       return `사진은 메모 하나에 최대 ${MEMO_IMAGE_MAX_COUNT}장까지 첨부할 수 있어요.`;
     case 'SAVE_TO_GALLERY_FAILED':
     case 'accessDenied':
-      return '휴대폰에 저장하지 못했어요. 사진 저장 권한을 확인해주세요.';
+      return '사진을 앨범에 저장하지 못했어요.';
     default:
       return '사진을 처리하지 못했어요. 잠시 후 다시 시도해주세요.';
   }

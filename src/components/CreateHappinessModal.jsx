@@ -49,12 +49,15 @@ const createDraftHappinessId = () => `c_${Date.now()}_${Math.random().toString(3
 const getCreateImageErrorMessage = code => {
   switch (code) {
     case 'CAMERA_PERMISSION_DENIED':
-      return '카메라 권한이 필요해요. 휴대폰 설정에서 권한을 허용해주세요.';
+      return '카메라 권한이 필요해요. 설정에서 권한을 허용해 주세요.';
     case 'PHOTO_PERMISSION_DENIED':
-      return '사진 접근 권한이 필요해요. 휴대폰 설정에서 권한을 허용해주세요.';
+      return '사진 접근 권한이 필요해요. 설정에서 권한을 허용해 주세요.';
     case 'PHOTO_PICK_CANCELLED':
     case 'OS-PLUG-CAMR-0006':
       return '';
+    case 'SAVE_TO_GALLERY_FAILED':
+    case 'accessDenied':
+      return '사진을 앨범에 저장하지 못했어요.';
     default:
       return '사진을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
   }
@@ -136,6 +139,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   const [imageFeedback, setImageFeedback] = useState('');
   const [imageBusyTarget, setImageBusyTarget] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [fieldValidation, setFieldValidation] = useState({ title: false, description: false, pulse: 0 });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const cleanupPreviewImage = image => {
@@ -167,6 +171,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     setImageFeedback('');
     setImageBusyTarget('');
     setSubmitError('');
+    setFieldValidation({ title: false, description: false, pulse: 0 });
     setIsSubmitting(false);
   };
 
@@ -202,17 +207,23 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     const trimmedDescription = description.trim();
 
     if (!trimmedTitle || !trimmedDescription) {
+      setFieldValidation(prev => ({
+        title: !trimmedTitle,
+        description: !trimmedDescription,
+        pulse: prev.pulse + 1
+      }));
       return;
     }
 
     if (selectedTags.length === 0) {
-      setTagError('최소 한개의 태그를 선택해 주세요.');
+      setTagError('최소 한 개의 태그를 선택해 주세요.');
       setIsTagPickerOpen(true);
       return;
     }
 
     setSubmitError('');
     setTagError('');
+    setFieldValidation({ title: false, description: false, pulse: 0 });
     setIsSubmitting(true);
     const result = await addCustomItem(
       trimmedTitle,
@@ -229,11 +240,11 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
 
     if (!result?.success) {
       if (result?.code === 'AUTH_REQUIRED') {
-        setSubmitError('공개하기는 로그인 후 사용할 수 있어요.');
+        setSubmitError('공개하려면 로그인이 필요해요.');
         return;
       }
 
-      setSubmitError('행복을 저장하지 못했어요. 잠시 후 다시 시도해주세요.');
+      setSubmitError('저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.');
       return;
     }
 
@@ -369,15 +380,18 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
         </div>
 
         <div className="create-modal-form-shell">
-          <form onSubmit={handleSubmit} className="modal-form create-modal-form">
+          <form onSubmit={handleSubmit} className="modal-form create-modal-form" noValidate>
             <div className="form-group">
               <input
                 id="custom-happiness-title"
-                className="create-note-title-input"
+                className={`create-note-title-input ${fieldValidation.title ? `create-field-prompt ${fieldValidation.pulse % 2 === 0 ? 'pulse-even' : 'pulse-odd'}` : ''}`}
                 type="text"
                 value={title}
-                onChange={event => setTitle(event.target.value)}
-                placeholder="행복의 이름을 적어주세요"
+                onChange={event => {
+                  setTitle(event.target.value);
+                  setFieldValidation(prev => ({ ...prev, title: false }));
+                }}
+                placeholder={fieldValidation.title ? '제목을 적어주세요' : '행복의 이름을 적어주세요'}
                 aria-label="행복 제목"
                 maxLength={20}
                 required
@@ -387,10 +401,13 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
             <div className="form-group">
               <textarea
                 id="custom-happiness-description"
-                className="create-note-description-input"
+                className={`create-note-description-input ${fieldValidation.description ? `create-field-prompt ${fieldValidation.pulse % 2 === 0 ? 'pulse-even' : 'pulse-odd'}` : ''}`}
                 value={description}
-                onChange={event => setDescription(event.target.value)}
-                placeholder="어떤 행복인지 짧게 설명해주세요"
+                onChange={event => {
+                  setDescription(event.target.value);
+                  setFieldValidation(prev => ({ ...prev, description: false }));
+                }}
+                placeholder={fieldValidation.description ? '내용을 적어주세요' : '어떤 행복인지 짧게 설명해주세요'}
                 aria-label="행복 상세 내용"
                 rows={4}
                 maxLength={70}

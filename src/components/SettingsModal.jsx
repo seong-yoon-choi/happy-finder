@@ -276,7 +276,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const reminderMessage = (() => {
     if (isScheduledReminderEnabled && isNativeReminderPlatform) {
       if (needsExactAlarmAccess) {
-        return '정확한 시간에 알림을 받으려면 알람 및 리마인더 권한을 허용해주세요.';
+        return '알림을 받으려면 설정에서 권한을 허용해 주세요.';
       }
 
       if (notificationPermission === 'granted') {
@@ -284,7 +284,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
       }
 
       if (notificationPermission === 'denied') {
-        return '알림이 꺼져 있어요. 앱 설정에서 다시 허용하면 바로 사용할 수 있어요.';
+        return '알림을 받으려면 설정에서 권한을 허용해 주세요.';
       }
 
       return '시간 알림을 켜면 시스템 알림 권한을 확인한 뒤 예약 알림을 설정해요.';
@@ -299,7 +299,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     }
 
     if (isScheduledReminderEnabled && notificationPermission === 'denied') {
-      return '브라우저 알림이 차단되어 있어요.';
+      return '알림을 받으려면 설정에서 권한을 허용해 주세요.';
     }
 
     if (isScheduledReminderEnabled) {
