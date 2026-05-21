@@ -1,198 +1,231 @@
 import React, { useMemo } from 'react';
+import { HAPPINESS_TAG_GROUPS, HAPPINESS_TAGS, normalizeVisibleTags } from '../lib/happinessTags';
 import { useHappy } from '../store/HappyContext';
 import './Analysis.css';
 
-const happinessTypes = [
-  { key: 'sensory', label: '감각적', color: '#4ca33a' },
-  { key: 'achievement', label: '성취적', color: '#a9d94f' },
-  { key: 'relationship', label: '관계적', color: '#f7c437' },
-  { key: 'flow', label: '몰입적', color: '#6fbf73' },
-  { key: 'meaning', label: '의미적', color: '#d6ca61' }
+const TAG_COLORS = [
+  '#3f8f46',
+  '#78a75b',
+  '#4d9c9f',
+  '#d98859',
+  '#f2b84b',
+  '#6f9e45',
+  '#508fb8',
+  '#a49d4f',
+  '#e0a33c',
+  '#6aac6e',
+  '#c07b95',
+  '#7b9fca',
+  '#b7b84d'
 ];
 
-const typeAliases = {
-  '감각적': 'sensory',
-  '감각적 행복': 'sensory',
-  '성취적': 'achievement',
-  '성취적 행복': 'achievement',
-  '관계적': 'relationship',
-  '관계적 행복': 'relationship',
-  '몰입적': 'flow',
-  '몰입적 행복': 'flow',
-  '의미적': 'meaning',
-  '의미적 행복': 'meaning'
-};
-
-const ignoredWords = new Set([
-  '오늘',
-  '기록',
-  '행복',
-  '내가',
-  '나는',
-  '너무',
-  '정말',
-  '그리고',
-  '그래서',
-  '있는',
-  '없는',
-  '좋은',
-  '좋다',
-  '좋았다',
-  '했다',
-  '하면',
-  '해서',
-  '같다',
-  '하루',
-  '시간'
-]);
-
-const getRecordContent = record => (
-  typeof record?.content === 'string' ? record.content.trim() : ''
+const tagMetaMap = new Map(
+  HAPPINESS_TAG_GROUPS.flatMap(group => (
+    group.tags.map(tag => [tag, { group: group.label }])
+  ))
 );
 
-const getTypeKey = type => {
-  if (typeof type !== 'string') {
-    return '';
-  }
+const tagColorMap = new Map(
+  HAPPINESS_TAGS.map((tag, index) => [tag, TAG_COLORS[index % TAG_COLORS.length]])
+);
 
-  return typeAliases[type.trim()] || '';
-};
+const createTagCounter = () => (
+  new Map(HAPPINESS_TAGS.map(tag => [
+    tag,
+    {
+      label: tag,
+      group: tagMetaMap.get(tag)?.group || '태그',
+      color: tagColorMap.get(tag) || TAG_COLORS[0],
+      count: 0
+    }
+  ]))
+);
 
-const getRecordTypeScores = records => {
-  const scoreMap = happinessTypes.reduce((acc, type) => {
-    acc[type.key] = 0;
-    return acc;
-  }, {});
+const addTagsToCounter = (counter, tags, amount = 1) => {
+  normalizeVisibleTags(tags, Infinity).forEach(tag => {
+    const current = counter.get(tag);
 
-  records.forEach(record => {
-    if (!Array.isArray(record?.happinessTypes)) {
+    if (!current) {
       return;
     }
 
-    record.happinessTypes.forEach(entry => {
-      const typeKey = getTypeKey(entry?.type);
-      const weight = Number(entry?.weight);
-
-      if (!typeKey || !Number.isFinite(weight) || weight <= 0) {
-        return;
-      }
-
-      scoreMap[typeKey] += weight;
+    counter.set(tag, {
+      ...current,
+      count: current.count + amount
     });
   });
-
-  const totalScore = Object.values(scoreMap).reduce((sum, score) => sum + score, 0);
-
-  return happinessTypes.map(type => ({
-    ...type,
-    score: scoreMap[type.key],
-    percentage: totalScore > 0 ? Math.round((scoreMap[type.key] / totalScore) * 100) : 0
-  }));
 };
 
-const getTypeChartGradient = typeScores => {
-  const totalPercentage = typeScores.reduce((sum, type) => sum + type.percentage, 0);
+const getSortedTagStats = (counter, limit = Infinity) => (
+  Array.from(counter.values())
+    .filter(tag => tag.count > 0)
+    .sort((left, right) => (
+      right.count - left.count || HAPPINESS_TAGS.indexOf(left.label) - HAPPINESS_TAGS.indexOf(right.label)
+    ))
+    .slice(0, limit)
+);
 
-  if (totalPercentage <= 0) {
+const getItemTags = item => normalizeVisibleTags(item?.tags, Infinity);
+
+const buildItemSource = ({ title, description, items = [] }) => {
+  const counter = createTagCounter();
+
+  items.forEach(item => {
+    addTagsToCounter(counter, getItemTags(item));
+  });
+
+  return {
+    title,
+    description,
+    countLabel: `${items.length}개`,
+    tags: getSortedTagStats(counter, 5)
+  };
+};
+
+const buildRecordSource = records => {
+  const counter = createTagCounter();
+  const linkedRecords = records.filter(record => record.sourceType === 'list');
+
+  linkedRecords.forEach(record => {
+    const itemTags = getItemTags(record.item);
+    const recordTags = itemTags.length > 0
+      ? itemTags
+      : normalizeVisibleTags(record.tags, Infinity);
+
+    addTagsToCounter(counter, recordTags);
+  });
+
+  return {
+    title: '행복 메모',
+    description: '행복 리스트에 남긴 기록',
+    countLabel: `${linkedRecords.length}개`,
+    tags: getSortedTagStats(counter, 5)
+  };
+};
+
+const getTagChartGradient = tagStats => {
+  const totalCount = tagStats.reduce((sum, tag) => sum + tag.count, 0);
+
+  if (totalCount <= 0) {
     return 'conic-gradient(rgba(76, 163, 58, 0.14) 0deg 360deg)';
   }
 
   let cursor = 0;
-  const segments = typeScores
-    .filter(type => type.percentage > 0)
-    .map(type => {
-      const start = cursor;
-      const end = cursor + type.percentage * 3.6;
-      cursor = end;
-      return `${type.color} ${start}deg ${end}deg`;
-    });
+  const segments = tagStats.map(tag => {
+    const start = cursor;
+    const end = cursor + (tag.count / totalCount) * 360;
+    cursor = end;
+    return `${tag.color} ${start}deg ${end}deg`;
+  });
 
   return `conic-gradient(${segments.join(', ')})`;
 };
 
-const getTopTags = records => {
-  const tagCounts = new Map();
+const getTagPercentage = (tag, totalCount) => (
+  totalCount > 0 ? Math.round((tag.count / totalCount) * 100) : 0
+);
 
-  records.forEach(record => {
-    if (!Array.isArray(record?.tags)) {
-      return;
-    }
+const getRecommendationItems = ({ items, topTags, userFavorites, userEmpathies, myItems }) => {
+  if (!Array.isArray(items) || items.length === 0 || topTags.length === 0) {
+    return [];
+  }
 
-    record.tags.forEach(tag => {
-      const normalizedTag = typeof tag === 'string' ? tag.trim() : '';
+  const myItemIds = new Set(myItems.map(item => item.id));
+  const usedItemIds = new Set([
+    ...Object.entries(userFavorites || {}).filter(([, value]) => value).map(([id]) => id),
+    ...Object.entries(userEmpathies || {}).filter(([, value]) => value).map(([id]) => id),
+    ...myItemIds
+  ]);
+  const topTagSet = new Set(topTags.slice(0, 3).map(tag => tag.label));
 
-      if (!normalizedTag) {
-        return;
-      }
+  return items
+    .filter(item => !usedItemIds.has(item.id))
+    .filter(item => getItemTags(item).some(tag => topTagSet.has(tag)))
+    .slice(0, 3);
+};
 
-      tagCounts.set(normalizedTag, (tagCounts.get(normalizedTag) || 0) + 1);
+const buildAnalysisModel = ({ records, items, favoriteItems, myItems, userEmpathies, userFavorites }) => {
+  const empathyItems = items.filter(item => userEmpathies?.[item.id]);
+  const sources = [
+    buildItemSource({
+      title: '즐겨찾기',
+      description: '마음에 들어 저장한 행복',
+      items: favoriteItems
+    }),
+    buildItemSource({
+      title: '내가 만든 행복',
+      description: '직접 만든 행복 리스트',
+      items: myItems
+    }),
+    buildRecordSource(records),
+    buildItemSource({
+      title: '공감',
+      description: '따뜻한 흔적을 남긴 행복',
+      items: empathyItems
+    })
+  ];
+
+  const combinedCounter = createTagCounter();
+  sources.forEach(source => {
+    source.tags.forEach(tag => {
+      addTagsToCounter(combinedCounter, [tag.label], tag.count);
     });
   });
 
-  return Array.from(tagCounts.entries())
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, 8)
-    .map(([label, count]) => ({ label, count }));
-};
-
-const getTopWords = records => {
-  const wordCounts = new Map();
-
-  records.forEach(record => {
-    getRecordContent(record)
-      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-      .split(/\s+/)
-      .map(word => word.trim())
-      .filter(word => word.length >= 2 && !ignoredWords.has(word))
-      .forEach(word => {
-        wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
-      });
+  const topTags = getSortedTagStats(combinedCounter, 8);
+  const totalSignals = topTags.reduce((sum, tag) => sum + tag.count, 0);
+  const primaryTag = topTags[0] || null;
+  const recommendationItems = getRecommendationItems({
+    items,
+    topTags,
+    userFavorites,
+    userEmpathies,
+    myItems
   });
 
-  return Array.from(wordCounts.entries())
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, 8)
-    .map(([label, count]) => ({ label, count }));
-};
-
-const buildAnalysisModel = ({ records, items }) => {
-  const freeRecordCount = records.filter(record => record.sourceType === 'free').length;
-  const linkedRecordCount = records.filter(record => record.sourceType === 'list').length;
-  const typeScores = getRecordTypeScores(records);
-  const topTags = getTopTags(records);
-  const topWords = getTopWords(records);
-  const recommendationItems = Array.isArray(items) ? items.slice(0, 3) : [];
-  const styleTitle = records.length === 0
-    ? '기록 데이터 없음'
-    : freeRecordCount >= linkedRecordCount
-      ? '자유롭게 기록하는 행복 스타일'
-      : '리스트에서 발견하는 행복 스타일';
-  const styleDescription = records.length === 0
-    ? '기록이 추가되면 이 영역에 행복 스타일 요약이 들어갑니다.'
-    : `${records.length}개의 기록 중 자유 기록 ${freeRecordCount}개, 리스트 기록 ${linkedRecordCount}개가 쌓였습니다.`;
+  const styleTitle = primaryTag
+    ? `${primaryTag.label} 쪽 행복이 자주 보여요`
+    : '분석할 행복 데이터가 아직 충분하지 않아요';
+  const styleDescription = primaryTag
+    ? `즐겨찾기, 내가 만든 행복, 행복 메모, 공감에서 ${totalSignals}개의 태그 흐름을 모았어요.`
+    : '즐겨찾기, 공감, 행복 메모, 내가 만든 행복이 쌓이면 2차 태그 기준으로 흐름을 보여줄게요.';
 
   return {
+    sources,
+    topTags,
+    totalSignals,
+    primaryTag,
     styleTitle,
     styleDescription,
-    freeRecordCount,
-    linkedRecordCount,
-    typeScores,
-    topTags,
-    topWords,
     recommendationItems
   };
 };
 
 const Analysis = () => {
-  const { getAllRecords, items } = useHappy();
+  const {
+    getAllRecords,
+    getFavoriteItems,
+    getMyItems,
+    items,
+    userEmpathies,
+    userFavorites
+  } = useHappy();
 
   const records = getAllRecords();
+  const favoriteItems = getFavoriteItems();
+  const myItems = getMyItems();
   const analysis = useMemo(
-    () => buildAnalysisModel({ records, items }),
-    [records, items]
+    () => buildAnalysisModel({
+      records,
+      items,
+      favoriteItems,
+      myItems,
+      userEmpathies,
+      userFavorites
+    }),
+    [records, items, favoriteItems, myItems, userEmpathies, userFavorites]
   );
-  const chartGradient = getTypeChartGradient(analysis.typeScores);
-  const keywordItems = analysis.topTags.length > 0 ? analysis.topTags : analysis.topWords;
+  const chartGradient = getTagChartGradient(analysis.topTags);
 
   return (
     <div className="view-container analysis-view">
@@ -200,42 +233,11 @@ const Analysis = () => {
         <div className="analysis-brand" aria-label="Happy Finder 로고">Happy Finder</div>
         <div>
           <h2>분석</h2>
-          <p>내 행복 기록의 흐름을 한눈에 정리합니다.</p>
+          <p>내 행복의 태그 흐름을 한눈에 정리합니다.</p>
         </div>
       </header>
 
       <main className="analysis-sections">
-        <section className="analysis-type-section">
-          <div className="analysis-section-head">
-            <span>TYPES</span>
-            <h3>행복 유형 비중</h3>
-          </div>
-
-          <div className="analysis-type-layout">
-            <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }}>
-              <div>
-                <strong>{analysis.typeScores.reduce((sum, type) => sum + type.percentage, 0)}%</strong>
-                <span>분류</span>
-              </div>
-            </div>
-
-            <div className="analysis-type-list">
-              {analysis.typeScores.map(type => (
-                <div key={type.key} className="analysis-type-row">
-                  <div className="analysis-type-label">
-                    <i style={{ background: type.color }} aria-hidden="true" />
-                    <span>{type.label}</span>
-                  </div>
-                  <div className="analysis-type-bar" aria-hidden="true">
-                    <span style={{ width: `${type.percentage}%`, background: type.color }} />
-                  </div>
-                  <strong>{type.percentage}%</strong>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section className="analysis-style-section">
           <div className="analysis-section-head">
             <span>STYLE</span>
@@ -261,40 +263,95 @@ const Analysis = () => {
           </div>
         </section>
 
-        <section className="analysis-keyword-section">
+        <section className="analysis-tag-section">
           <div className="analysis-section-head">
-            <span>KEYWORDS</span>
-            <h3>자주 나타난 태그와 단어</h3>
+            <span>TAGS</span>
+            <h3>자주 만난 태그</h3>
           </div>
 
-          {keywordItems.length > 0 ? (
-            <div className="analysis-chip-list">
-              {keywordItems.map(item => (
-                <span key={item.label}>
-                  {item.label}
-                  <small>{item.count}</small>
-                </span>
-              ))}
+          {analysis.topTags.length > 0 ? (
+            <div className="analysis-tag-layout">
+              <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }}>
+                <div>
+                  <strong>{analysis.totalSignals}</strong>
+                  <span>흔적</span>
+                </div>
+              </div>
+
+              <div className="analysis-tag-list">
+                {analysis.topTags.slice(0, 6).map(tag => (
+                  <div key={tag.label} className="analysis-tag-row">
+                    <div className="analysis-tag-label">
+                      <i style={{ background: tag.color }} aria-hidden="true" />
+                      <span>{tag.label}</span>
+                    </div>
+                    <div className="analysis-tag-bar" aria-hidden="true">
+                      <span
+                        style={{
+                          width: `${getTagPercentage(tag, analysis.totalSignals)}%`,
+                          background: tag.color
+                        }}
+                      />
+                    </div>
+                    <strong>{getTagPercentage(tag, analysis.totalSignals)}%</strong>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <p className="analysis-empty-line">표시할 태그와 단어가 없습니다.</p>
+            <p className="analysis-empty-line">분석할 행복 데이터가 아직 충분하지 않아요.</p>
           )}
+        </section>
+
+        <section className="analysis-source-section">
+          <div className="analysis-section-head">
+            <span>SOURCES</span>
+            <h3>기준별 태그</h3>
+          </div>
+
+          <div className="analysis-source-grid">
+            {analysis.sources.map(source => (
+              <article key={source.title} className="analysis-source-card">
+                <div>
+                  <strong>{source.title}</strong>
+                  <small>{source.countLabel}</small>
+                </div>
+                <p>{source.description}</p>
+                {source.tags.length > 0 ? (
+                  <div className="analysis-mini-chip-list">
+                    {source.tags.map(tag => (
+                      <span key={tag.label}>
+                        {tag.label}
+                        <small>{tag.count}</small>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="analysis-source-empty">아직 태그가 없어요.</span>
+                )}
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className="analysis-recommend-section">
           <div className="analysis-section-head">
-            <span>RECOMMEND</span>
-            <h3>추천 행복 영역</h3>
+            <span>NEXT</span>
+            <h3>비슷하게 살펴볼 행복</h3>
           </div>
 
-          <div className="analysis-recommend-list">
-            {analysis.recommendationItems.map(item => (
-              <article key={item.id} className="analysis-recommend-card">
-                <strong>{item.title}</strong>
-                <p>{item.description}</p>
-              </article>
-            ))}
-          </div>
+          {analysis.recommendationItems.length > 0 ? (
+            <div className="analysis-recommend-list">
+              {analysis.recommendationItems.map(item => (
+                <article key={item.id} className="analysis-recommend-card">
+                  <strong>{item.title}</strong>
+                  <p>{item.description}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="analysis-empty-line">태그 흐름이 쌓이면 비슷한 행복을 보여줄게요.</p>
+          )}
         </section>
       </main>
     </div>

@@ -3446,7 +3446,7 @@ export const HappyProvider = ({ children }) => {
           item: linkedItem || null,
           itemTitle: linkedItem?.title || '삭제된 행복',
           itemDescription: linkedItem?.description || '',
-          tags: []
+          tags: normalizeVisibleTags(linkedItem?.tags, MAX_RECORD_TAGS)
         }));
     });
 
