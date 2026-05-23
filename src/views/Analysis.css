@@ -95,41 +95,91 @@
     line-height: 1.24;
 }
 
-.analysis-style-body {
+.analysis-report {
     display: flex;
-    align-items: flex-start;
-    gap: 14px;
+    flex-direction: column;
+    gap: 13px;
 }
 
-.analysis-style-mark {
-    flex: 0 0 58px;
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
+.analysis-report-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(var(--primary-rgb), 0.13);
+}
+
+.analysis-report-hero > span {
+    width: fit-content;
+    min-height: 24px;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    background: rgba(var(--primary-rgb), 0.12);
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.1);
     color: var(--primary-color);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
 }
 
-.analysis-style-mark svg {
-    width: 32px;
-    height: 32px;
-}
-
-.analysis-style-body strong {
+.analysis-report-hero strong {
     display: block;
-    margin-bottom: 6px;
     color: var(--text-dark);
-    font-size: clamp(1.05rem, 3.5vw, 1.24rem);
-    line-height: 1.3;
+    font-size: clamp(1.18rem, 4.2vw, 1.48rem);
+    line-height: 1.24;
 }
 
-.analysis-style-body p {
+.analysis-report-hero p {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: var(--font-body-md);
+    font-weight: 700;
+    line-height: 1.55;
+}
+
+.analysis-report-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.analysis-report-grid article,
+.analysis-report-balance > div {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid rgba(var(--primary-rgb), 0.12);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.42);
+}
+
+.dark-theme .analysis-report-grid article,
+.dark-theme .analysis-report-balance > div {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.analysis-report-grid span,
+.analysis-report-balance span {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--primary-color);
+    font-size: 0.74rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.analysis-report-grid p,
+.analysis-report-balance p {
+    margin: 0;
     color: var(--text-light);
     font-size: var(--font-body-sm);
     line-height: 1.65;
+}
+
+.analysis-report-balance {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
 }
 
 .analysis-tag-layout {
@@ -415,6 +465,10 @@
     }
 
     .analysis-source-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .analysis-report-grid {
         grid-template-columns: 1fr;
     }
 }
