@@ -484,6 +484,7 @@ const Analysis = () => {
             isOpen={Boolean(selectedRecommendation)}
             onClose={handleCloseRecommendation}
             canDelete={false}
+            autoOpenMemoComposer
           />
         </LazyLoadBoundary>
       )}
