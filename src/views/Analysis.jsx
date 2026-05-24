@@ -455,27 +455,25 @@ const Analysis = () => {
       <header className="analysis-header">
         <div className="analysis-brand" aria-label="Happy Finder 로고">Happy Finder</div>
         <div className="analysis-header-row">
-          <div>
+          <div className="analysis-title-block">
             <h2>분석</h2>
-            <p>내 행복의 태그 흐름을 한눈에 정리합니다.</p>
+            <div className="analysis-subtitle-row">
+              <p>내 행복의 태그 흐름을 한눈에 정리합니다.</p>
+              <button
+                type="button"
+                className="analysis-maturity-btn"
+                onClick={() => setIsMaturityModalOpen(true)}
+                aria-label={`분석 단계 보기: ${analysisMaturity.label}, ${analysis.totalSignals}개`}
+              >
+                <span className="analysis-maturity-icon">
+                  <SproutIcon />
+                </span>
+                <span className="analysis-maturity-track" aria-hidden="true">
+                  <i style={{ width: `${analysisMaturity.progress}%` }} />
+                </span>
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            className="analysis-maturity-btn"
-            onClick={() => setIsMaturityModalOpen(true)}
-            aria-label={`분석 단계 보기: ${analysisMaturity.label}`}
-          >
-            <span className="analysis-maturity-icon">
-              <SproutIcon />
-            </span>
-            <span className="analysis-maturity-copy">
-              <strong>{analysisMaturity.label}</strong>
-              <span>{analysis.totalSignals}개</span>
-            </span>
-            <span className="analysis-maturity-track" aria-hidden="true">
-              <i style={{ width: `${analysisMaturity.progress}%` }} />
-            </span>
-          </button>
         </div>
       </header>
 
@@ -505,7 +503,7 @@ const Analysis = () => {
                   <span>{analysis.styleSummary.signalLabel}</span>
                   <strong>주요 행복 흐름</strong>
                   <div className="analysis-report-tag-bars" aria-label="주요 태그 비율">
-                    {analysis.topTags.slice(0, 4).map(tag => (
+                    {analysis.topTags.slice(0, 3).map(tag => (
                       <div
                         key={tag.label}
                         className="analysis-report-tag-bar"
