@@ -188,7 +188,7 @@ const buildStyleSummary = ({ nickname, topTags, totalSignals }) => {
     recommendation: profile.recommendation,
     strength: profile.strength,
     caution: profile.caution,
-    signalLabel: `${totalSignals}개 기록 기반`
+    signalLabel: `${totalSignals}개 행복 신호 기반`
   };
 };
 
@@ -304,6 +304,7 @@ const Analysis = () => {
   } = useHappy();
   const [recommendationRefreshSeed, setRecommendationRefreshSeed] = useState(0);
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
+  const [isReportExpanded, setIsReportExpanded] = useState(false);
 
   const records = getAllRecords();
   const favoriteItems = getFavoriteItems();
@@ -361,69 +362,75 @@ const Analysis = () => {
         <main className="analysis-sections">
           <section className="analysis-style-section">
             <div className="analysis-section-head">
-              <h3>나의 행복 스타일 리포트</h3>
+              <h3>나의 행복 분석 리포트</h3>
             </div>
             <div className="analysis-report">
+              <div className="analysis-report-chart">
+                <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }}>
+                  <div>
+                    <strong>{analysis.totalSignals}</strong>
+                    <span>행복 신호</span>
+                  </div>
+                </div>
+
+                <div className="analysis-report-chart-copy">
+                  <span>{analysis.styleSummary.signalLabel}</span>
+                  <strong>주요 행복 흐름</strong>
+                  <div className="analysis-report-tag-chips" aria-label="주요 태그">
+                    {analysis.topTags.slice(0, 4).map(tag => (
+                      <span key={tag.label}>
+                        {tag.label}
+                        <small>{getTagPercentage(tag, analysis.totalSignals)}%</small>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="analysis-report-hero">
-                <span>{analysis.styleSummary.signalLabel}</span>
                 <strong>{analysis.styleSummary.title}</strong>
                 <p>{analysis.styleSummary.overview}</p>
               </div>
-              <div className="analysis-report-grid">
-                <article>
-                  <span>성향 해석</span>
-                  <p>{analysis.styleSummary.interpretation}</p>
-                </article>
-                <article>
-                  <span>추천 행동</span>
-                  <p>{analysis.styleSummary.recommendation}</p>
-                </article>
-              </div>
-              <div className="analysis-report-balance">
-                <div>
-                  <span>강점</span>
-                  <p>{analysis.styleSummary.strength}</p>
-                </div>
-                <div>
-                  <span>균형 포인트</span>
-                  <p>{analysis.styleSummary.caution}</p>
-                </div>
-              </div>
-            </div>
-          </section>
 
-          <section className="analysis-tag-section">
-            <div className="analysis-section-head">
-              <h3>주요 태그 분포</h3>
-            </div>
+              <button
+                type="button"
+                className={`analysis-report-more ${isReportExpanded ? 'is-open' : ''}`}
+                onClick={() => setIsReportExpanded(prevExpanded => !prevExpanded)}
+                aria-expanded={isReportExpanded}
+              >
+                <span>{isReportExpanded ? '리포트 접기' : '자세히 보기'}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path
+                    d="M6 9l6 6 6-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
 
-            <div className="analysis-tag-layout">
-              <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }}>
-                <div>
-                  <strong>{analysis.totalSignals}</strong>
-                  <span>태그 신호</span>
-                </div>
-              </div>
-
-              <div className="analysis-tag-list">
-                {analysis.topTags.map(tag => (
-                  <div key={tag.label} className="analysis-tag-row">
-                    <div className="analysis-tag-label">
-                      <i style={{ background: tag.color }} aria-hidden="true" />
-                      <span>{tag.label}</span>
-                    </div>
-                    <div className="analysis-tag-bar" aria-hidden="true">
-                      <span
-                        style={{
-                          width: `${getTagPercentage(tag, analysis.totalSignals)}%`,
-                          background: tag.color
-                        }}
-                      />
-                    </div>
-                    <strong>{getTagPercentage(tag, analysis.totalSignals)}%</strong>
+              {isReportExpanded && (
+                <div className="analysis-report-details">
+                  <article>
+                    <span>성향 해석</span>
+                    <p>{analysis.styleSummary.interpretation}</p>
+                  </article>
+                  <article>
+                    <span>추천 행동</span>
+                    <p>{analysis.styleSummary.recommendation}</p>
+                  </article>
+                  <div>
+                    <span>강점</span>
+                    <p>{analysis.styleSummary.strength}</p>
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <span>균형 포인트</span>
+                    <p>{analysis.styleSummary.caution}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 
