@@ -278,13 +278,9 @@
 
 .analysis-report-preview {
     position: relative;
-    max-height: 4.9em;
     margin: -1px 0 0;
-    overflow: hidden;
     font-size: var(--font-body-sm);
     line-height: 1.55;
-    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 58%, rgba(0, 0, 0, 0.18) 100%);
-    mask-image: linear-gradient(to bottom, #000 0%, #000 58%, rgba(0, 0, 0, 0.18) 100%);
 }
 
 .analysis-report-preview span {
@@ -297,8 +293,26 @@
 }
 
 .analysis-report-preview p {
+    position: relative;
+    max-height: 6.2em;
     margin: 0;
+    overflow: hidden;
     color: var(--text-light);
+}
+
+.analysis-report-preview p::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1.55em;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 254, 250, 0.92));
+}
+
+.dark-theme .analysis-report-preview p::after {
+    background: linear-gradient(to bottom, rgba(38, 50, 36, 0), rgba(38, 50, 36, 0.92));
 }
 
 .analysis-report-more {
@@ -314,12 +328,11 @@
     color: rgba(var(--primary-rgb), 0.86);
     font-size: var(--font-body-sm);
     font-weight: 900;
-    opacity: 0.84;
     cursor: pointer;
 }
 
 .analysis-report-more.is-open {
-    opacity: 0.94;
+    color: var(--primary-color);
 }
 
 .analysis-report-more svg {
