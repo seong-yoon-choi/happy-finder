@@ -260,7 +260,7 @@ const buildStyleSummary = ({ nickname, topTags, totalSignals }) => {
     recommendation: profile.recommendation,
     strength: profile.strength,
     caution: profile.caution,
-    signalLabel: `행복 데이터 ${totalSignals}개 기반`
+    signalLabel: `${totalSignals}개의 행복 데이터 기반`
   };
 };
 
@@ -493,12 +493,7 @@ const Analysis = () => {
             </div>
             <div className="analysis-report">
               <div className="analysis-report-chart">
-                <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }}>
-                  <div>
-                    <strong>{analysis.totalSignals}</strong>
-                    <span>행복 신호</span>
-                  </div>
-                </div>
+                <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }} aria-hidden="true" />
 
                 <div className="analysis-report-chart-copy">
                   <strong>주요 행복 흐름</strong>
