@@ -504,12 +504,21 @@ const Analysis = () => {
                 <div className="analysis-report-chart-copy">
                   <span>{analysis.styleSummary.signalLabel}</span>
                   <strong>주요 행복 흐름</strong>
-                  <div className="analysis-report-tag-chips" aria-label="주요 태그">
+                  <div className="analysis-report-tag-bars" aria-label="주요 태그 비율">
                     {analysis.topTags.slice(0, 4).map(tag => (
-                      <span key={tag.label}>
-                        {tag.label}
-                        <small>{getTagPercentage(tag, analysis.totalSignals)}%</small>
-                      </span>
+                      <div
+                        key={tag.label}
+                        className="analysis-report-tag-bar"
+                        style={{ '--tag-color': tag.color }}
+                      >
+                        <div>
+                          <span>{tag.label}</span>
+                          <strong>{getTagPercentage(tag, analysis.totalSignals)}%</strong>
+                        </div>
+                        <span className="analysis-report-tag-track" aria-hidden="true">
+                          <i style={{ width: `${getTagPercentage(tag, analysis.totalSignals)}%` }} />
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </div>
