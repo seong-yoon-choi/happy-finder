@@ -15,8 +15,8 @@
 }
 
 .analysis-header h2 {
-    font-size: var(--font-title-lg);
-    line-height: 1.2;
+    font-size: clamp(1.8rem, 6vw, 2.24rem);
+    line-height: 1.12;
     margin: 0;
 }
 
@@ -38,18 +38,18 @@
 .analysis-title-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 6px;
 }
 
 .analysis-maturity-btn {
     flex: 0 0 auto;
-    width: 78px;
-    min-height: 28px;
+    width: 94px;
+    min-height: 34px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 7px 4px 5px;
+    gap: 8px;
+    padding: 5px 9px 5px 6px;
     border: 1px solid rgba(var(--primary-rgb), 0.16);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.5);
@@ -62,9 +62,9 @@
 }
 
 .analysis-maturity-icon {
-    flex: 0 0 20px;
-    width: 20px;
-    height: 20px;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
@@ -75,8 +75,8 @@
 
 .analysis-maturity-icon svg,
 .analysis-maturity-modal-head svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 .analysis-maturity-modal-head svg {
@@ -86,8 +86,8 @@
 
 .analysis-maturity-track {
     flex: 1 1 auto;
-    width: 38px;
-    height: 5px;
+    width: 48px;
+    height: 6px;
     border-radius: 999px;
     overflow: hidden;
     background: rgba(var(--primary-rgb), 0.1);
@@ -594,7 +594,7 @@
     }
 
     .analysis-maturity-btn {
-        width: 74px;
+        width: 88px;
     }
 
     .analysis-report-chart-copy {
