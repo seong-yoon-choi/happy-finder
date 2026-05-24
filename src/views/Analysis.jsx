@@ -295,8 +295,8 @@ const buildRecommendationPrompt = ({ recentTags = [], topTags = [] }) => {
   const tagText = tagLabels.join(' · ');
 
   return recentTags.length > 0
-    ? `최근 ${tagText} 태그가 자주 보였어요. 이 흐름과 가까운 행복을 즐겨보는 건 어떨까요?`
-    : `${tagText} 태그 흐름이 눈에 띄어요. 이 흐름과 가까운 행복을 즐겨보는 건 어떨까요?`;
+    ? `최근에 ${tagText} 태그가 자주 보였어요. 이 태그와 가까운 행복을 추천해 드릴게요.`
+    : `최근에 ${tagText} 태그 흐름이 눈에 띄어요. 이 태그와 가까운 행복을 추천해 드릴게요.`;
 };
 
 const getRecommendationItems = ({
@@ -528,9 +528,10 @@ const Analysis = () => {
               </div>
 
               {!isReportExpanded && (
-                <p className="analysis-report-preview">
-                  {analysis.styleSummary.interpretation}
-                </p>
+                <div className="analysis-report-preview">
+                  <span>성향 해석</span>
+                  <p>{analysis.styleSummary.interpretation}</p>
+                </div>
               )}
 
               <button
