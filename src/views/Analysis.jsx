@@ -456,9 +456,8 @@ const Analysis = () => {
         <div className="analysis-brand" aria-label="Happy Finder 로고">Happy Finder</div>
         <div className="analysis-header-row">
           <div className="analysis-title-block">
-            <h2>분석</h2>
-            <div className="analysis-subtitle-row">
-              <p>내 행복의 태그 흐름을 한눈에 정리합니다.</p>
+            <div className="analysis-title-row">
+              <h2>분석</h2>
               <button
                 type="button"
                 className="analysis-maturity-btn"
@@ -473,6 +472,7 @@ const Analysis = () => {
                 </span>
               </button>
             </div>
+            <p>내 행복의 태그 흐름을 한눈에 정리합니다.</p>
           </div>
         </div>
       </header>
@@ -503,7 +503,7 @@ const Analysis = () => {
                   <span>{analysis.styleSummary.signalLabel}</span>
                   <strong>주요 행복 흐름</strong>
                   <div className="analysis-report-tag-bars" aria-label="주요 태그 비율">
-                    {analysis.topTags.slice(0, 3).map(tag => (
+                    {analysis.topTags.slice(0, 4).map(tag => (
                       <div
                         key={tag.label}
                         className="analysis-report-tag-bar"

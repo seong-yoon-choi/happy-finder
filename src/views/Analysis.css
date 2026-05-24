@@ -17,7 +17,7 @@
 .analysis-header h2 {
     font-size: var(--font-title-lg);
     line-height: 1.2;
-    margin-bottom: 6px;
+    margin: 0;
 }
 
 .analysis-header p {
@@ -35,10 +35,11 @@
     min-width: 0;
 }
 
-.analysis-subtitle-row {
+.analysis-title-row {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
 .analysis-maturity-btn {
@@ -172,13 +173,13 @@
 .analysis-report-chart {
     display: grid;
     grid-template-columns: 102px minmax(0, 1fr);
-    gap: clamp(12px, 3.4vw, 15px);
+    gap: clamp(18px, 5vw, 24px);
     align-items: center;
     justify-items: start;
 }
 
 .analysis-report-chart-copy {
-    width: 100%;
+    width: min(100%, 180px);
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -206,6 +207,7 @@
 }
 
 .analysis-report-tag-bars {
+    width: min(100%, 168px);
     display: flex;
     flex-direction: column;
     gap: 6px;
