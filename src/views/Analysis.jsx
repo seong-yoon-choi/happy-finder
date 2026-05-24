@@ -527,6 +527,12 @@ const Analysis = () => {
                 <p>{analysis.styleSummary.overview}</p>
               </div>
 
+              {!isReportExpanded && (
+                <p className="analysis-report-preview">
+                  {analysis.styleSummary.interpretation}
+                </p>
+              )}
+
               <button
                 type="button"
                 className={`analysis-report-more ${isReportExpanded ? 'is-open' : ''}`}

@@ -173,13 +173,13 @@
 .analysis-report-chart {
     display: grid;
     grid-template-columns: 102px minmax(0, 1fr);
-    gap: clamp(18px, 5vw, 24px);
+    gap: clamp(26px, 7vw, 38px);
     align-items: center;
     justify-items: start;
 }
 
 .analysis-report-chart-copy {
-    width: min(100%, 180px);
+    width: min(100%, 160px);
     min-width: 0;
     display: flex;
     flex-direction: column;
@@ -207,7 +207,7 @@
 }
 
 .analysis-report-tag-bars {
-    width: min(100%, 168px);
+    width: min(100%, 150px);
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -280,6 +280,18 @@
     line-height: 1.55;
 }
 
+.analysis-report-preview {
+    position: relative;
+    max-height: 4.86em;
+    margin: -1px 0 0;
+    overflow: hidden;
+    color: var(--text-light);
+    font-size: var(--font-body-sm);
+    line-height: 1.62;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 58%, rgba(0, 0, 0, 0.18) 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 58%, rgba(0, 0, 0, 0.18) 100%);
+}
+
 .analysis-report-more {
     width: 100%;
     min-height: 40px;
@@ -289,11 +301,16 @@
     gap: 7px;
     border: 1px solid rgba(var(--primary-rgb), 0.16);
     border-radius: 999px;
-    background: rgba(var(--primary-rgb), 0.07);
-    color: var(--primary-color);
+    background: rgba(var(--primary-rgb), 0.045);
+    color: rgba(var(--primary-rgb), 0.86);
     font-size: var(--font-body-sm);
     font-weight: 900;
+    opacity: 0.84;
     cursor: pointer;
+}
+
+.analysis-report-more.is-open {
+    opacity: 0.94;
 }
 
 .analysis-report-more svg {
