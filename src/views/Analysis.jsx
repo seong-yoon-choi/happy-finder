@@ -295,8 +295,8 @@ const buildRecommendationPrompt = ({ recentTags = [], topTags = [] }) => {
   const tagText = tagLabels.join(' · ');
 
   return recentTags.length > 0
-    ? `최근 ${tagText} 흐름이 많던데 이런 행복은 어떤가요?`
-    : `${tagText} 흐름이 자주 보이는데 이런 행복은 어떤가요?`;
+    ? `최근 ${tagText} 태그가 자주 보였어요. 이 흐름과 가까운 행복을 즐겨보는 건 어떨까요?`
+    : `${tagText} 태그 흐름이 눈에 띄어요. 이 흐름과 가까운 행복을 즐겨보는 건 어떨까요?`;
 };
 
 const getRecommendationItems = ({
