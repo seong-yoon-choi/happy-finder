@@ -164,6 +164,15 @@
     line-height: 1.24;
 }
 
+.analysis-report-head {
+    align-items: flex-start;
+}
+
+.analysis-report-signal-badge {
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
 .analysis-report {
     display: flex;
     flex-direction: column;
@@ -172,10 +181,10 @@
 
 .analysis-report-chart {
     display: grid;
-    grid-template-columns: 102px 150px;
+    grid-template-columns: 112px 150px;
     justify-content: space-between;
     gap: clamp(18px, 5vw, 28px);
-    align-items: center;
+    align-items: start;
 }
 
 .analysis-report-chart-copy {
@@ -183,21 +192,8 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 7px;
-}
-
-.analysis-report-chart-copy > span {
-    width: fit-content;
-    min-height: 22px;
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: rgba(var(--primary-rgb), 0.1);
-    color: var(--primary-color);
-    font-size: 0.68rem;
-    font-weight: 800;
-    line-height: 1;
+    gap: 6px;
+    padding-top: 1px;
 }
 
 .analysis-report-chart-copy > strong {
@@ -210,7 +206,7 @@
     width: 150px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
 }
 
 .analysis-report-tag-bar {
@@ -365,8 +361,8 @@
 }
 
 .analysis-donut {
-    width: 102px;
-    height: 102px;
+    width: 112px;
+    height: 112px;
     border-radius: 50%;
     background: var(--analysis-chart);
     display: grid;
@@ -375,8 +371,8 @@
 }
 
 .analysis-donut > div {
-    width: 62px;
-    height: 62px;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
     background: var(--white);
     display: flex;
@@ -388,7 +384,7 @@
 
 .analysis-donut strong {
     color: var(--primary-color);
-    font-size: 1.12rem;
+    font-size: 1.18rem;
     line-height: 1;
 }
 

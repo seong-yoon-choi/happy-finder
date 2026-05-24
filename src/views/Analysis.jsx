@@ -260,7 +260,7 @@ const buildStyleSummary = ({ nickname, topTags, totalSignals }) => {
     recommendation: profile.recommendation,
     strength: profile.strength,
     caution: profile.caution,
-    signalLabel: `${totalSignals}개 행복 신호 기반`
+    signalLabel: `행복 데이터 ${totalSignals}개 기반`
   };
 };
 
@@ -487,8 +487,9 @@ const Analysis = () => {
       ) : (
         <main className="analysis-sections">
           <section className="analysis-style-section">
-            <div className="analysis-section-head">
+            <div className="analysis-section-head analysis-section-head-row analysis-report-head">
               <h3>나의 행복 분석 리포트</h3>
+              <span className="analysis-report-signal-badge">{analysis.styleSummary.signalLabel}</span>
             </div>
             <div className="analysis-report">
               <div className="analysis-report-chart">
@@ -500,10 +501,9 @@ const Analysis = () => {
                 </div>
 
                 <div className="analysis-report-chart-copy">
-                  <span>{analysis.styleSummary.signalLabel}</span>
                   <strong>주요 행복 흐름</strong>
                   <div className="analysis-report-tag-bars" aria-label="주요 태그 비율">
-                    {analysis.topTags.slice(0, 4).map(tag => (
+                    {analysis.topTags.slice(0, 5).map(tag => (
                       <div
                         key={tag.label}
                         className="analysis-report-tag-bar"
