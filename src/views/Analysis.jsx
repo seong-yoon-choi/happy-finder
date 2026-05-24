@@ -7,6 +7,7 @@ import './Analysis.css';
 const HappinessDetailModal = lazy(() => import('../components/HappinessDetailModal'));
 
 const ANALYSIS_MIN_SIGNAL_COUNT = 6;
+const ANALYSIS_MATURITY_MAX_SIGNAL_COUNT = 30;
 
 const TAG_COLORS = [
   '#3f8f46',
@@ -100,6 +101,77 @@ const getTagChartGradient = tagStats => {
 
 const getTagPercentage = (tag, totalCount) => (
   totalCount > 0 ? Math.round((tag.count / totalCount) * 100) : 0
+);
+
+const getAnalysisMaturity = totalSignals => {
+  const safeSignals = Math.max(0, Number.isFinite(totalSignals) ? totalSignals : 0);
+  const progress = Math.min(100, Math.round((safeSignals / ANALYSIS_MATURITY_MAX_SIGNAL_COUNT) * 100));
+
+  if (safeSignals >= 21) {
+    return {
+      key: 'enough',
+      label: '충분한 분석',
+      range: '21개 이상',
+      progress,
+      description: '기록과 공감 흐름이 충분히 쌓여 현재 행복 성향을 비교적 안정적으로 볼 수 있어요.'
+    };
+  }
+
+  if (safeSignals >= 11) {
+    return {
+      key: 'stable',
+      label: '안정 분석',
+      range: '11~20개',
+      progress,
+      description: '반복되는 태그 흐름이 보이기 시작해서 추천과 리포트의 방향성이 안정되는 단계예요.'
+    };
+  }
+
+  if (safeSignals >= ANALYSIS_MIN_SIGNAL_COUNT) {
+    return {
+      key: 'early',
+      label: '초기 분석',
+      range: '6~10개',
+      progress,
+      description: '분석은 가능하지만 아직 데이터가 적어 앞으로의 기록에 따라 성향이 바뀔 수 있어요.'
+    };
+  }
+
+  return {
+    key: 'ready',
+    label: '분석 준비',
+    range: '0~5개',
+    progress,
+    description: '행복 메모, 즐겨찾기, 공감이 조금 더 쌓이면 분석을 시작할 수 있어요.'
+  };
+};
+
+const SproutIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M12 21V10"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+    />
+    <path
+      d="M12 10C10.2 6.4 7.5 5 4.8 5.4C5.1 8.5 7.5 10.4 12 10Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M12 10C13.7 6.8 16.3 5.2 19.2 5.6C18.8 8.6 16.4 10.4 12 10Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
 );
 
 const getStyleProfile = topTags => {
@@ -201,9 +273,36 @@ const rotateItems = (items, seed) => {
   return [...items.slice(offset), ...items.slice(0, offset)];
 };
 
+const getRecentTagStats = (records = []) => {
+  const recentCounter = createTagCounter();
+
+  records.slice(0, 8).forEach((record, index) => {
+    const weight = Math.max(1, 4 - Math.floor(index / 2));
+    addTagsToCounter(recentCounter, getLinkedRecordTags(record), weight);
+  });
+
+  return getSortedTagStats(recentCounter, 3);
+};
+
+const buildRecommendationPrompt = ({ recentTags = [], topTags = [] }) => {
+  const sourceTags = recentTags.length > 0 ? recentTags : topTags.slice(0, 2);
+  const tagLabels = sourceTags.slice(0, 2).map(tag => tag.label);
+
+  if (tagLabels.length === 0) {
+    return '';
+  }
+
+  const tagText = tagLabels.join(' · ');
+
+  return recentTags.length > 0
+    ? `최근 ${tagText} 흐름이 많던데 이런 행복은 어떤가요?`
+    : `${tagText} 흐름이 자주 보이는데 이런 행복은 어떤가요?`;
+};
+
 const getRecommendationItems = ({
   items,
-  topTags,
+  topTags = [],
+  recentTags = [],
   userFavorites,
   userEmpathies,
   myItems,
@@ -222,12 +321,13 @@ const getRecommendationItems = ({
     ...recordedItemIds
   ]);
   const topTagWeights = new Map(topTags.slice(0, 5).map((tag, index) => [tag.label, 5 - index]));
+  const recentTagWeights = new Map(recentTags.slice(0, 3).map((tag, index) => [tag.label, 6 - (index * 2)]));
 
   const scoredItems = items
     .filter(item => !usedItemIds.has(item.id))
     .map(item => {
       const score = getItemTags(item).reduce((sum, tag) => (
-        sum + (topTagWeights.get(tag) || 0)
+        sum + (topTagWeights.get(tag) || 0) + (recentTagWeights.get(tag) || 0)
       ), 0);
 
       return { item, score };
@@ -263,6 +363,7 @@ const buildAnalysisModel = ({
 
   const allTagStats = getSortedTagStats(combinedCounter);
   const topTags = allTagStats.slice(0, 6);
+  const recentTags = getRecentTagStats(linkedRecords);
   const totalSignals = allTagStats.reduce((sum, tag) => sum + tag.count, 0);
   const nickname = typeof authUserNickname === 'string' && authUserNickname.trim()
     ? authUserNickname.trim()
@@ -275,11 +376,16 @@ const buildAnalysisModel = ({
   const recommendationItems = getRecommendationItems({
     items,
     topTags,
+    recentTags,
     userFavorites,
     userEmpathies,
     myItems,
     recordedItemIds,
     refreshSeed
+  });
+  const recommendationPrompt = buildRecommendationPrompt({
+    recentTags,
+    topTags
   });
 
   return {
@@ -288,6 +394,7 @@ const buildAnalysisModel = ({
     totalSignals,
     styleSummary,
     recommendationItems,
+    recommendationPrompt,
     isLocked: totalSignals < ANALYSIS_MIN_SIGNAL_COUNT
   };
 };
@@ -305,6 +412,7 @@ const Analysis = () => {
   const [recommendationRefreshSeed, setRecommendationRefreshSeed] = useState(0);
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const [isReportExpanded, setIsReportExpanded] = useState(false);
+  const [isMaturityModalOpen, setIsMaturityModalOpen] = useState(false);
 
   const records = getAllRecords();
   const favoriteItems = getFavoriteItems();
@@ -332,6 +440,7 @@ const Analysis = () => {
     ]
   );
   const chartGradient = getTagChartGradient(analysis.allTagStats);
+  const analysisMaturity = getAnalysisMaturity(analysis.totalSignals);
 
   const handleRefreshRecommendations = () => {
     setRecommendationRefreshSeed(prevSeed => prevSeed + 1);
@@ -345,9 +454,28 @@ const Analysis = () => {
     <div className="view-container analysis-view">
       <header className="analysis-header">
         <div className="analysis-brand" aria-label="Happy Finder 로고">Happy Finder</div>
-        <div>
-          <h2>분석</h2>
-          <p>내 행복의 태그 흐름을 한눈에 정리합니다.</p>
+        <div className="analysis-header-row">
+          <div>
+            <h2>분석</h2>
+            <p>내 행복의 태그 흐름을 한눈에 정리합니다.</p>
+          </div>
+          <button
+            type="button"
+            className="analysis-maturity-btn"
+            onClick={() => setIsMaturityModalOpen(true)}
+            aria-label={`분석 단계 보기: ${analysisMaturity.label}`}
+          >
+            <span className="analysis-maturity-icon">
+              <SproutIcon />
+            </span>
+            <span className="analysis-maturity-copy">
+              <strong>{analysisMaturity.label}</strong>
+              <span>{analysis.totalSignals}개</span>
+            </span>
+            <span className="analysis-maturity-track" aria-hidden="true">
+              <i style={{ width: `${analysisMaturity.progress}%` }} />
+            </span>
+          </button>
         </div>
       </header>
 
@@ -457,19 +585,24 @@ const Analysis = () => {
             </div>
 
             {analysis.recommendationItems.length > 0 ? (
-              <div className="analysis-recommend-list">
-                {analysis.recommendationItems.map(item => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="analysis-recommend-card"
-                    onClick={() => setSelectedRecommendation(item)}
-                  >
-                    <strong>{item.title}</strong>
-                    <p>{item.description}</p>
-                  </button>
-                ))}
-              </div>
+              <>
+                {analysis.recommendationPrompt && (
+                  <p className="analysis-recommend-prompt">{analysis.recommendationPrompt}</p>
+                )}
+                <div className="analysis-recommend-list">
+                  {analysis.recommendationItems.map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="analysis-recommend-card"
+                      onClick={() => setSelectedRecommendation(item)}
+                    >
+                      <strong>{item.title}</strong>
+                      <p>{item.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </>
             ) : (
               <p className="analysis-empty-line">아직 추천할 행복이 부족해요. 기록과 공감을 조금 더 쌓아주세요.</p>
             )}
@@ -494,6 +627,76 @@ const Analysis = () => {
             autoOpenMemoComposer
           />
         </LazyLoadBoundary>
+      )}
+
+      {isMaturityModalOpen && (
+        <div
+          className="analysis-maturity-overlay"
+          data-block-pull-refresh="true"
+          onClick={() => setIsMaturityModalOpen(false)}
+        >
+          <div
+            className="analysis-maturity-modal"
+            data-block-pull-refresh="true"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="analysis-maturity-title"
+            onClick={event => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="analysis-maturity-close"
+              onClick={() => setIsMaturityModalOpen(false)}
+              aria-label="분석 단계 설명 닫기"
+            >
+              &times;
+            </button>
+            <div className="analysis-maturity-modal-head">
+              <span>
+                <SproutIcon />
+              </span>
+              <div>
+                <h3 id="analysis-maturity-title">분석 단계</h3>
+                <p>기록, 즐겨찾기, 공감, 행복 메모가 쌓일수록 리포트의 신뢰도가 높아져요.</p>
+              </div>
+            </div>
+            <div className="analysis-maturity-stage-list">
+              {[
+                {
+                  label: '분석 준비',
+                  range: '0~5개',
+                  description: '아직 분석을 확정하기에는 데이터가 부족한 단계예요.'
+                },
+                {
+                  label: '초기 분석',
+                  range: '6~10개',
+                  description: '첫 리포트를 볼 수 있지만 성향이 바뀔 수 있는 단계예요.'
+                },
+                {
+                  label: '안정 분석',
+                  range: '11~20개',
+                  description: '반복되는 행복 흐름이 보여 추천과 해석이 안정되는 단계예요.'
+                },
+                {
+                  label: '충분한 분석',
+                  range: '21개 이상',
+                  description: '행복 성향을 더 선명하게 볼 수 있는 단계예요.'
+                }
+              ].map(stage => (
+                <article
+                  key={stage.label}
+                  className={stage.label === analysisMaturity.label ? 'active' : ''}
+                >
+                  <div>
+                    <strong>{stage.label}</strong>
+                    <span>{stage.range}</span>
+                  </div>
+                  <p>{stage.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
