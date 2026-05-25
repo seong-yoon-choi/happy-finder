@@ -169,7 +169,7 @@
     gap: 12px;
 }
 
-.analysis-section-head span {
+.analysis-section-head > span {
     width: fit-content;
     min-height: 23px;
     display: inline-flex;
@@ -186,6 +186,15 @@
 .analysis-section-head h3 {
     font-size: clamp(1.12rem, 3.7vw, 1.32rem);
     line-height: 1.24;
+}
+
+.analysis-report-head {
+    align-items: center;
+}
+
+.analysis-report-head h3 {
+    min-width: 0;
+    font-size: clamp(1.04rem, 3.4vw, 1.26rem);
 }
 
 .analysis-report-signal-badge {
@@ -212,25 +221,20 @@
 }
 
 .analysis-report-chart {
-    position: relative;
     display: grid;
     grid-template-columns: 126px 150px;
     justify-content: space-between;
     column-gap: clamp(14px, 4vw, 24px);
     align-items: center;
-    padding: 66px 0 6px;
-}
-
-.analysis-report-chart-toolbar {
-    position: absolute;
-    top: 0;
-    right: 0;
-    display: flex;
-    justify-content: flex-end;
+    padding: 4px 0 6px;
 }
 
 .analysis-report-maturity-btn {
-    width: 128px;
+    flex: 0 0 118px;
+    width: 118px;
+    min-height: 44px;
+    padding: 7px 9px;
+    grid-template-columns: 28px minmax(0, 1fr);
 }
 
 .analysis-donut-wrap {
@@ -676,7 +680,19 @@
     }
 
     .analysis-report-maturity-btn {
-        width: 118px;
+        flex-basis: 108px;
+        width: 108px;
+        min-height: 42px;
+        padding: 7px 8px;
+        grid-template-columns: 26px minmax(0, 1fr);
+    }
+
+    .analysis-report-head {
+        gap: 10px;
+    }
+
+    .analysis-report-head h3 {
+        font-size: 1.02rem;
     }
 
     .analysis-report-chart-copy {
