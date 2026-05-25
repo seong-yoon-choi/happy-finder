@@ -480,15 +480,14 @@ const Analysis = () => {
                 onClick={() => setIsMaturityModalOpen(true)}
                 aria-label={`분석 단계 보기: ${analysisMaturity.label}, ${analysis.totalSignals}개`}
               >
-                <span className="analysis-maturity-icon">
-                  <SproutIcon />
-                </span>
-                <span className="analysis-maturity-copy">
-                  <strong>{analysisMaturity.label}</strong>
-                  <span>{analysis.totalSignals}개</span>
-                </span>
-                <span className="analysis-maturity-track" aria-hidden="true">
-                  <i style={{ width: `${analysisMaturity.progress}%` }} />
+                <span className="analysis-maturity-label">{analysisMaturity.label}</span>
+                <span className="analysis-maturity-meter">
+                  <span className="analysis-maturity-icon">
+                    <SproutIcon />
+                  </span>
+                  <span className="analysis-maturity-track" aria-hidden="true">
+                    <i style={{ width: `${analysisMaturity.progress}%` }} />
+                  </span>
                 </span>
               </button>
             </div>
@@ -671,6 +670,26 @@ const Analysis = () => {
               <div>
                 <h3 id="analysis-maturity-title">분석 단계</h3>
                 <p>기록, 즐겨찾기, 공감, 행복 메모가 쌓일수록 리포트의 신뢰도가 높아져요.</p>
+              </div>
+            </div>
+            <div
+              className="analysis-maturity-modal-meter"
+              style={{ '--maturity-progress': `${analysisMaturity.progress}%` }}
+            >
+              <div className="analysis-maturity-modal-track" aria-label={`현재 분석 데이터 ${analysis.totalSignals}개`}>
+                <i />
+                <span className="analysis-maturity-modal-checkpoint checkpoint-10">
+                  <b />
+                  <em>10개</em>
+                </span>
+                <span className="analysis-maturity-modal-checkpoint checkpoint-20">
+                  <b />
+                  <em>20개</em>
+                </span>
+                <span className="analysis-maturity-modal-current">
+                  <b />
+                  <em>{analysis.totalSignals}개</em>
+                </span>
               </div>
             </div>
             <div className="analysis-maturity-stage-list">

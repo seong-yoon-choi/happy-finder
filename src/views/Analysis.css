@@ -44,13 +44,12 @@
 
 .analysis-maturity-btn {
     flex: 0 0 128px;
-    min-height: 48px;
-    display: grid;
-    grid-template-columns: 30px minmax(0, 1fr);
-    grid-template-rows: auto 7px;
-    align-items: center;
-    gap: 6px 8px;
-    padding: 8px 10px;
+    min-height: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 7px 10px 8px;
     border: 1px solid rgba(var(--primary-rgb), 0.42);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.5);
@@ -63,8 +62,9 @@
 }
 
 .analysis-maturity-icon {
-    width: 30px;
-    height: 30px;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
@@ -75,8 +75,8 @@
 
 .analysis-maturity-icon svg,
 .analysis-maturity-modal-head svg {
-    width: 19px;
-    height: 19px;
+    width: 16px;
+    height: 16px;
 }
 
 .analysis-maturity-modal-head svg {
@@ -84,40 +84,55 @@
     height: 17px;
 }
 
-.analysis-maturity-copy {
+.analysis-maturity-label {
+    color: var(--text-dark);
+    font-size: 0.77rem;
+    font-weight: 900;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.analysis-maturity-meter {
     min-width: 0;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    text-align: left;
-}
-
-.analysis-maturity-copy strong {
-    color: var(--text-dark);
-    font-size: 0.76rem;
-    font-weight: 900;
-    line-height: 1.05;
-    white-space: nowrap;
-}
-
-.analysis-maturity-copy span {
-    color: var(--text-light);
-    font-size: 0.67rem;
-    font-weight: 800;
-    line-height: 1;
-    white-space: nowrap;
+    align-items: center;
+    gap: 7px;
 }
 
 .analysis-maturity-track {
-    grid-column: 1 / -1;
-    width: 100%;
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
     height: 7px;
     border-radius: 999px;
     overflow: hidden;
     background: rgba(var(--primary-rgb), 0.1);
 }
 
+.analysis-maturity-track::before,
+.analysis-maturity-track::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.1);
+}
+
+.analysis-maturity-track::before {
+    left: 33.333%;
+}
+
+.analysis-maturity-track::after {
+    left: 66.666%;
+}
+
 .analysis-maturity-track i {
+    position: relative;
+    z-index: 1;
     display: block;
     height: 100%;
     border-radius: inherit;
@@ -232,9 +247,8 @@
 .analysis-report-maturity-btn {
     flex: 0 0 118px;
     width: 118px;
-    min-height: 44px;
-    padding: 7px 9px;
-    grid-template-columns: 28px minmax(0, 1fr);
+    min-height: 50px;
+    padding: 7px 9px 8px;
 }
 
 .analysis-donut-wrap {
@@ -621,6 +635,95 @@
     line-height: 1.55;
 }
 
+.analysis-maturity-modal-meter {
+    margin: -2px 0 18px;
+    padding: 12px 12px 28px;
+    border: 1px solid rgba(var(--primary-rgb), 0.12);
+    border-radius: 14px;
+    background: rgba(var(--primary-rgb), 0.045);
+}
+
+.analysis-maturity-modal-track {
+    position: relative;
+    height: 36px;
+}
+
+.analysis-maturity-modal-track::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.11);
+}
+
+.analysis-maturity-modal-track > i {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    width: var(--maturity-progress);
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.72), rgba(var(--secondary-rgb), 0.88));
+}
+
+.analysis-maturity-modal-checkpoint,
+.analysis-maturity-modal-current {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+}
+
+.analysis-maturity-modal-checkpoint b,
+.analysis-maturity-modal-current b {
+    display: block;
+    width: 2px;
+    height: 24px;
+    border-radius: 999px;
+}
+
+.analysis-maturity-modal-checkpoint b {
+    background: rgba(var(--primary-rgb), 0.28);
+}
+
+.analysis-maturity-modal-current b {
+    background: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.11);
+}
+
+.analysis-maturity-modal-checkpoint em,
+.analysis-maturity-modal-current em {
+    position: absolute;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-light);
+    font-size: 0.68rem;
+    font-style: normal;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.analysis-maturity-modal-current em {
+    color: var(--primary-color);
+}
+
+.analysis-maturity-modal-checkpoint.checkpoint-10 {
+    left: 33.333%;
+}
+
+.analysis-maturity-modal-checkpoint.checkpoint-20 {
+    left: 66.666%;
+}
+
+.analysis-maturity-modal-current {
+    left: clamp(18px, var(--maturity-progress), calc(100% - 18px));
+    z-index: 2;
+}
+
 .analysis-maturity-stage-list {
     display: flex;
     flex-direction: column;
@@ -675,16 +778,20 @@
 
     .analysis-maturity-btn {
         flex-basis: 118px;
-        grid-template-columns: 28px minmax(0, 1fr);
         padding: 8px 9px;
     }
 
     .analysis-report-maturity-btn {
         flex-basis: 108px;
         width: 108px;
-        min-height: 42px;
+        min-height: 48px;
         padding: 7px 8px;
-        grid-template-columns: 26px minmax(0, 1fr);
+    }
+
+    .analysis-report-maturity-btn .analysis-maturity-icon {
+        flex-basis: 22px;
+        width: 22px;
+        height: 22px;
     }
 
     .analysis-report-head {
