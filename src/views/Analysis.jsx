@@ -130,7 +130,7 @@ const getAnalysisMaturity = totalSignals => {
   if (safeSignals >= ANALYSIS_MIN_SIGNAL_COUNT) {
     return {
       key: 'early',
-      label: '초기 분석',
+      label: '초급 분석',
       range: '6~10개',
       progress,
       description: '분석은 가능하지만 아직 데이터가 적어 앞으로의 기록에 따라 성향이 바뀔 수 있어요.'
@@ -456,24 +456,26 @@ const Analysis = () => {
         <div className="analysis-brand" aria-label="Happy Finder 로고">Happy Finder</div>
         <div className="analysis-header-row">
           <div className="analysis-title-block">
-            <div className="analysis-title-row">
-              <h2>분석</h2>
-              <button
-                type="button"
-                className="analysis-maturity-btn"
-                onClick={() => setIsMaturityModalOpen(true)}
-                aria-label={`분석 단계 보기: ${analysisMaturity.label}, ${analysis.totalSignals}개`}
-              >
-                <span className="analysis-maturity-icon">
-                  <SproutIcon />
-                </span>
-                <span className="analysis-maturity-track" aria-hidden="true">
-                  <i style={{ width: `${analysisMaturity.progress}%` }} />
-                </span>
-              </button>
-            </div>
+            <h2>분석</h2>
             <p>내 행복의 태그 흐름을 한눈에 정리합니다.</p>
           </div>
+          <button
+            type="button"
+            className="analysis-maturity-btn"
+            onClick={() => setIsMaturityModalOpen(true)}
+            aria-label={`분석 단계 보기: ${analysisMaturity.label}, ${analysis.totalSignals}개`}
+          >
+            <span className="analysis-maturity-icon">
+              <SproutIcon />
+            </span>
+            <span className="analysis-maturity-copy">
+              <strong>{analysisMaturity.label}</strong>
+              <span>{analysis.totalSignals}개</span>
+            </span>
+            <span className="analysis-maturity-track" aria-hidden="true">
+              <i style={{ width: `${analysisMaturity.progress}%` }} />
+            </span>
+          </button>
         </div>
       </header>
 
@@ -487,13 +489,15 @@ const Analysis = () => {
       ) : (
         <main className="analysis-sections">
           <section className="analysis-style-section">
-            <div className="analysis-section-head analysis-section-head-row analysis-report-head">
+            <div className="analysis-section-head">
               <h3>나의 행복 분석 리포트</h3>
-              <span className="analysis-report-signal-badge">{analysis.styleSummary.signalLabel}</span>
             </div>
             <div className="analysis-report">
               <div className="analysis-report-chart">
-                <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }} aria-hidden="true" />
+                <div className="analysis-donut-wrap">
+                  <span className="analysis-report-signal-badge">{analysis.styleSummary.signalLabel}</span>
+                  <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }} aria-hidden="true" />
+                </div>
 
                 <div className="analysis-report-chart-copy">
                   <strong>주요 행복 흐름</strong>
@@ -677,7 +681,7 @@ const Analysis = () => {
                   description: '아직 분석을 확정하기에는 데이터가 부족한 단계예요.'
                 },
                 {
-                  label: '초기 분석',
+                  label: '초급 분석',
                   range: '6~10개',
                   description: '첫 리포트를 볼 수 있지만 성향이 바뀔 수 있는 단계예요.'
                 },
