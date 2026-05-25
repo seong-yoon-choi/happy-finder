@@ -29,8 +29,6 @@
 .analysis-header-row {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
 }
 
 .analysis-title-block {
@@ -54,7 +52,7 @@
     gap: 6px 8px;
     padding: 8px 10px;
     border: 1px solid rgba(var(--primary-rgb), 0.42);
-    border-radius: 999px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.5);
     color: var(--text-dark);
     cursor: pointer;
@@ -214,12 +212,20 @@
 }
 
 .analysis-report-chart {
+    position: relative;
     display: grid;
     grid-template-columns: 126px 150px;
     justify-content: space-between;
     gap: clamp(14px, 4vw, 24px);
     align-items: center;
-    padding: 4px 0 6px;
+    padding: 58px 0 6px;
+}
+
+.analysis-report-maturity-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 128px;
 }
 
 .analysis-donut-wrap {
@@ -662,6 +668,10 @@
         flex-basis: 118px;
         grid-template-columns: 28px minmax(0, 1fr);
         padding: 8px 9px;
+    }
+
+    .analysis-report-maturity-btn {
+        width: 118px;
     }
 
     .analysis-report-chart-copy {
