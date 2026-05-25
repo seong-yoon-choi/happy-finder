@@ -52,7 +52,7 @@
     gap: 6px 8px;
     padding: 8px 10px;
     border: 1px solid rgba(var(--primary-rgb), 0.42);
-    border-radius: 14px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.5);
     color: var(--text-dark);
     cursor: pointer;
@@ -212,19 +212,22 @@
 }
 
 .analysis-report-chart {
-    position: relative;
     display: grid;
     grid-template-columns: 126px 150px;
     justify-content: space-between;
-    gap: clamp(14px, 4vw, 24px);
+    column-gap: clamp(14px, 4vw, 24px);
+    row-gap: 14px;
     align-items: center;
-    padding: 58px 0 6px;
+    padding: 0 0 6px;
+}
+
+.analysis-report-chart-toolbar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .analysis-report-maturity-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
     width: 128px;
 }
 

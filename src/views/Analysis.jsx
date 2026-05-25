@@ -477,23 +477,25 @@ const Analysis = () => {
             </div>
             <div className="analysis-report">
               <div className="analysis-report-chart">
-                <button
-                  type="button"
-                  className="analysis-maturity-btn analysis-report-maturity-btn"
-                  onClick={() => setIsMaturityModalOpen(true)}
-                  aria-label={`분석 단계 보기: ${analysisMaturity.label}, ${analysis.totalSignals}개`}
-                >
-                  <span className="analysis-maturity-icon">
-                    <SproutIcon />
-                  </span>
-                  <span className="analysis-maturity-copy">
-                    <strong>{analysisMaturity.label}</strong>
-                    <span>{analysis.totalSignals}개</span>
-                  </span>
-                  <span className="analysis-maturity-track" aria-hidden="true">
-                    <i style={{ width: `${analysisMaturity.progress}%` }} />
-                  </span>
-                </button>
+                <div className="analysis-report-chart-toolbar">
+                  <button
+                    type="button"
+                    className="analysis-maturity-btn analysis-report-maturity-btn"
+                    onClick={() => setIsMaturityModalOpen(true)}
+                    aria-label={`분석 단계 보기: ${analysisMaturity.label}, ${analysis.totalSignals}개`}
+                  >
+                    <span className="analysis-maturity-icon">
+                      <SproutIcon />
+                    </span>
+                    <span className="analysis-maturity-copy">
+                      <strong>{analysisMaturity.label}</strong>
+                      <span>{analysis.totalSignals}개</span>
+                    </span>
+                    <span className="analysis-maturity-track" aria-hidden="true">
+                      <i style={{ width: `${analysisMaturity.progress}%` }} />
+                    </span>
+                  </button>
+                </div>
                 <div className="analysis-donut-wrap">
                   <span className="analysis-report-signal-badge">{analysis.styleSummary.signalLabel}</span>
                   <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }} aria-hidden="true" />
