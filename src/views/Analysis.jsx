@@ -1,6 +1,11 @@
 import React, { lazy, useMemo, useState } from 'react';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
-import { HAPPINESS_TAG_GROUPS, HAPPINESS_TAGS, normalizeVisibleTags } from '../lib/happinessTags';
+import {
+  HAPPINESS_CORE_TAG_GROUPS,
+  HAPPINESS_TAG_GROUPS,
+  HAPPINESS_TAGS,
+  normalizeVisibleTags
+} from '../lib/happinessTags';
 import { useHappy } from '../store/HappyContext';
 import './Analysis.css';
 
@@ -22,6 +27,84 @@ const TAG_COLORS = [
   '#7b9fca',
   '#b7b84d'
 ];
+
+const AXIS_COLORS = {
+  relation: '#3f8f46',
+  place: '#4d9c9f',
+  time: '#d98859',
+  cost: '#f2b84b',
+  action: '#6f9e45'
+};
+
+const STYLE_TYPE_NAMES = {
+  '혼자|실내|짧게|활동적': '자기 루틴 실행형',
+  '혼자|실내|짧게|휴식': '미니 회복 루틴형',
+  '혼자|실내|길게|활동적': '심층 몰입 실행형',
+  '혼자|실내|길게|휴식': '깊은 안정 회복형',
+  '혼자|실외|짧게|활동적': '단기 환기 실행형',
+  '혼자|실외|짧게|휴식': '고요한 산책 회복형',
+  '혼자|실외|길게|활동적': '독립 탐색 성장형',
+  '혼자|실외|길게|휴식': '느린 여정 회복형',
+  '함께|실내|짧게|활동적': '가벼운 실내 교류형',
+  '함께|실내|짧게|휴식': '짧은 안정 교류형',
+  '함께|실내|길게|활동적': '공동 몰입 실행형',
+  '함께|실내|길게|휴식': '깊은 대화 안정형',
+  '함께|실외|짧게|활동적': '즉흥 활력 교류형',
+  '함께|실외|짧게|휴식': '가벼운 동행 회복형',
+  '함께|실외|길게|활동적': '공동 탐험 활력형',
+  '함께|실외|길게|휴식': '긴 동행 회복형'
+};
+
+const STYLE_AXIS_COPY = {
+  혼자: {
+    interpretation: '행복의 중심이 외부 반응보다 자기 리듬에 놓여 있어, 스스로 선택하고 조절할 수 있는 순간에서 만족이 선명해지는 편입니다.',
+    recommendation: '혼자만의 시간을 미리 확보하고, 그 안에서 기록이나 정리처럼 결과가 남는 행동을 하나씩 배치해보세요.',
+    strength: '자기 돌봄과 자기 조절 능력이 강해 주변 분위기에 크게 흔들리지 않고 만족을 만들 수 있습니다.',
+    caution: '다만 좋은 경험이 안쪽에만 머물면 확장성이 줄어들 수 있으니, 가끔은 좋았던 순간을 누군가에게 공유해보는 것이 균형에 도움이 됩니다.'
+  },
+  함께: {
+    interpretation: '행복이 관계 안에서 커지는 편이라, 누군가와 경험을 나누고 반응을 주고받는 과정에서 감정의 밀도가 높아집니다.',
+    recommendation: '부담이 큰 약속보다 짧은 대화, 가벼운 동행, 함께 먹는 식사처럼 연결감이 남는 활동을 자주 만들어보세요.',
+    strength: '좋은 감정을 혼자 끝내지 않고 관계 속에서 확장하는 힘이 있습니다.',
+    caution: '다만 타인의 반응에 행복이 지나치게 묶이면 혼자 있는 시간이 허전해질 수 있으니, 혼자서도 만족할 수 있는 작은 루틴을 같이 두는 것이 좋습니다.'
+  },
+  실내: {
+    interpretation: '익숙하고 안정적인 공간에서 행복 신호가 잘 쌓입니다. 환경을 통제할 수 있을 때 몰입이나 회복이 더 편안해지는 흐름입니다.',
+    recommendation: '책상, 침대 주변, 자주 머무는 공간에 행복을 시작하기 쉬운 물건이나 루틴을 놓아두세요.',
+    strength: '일상의 반복 공간을 행복의 기반으로 바꾸는 능력이 좋습니다.',
+    caution: '실내 중심이 지나치면 새로운 자극이 줄 수 있는 환기감을 놓칠 수 있습니다.'
+  },
+  실외: {
+    interpretation: '공간이 바뀌고 시야가 넓어질 때 감정이 환기되는 편입니다. 밖으로 나가는 행동 자체가 행복을 시작시키는 스위치처럼 작동합니다.',
+    recommendation: '큰 외출보다 동네 한 바퀴, 다른 길로 걷기, 가까운 장소 방문처럼 낮은 진입 장벽의 외부 활동을 늘려보세요.',
+    strength: '환경 변화만으로도 기분 전환을 빠르게 만들어낼 수 있습니다.',
+    caution: '외부 자극에만 기대면 쉬는 날의 안정감이 약해질 수 있으니, 돌아온 뒤 정리하는 루틴을 함께 두면 좋습니다.'
+  },
+  짧게: {
+    interpretation: '긴 준비보다 바로 실행할 수 있는 작은 행동에서 행복을 자주 발견합니다. 생활 중간중간 짧은 회복과 전환을 잘 활용하는 흐름입니다.',
+    recommendation: '5분 안에 할 수 있는 행복 목록을 만들어두고, 피로하거나 흐름이 끊겼을 때 바로 꺼내 쓰는 방식이 잘 맞습니다.',
+    strength: '작은 시간도 놓치지 않고 기분을 바꿀 수 있는 실용적인 행복 감각이 있습니다.',
+    caution: '짧은 만족만 반복하면 깊은 몰입의 보상이 약해질 수 있으니, 가끔은 시간을 길게 쓰는 활동도 남겨두는 것이 좋습니다.'
+  },
+  길게: {
+    interpretation: '충분한 시간을 들여 몰입하거나 머무를 때 만족이 커집니다. 행복이 순간적인 자극보다 누적되는 경험에 가까운 편입니다.',
+    recommendation: '방해받지 않는 시간을 일정에 먼저 확보하고, 끝낸 뒤에는 무엇이 좋았는지 짧게 기록해보세요.',
+    strength: '시간을 들여 깊은 만족과 성취감을 만드는 힘이 있습니다.',
+    caution: '준비 시간이 길어 시작이 미뤄질 수 있으니, 아주 작은 첫 행동을 따로 정해두는 것이 좋습니다.'
+  },
+  활동적: {
+    interpretation: '생각만 하기보다 직접 움직이고 실행할 때 행복감이 살아납니다. 몸이나 행동의 변화가 감정 변화로 이어지는 편입니다.',
+    recommendation: '정리, 걷기, 만들기, 배우기처럼 시작과 끝이 보이는 활동을 자주 배치해보세요.',
+    strength: '정체된 감정을 행동으로 풀어내는 전환력이 좋습니다.',
+    caution: '활동이 계속 쌓이면 회복 시간이 부족해질 수 있으니, 활동 뒤에는 의도적인 휴식을 붙여두는 것이 좋습니다.'
+  },
+  휴식: {
+    interpretation: '무언가를 더 하기보다 긴장을 내려놓고 회복할 때 행복 신호가 커집니다. 안정과 여유가 중요한 기준으로 작동합니다.',
+    recommendation: '음악, 향, 차, 조용한 공간처럼 몸과 마음이 빠르게 내려앉는 회복 요소를 일상에 넣어보세요.',
+    strength: '자신의 피로와 감정 상태를 섬세하게 알아차리고 무리하지 않는 방향을 찾을 수 있습니다.',
+    caution: '휴식만 길어지면 변화나 성취의 자극이 줄어들 수 있으니, 컨디션이 괜찮은 날에는 작은 실행을 하나 섞어보는 것이 좋습니다.'
+  }
+};
 
 const tagMetaMap = new Map(
   HAPPINESS_TAG_GROUPS.flatMap(group => (
@@ -79,162 +162,127 @@ const getLinkedRecordTags = record => {
     : normalizeVisibleTags(record.tags, Infinity);
 };
 
-const getTagChartGradient = tagStats => {
-  const totalCount = tagStats.reduce((sum, tag) => sum + tag.count, 0);
+const getAxisStats = counter => HAPPINESS_TAG_GROUPS.map(group => {
+  const [leftTag, rightTag] = group.tags;
+  const leftCount = counter.get(leftTag)?.count || 0;
+  const rightCount = counter.get(rightTag)?.count || 0;
+  const total = leftCount + rightCount;
+  const leftPercentage = total > 0 ? Math.round((leftCount / total) * 100) : 50;
 
-  if (totalCount <= 0) {
-    return 'conic-gradient(rgba(76, 163, 58, 0.14) 0deg 360deg)';
+  return {
+    key: group.key,
+    label: group.label,
+    color: AXIS_COLORS[group.key] || TAG_COLORS[0],
+    leftTag,
+    rightTag,
+    leftCount,
+    rightCount,
+    total,
+    leftPercentage,
+    rightPercentage: total > 0 ? 100 - leftPercentage : 50
+  };
+});
+
+const getDominantAxisTag = axis => {
+  if (!axis || axis.leftCount === axis.rightCount) {
+    return axis?.leftTag || '';
   }
 
-  let cursor = 0;
-  const segments = tagStats.map(tag => {
-    const start = cursor;
-    const end = cursor + (tag.count / totalCount) * 360;
-    cursor = end;
-    return `${tag.color} ${start}deg ${end}deg`;
-  });
-
-  return `conic-gradient(${segments.join(', ')})`;
+  return axis.leftCount > axis.rightCount ? axis.leftTag : axis.rightTag;
 };
 
-const getTagChartSegments = tagStats => {
-  const totalCount = tagStats.reduce((sum, tag) => sum + tag.count, 0);
-
-  if (totalCount <= 0) {
-    return [];
-  }
-
-  let cursor = 0;
-
-  return tagStats.map(tag => {
-    const start = cursor;
-    const sweep = (tag.count / totalCount) * 360;
-    const end = start + sweep;
-    const middle = start + (sweep / 2);
-    const radians = ((middle - 90) * Math.PI) / 180;
-    cursor = end;
-
-    return {
-      ...tag,
-      percentage: Math.round((tag.count / totalCount) * 100),
-      labelX: `${50 + Math.cos(radians) * 36}%`,
-      labelY: `${50 + Math.sin(radians) * 36}%`
-    };
-  });
-};
-
-const getTagPercentage = (tag, totalCount) => (
-  totalCount > 0 ? Math.round((tag.count / totalCount) * 100) : 0
+const getAxisConfidence = axis => (
+  axis.total > 0 ? Math.abs(axis.leftPercentage - 50) * 2 : 0
 );
 
-const getAnalysisMaturity = totalSignals => {
+const getAnalysisMaturity = (axisStats, totalSignals) => {
   const safeSignals = Math.max(0, Number.isFinite(totalSignals) ? totalSignals : 0);
+  const coveredAxes = axisStats.filter(axis => axis.total >= 2).length;
+  const stableAxes = axisStats.filter(axis => axis.total >= 2 && getAxisConfidence(axis) >= 20).length;
 
-  if (safeSignals >= 20) {
+  if (safeSignals >= 12 && coveredAxes >= 5 && stableAxes >= 3) {
     return {
       key: 'enough',
       label: '충분한 분석',
-      range: '20개 이상',
-      description: '기록과 공감 흐름이 많이 쌓여 행복 성향을 꽤 안정적으로 볼 수 있는 단계예요.'
+      range: '5축 균형 확인',
+      description: '5가지 태그 축이 대부분 쌓였고 여러 축에서 반복되는 방향이 보여 현재 행복 성향을 비교적 안정적으로 해석할 수 있어요.'
     };
   }
 
-  if (safeSignals >= 10) {
+  if (safeSignals >= 8 && coveredAxes >= 3 && stableAxes >= 2) {
     return {
       key: 'stable',
       label: '안정 분석',
-      range: '10~19개',
-      description: '반복되는 태그 흐름이 보이기 시작해서 추천과 리포트의 방향성이 안정되는 단계예요.'
+      range: '주요 축 확인',
+      description: '일부 핵심 축에서 반복되는 방향이 보이기 시작해 추천과 리포트의 기준이 안정되는 단계예요.'
     };
   }
 
   return {
     key: 'early',
     label: '초급 분석',
-    range: '기본 분석',
-    description: '분석은 가능하지만 아직 태그 축의 분포가 충분히 고르게 쌓이지 않아 앞으로의 기록에 따라 성향이 바뀔 수 있어요.'
+    range: '일부 축 확인',
+    description: '분석은 가능하지만 아직 5가지 태그 축의 분포가 충분히 고르게 쌓이지 않아 앞으로의 기록에 따라 성향이 바뀔 수 있어요.'
   };
 };
 
-const getStyleProfile = topTags => {
-  const tagSet = new Set(topTags.map(tag => tag.label));
-  const hasAny = (...tags) => tags.some(tag => tagSet.has(tag));
-  const primaryTag = topTags[0]?.label || '';
+const getAxisStatByKey = (axisStats, key) => axisStats.find(axis => axis.key === key);
 
-  if (primaryTag === '혼자' || (hasAny('혼자') && hasAny('휴식', '편안함', '실내', '뿌듯함'))) {
-    return {
-      title: '자기 몰입형 행복',
-      overview: '혼자서 즐기는 행복을 선호하는 스타일입니다.',
-      interpretation: '남들과 함께 보내는 순간보다 자신의 속도에 맞춰 몰입하고, 조용히 정리하고, 스스로를 발전시키는 과정에서 안정적인 만족감을 느끼는 편입니다. 혼자 있는 시간이 단절이라기보다 에너지를 회복하고 생각을 정돈하는 중요한 기반으로 작동합니다.',
-      recommendation: '책상 위를 정리하고 짧은 기록을 남기거나, 혼자 산책하며 생각을 정리하는 루틴처럼 방해가 적고 반복 가능한 활동을 늘리면 더 자주 행복을 느낄 가능성이 큽니다.',
-      strength: '스스로를 돌보는 힘이 강하고, 외부 분위기에 휘둘리지 않고 자신만의 만족 기준을 만들 수 있습니다.',
-      caution: '다만 혼자만의 활동이 지나치게 많아지면 좋은 경험이 안쪽에만 머물 수 있습니다. 가끔은 내가 해낸 일이나 좋았던 순간을 다른 사람에게 공유하고, 다른 사람은 어떤 방식으로 행복을 얻는지도 살펴보는 것이 균형에 도움이 됩니다.'
-    };
+const getCostLabel = costAxis => {
+  if (!costAxis || costAxis.total === 0 || Math.abs(costAxis.leftPercentage - costAxis.rightPercentage) <= 10) {
+    return '균형형';
   }
 
-  if (primaryTag === '함께' || (hasAny('함께') && hasAny('즐거움', '감동', '위로', '설렘'))) {
-    return {
-      title: '관계 교류형 행복',
-      overview: '사람들과 감정을 나누는 순간에서 행복을 크게 느끼는 스타일입니다.',
-      interpretation: '혼자 완성하는 활동보다 누군가와 경험을 공유하고, 반응을 주고받고, 작은 대화 속에서 감정이 따뜻해질 때 행복감이 커지는 편입니다. 행복을 개인적인 성취보다 관계 안에서 확인하는 경향이 있습니다.',
-      recommendation: '가벼운 약속, 함께 먹는 식사, 좋은 것을 발견했을 때 바로 공유하는 행동처럼 부담이 작지만 연결감이 남는 활동을 자주 배치하는 것이 좋습니다.',
-      strength: '정서적 회복이 빠르고, 주변 사람의 반응을 통해 행복을 더 풍부하게 확장할 수 있습니다.',
-      caution: '다만 타인의 반응에 행복이 많이 좌우되면 혼자 있는 시간이 허전하게 느껴질 수 있습니다. 혼자서도 만족을 느낄 수 있는 작은 루틴을 함께 만들어두면 관계의 밀도와 개인의 안정감을 같이 지킬 수 있습니다.'
-    };
-  }
+  return costAxis.leftPercentage > costAxis.rightPercentage ? '비소비형' : '소비형';
+};
 
-  if (primaryTag === '활동적' || primaryTag === '실외' || (hasAny('활동적', '실외') && hasAny('설렘', '새로움', '즐거움'))) {
-    return {
-      title: '경험 확장형 행복',
-      overview: '몸을 움직이거나 새로운 장면을 만날 때 행복이 살아나는 스타일입니다.',
-      interpretation: '가만히 머물기보다 환경을 바꾸고, 직접 움직이고, 평소와 다른 장면을 경험할 때 감정의 환기가 잘 일어나는 편입니다. 행복을 생각으로만 찾기보다 실제 행동과 공간 변화 속에서 발견하는 경향이 있습니다.',
-      recommendation: '새로운 동네를 걷기, 짧은 외출 목표 만들기, 평소와 다른 길로 이동하기처럼 일상 안에 작은 변화와 움직임을 넣으면 행복을 더 자주 찾을 수 있습니다.',
-      strength: '변화에 대한 감각이 살아 있고, 작은 시도만으로도 기분 전환을 만들어내는 능력이 좋습니다.',
-      caution: '다만 새로움만 계속 좇으면 익숙한 일상의 만족을 놓칠 수 있습니다. 활동 후 좋았던 장면을 기록하거나, 반복해도 좋은 루틴으로 남길 만한 것을 골라두는 것이 안정감을 더해줍니다.'
-    };
-  }
-
-  if (primaryTag === '휴식' || primaryTag === '편안함' || (hasAny('휴식', '편안함') && hasAny('실내', '짧게', '무료'))) {
-    return {
-      title: '회복 안정형 행복',
-      overview: '자극을 늘리기보다 마음과 몸을 편안하게 회복하는 행복을 선호하는 스타일입니다.',
-      interpretation: '큰 이벤트보다 부담이 적고 안정적인 환경에서 긴장을 내려놓을 때 만족감이 커지는 편입니다. 행복을 강한 성취감보다 몸과 마음이 무리하지 않는 상태에서 발견하는 경향이 있습니다.',
-      recommendation: '잠깐 쉬는 시간, 따뜻한 음료, 조용한 음악, 정돈된 공간처럼 회복감을 주는 요소를 의식적으로 일상에 넣으면 행복의 빈도가 높아질 수 있습니다.',
-      strength: '자신의 피로와 감정 상태를 섬세하게 감지하고, 무리하지 않는 방식으로 균형을 되찾는 능력이 좋습니다.',
-      caution: '다만 안정만 오래 유지하면 새로운 자극이나 성취의 기회가 줄어들 수 있습니다. 컨디션이 괜찮은 날에는 아주 작은 도전이나 외부 활동을 하나씩 섞어보는 것이 좋습니다.'
-    };
-  }
-
-  if (primaryTag === '뿌듯함' || (hasAny('뿌듯함') && hasAny('길게', '활동적', '새로움'))) {
-    return {
-      title: '성장 실감형 행복',
-      overview: '무언가를 해냈다는 감각에서 행복을 얻는 스타일입니다.',
-      interpretation: '결과가 작더라도 직접 완성하고, 개선하고, 어제보다 나아졌다는 느낌이 남을 때 만족감이 커지는 편입니다. 행복을 단순한 기분 전환보다 성장의 증거로 받아들이는 경향이 있습니다.',
-      recommendation: '작은 목표를 정하고 완료 표시를 남기거나, 전후가 보이는 활동을 기록하면 행복감이 더 선명해질 수 있습니다. 특히 반복할수록 실력이 쌓이는 활동이 잘 맞습니다.',
-      strength: '자신을 움직이게 하는 동기가 분명하고, 작은 성취를 장기적인 자신감으로 연결할 가능성이 큽니다.',
-      caution: '다만 결과 중심으로만 행복을 판단하면 쉬는 시간에 죄책감을 느낄 수 있습니다. 성취형 활동 사이에 아무것도 증명하지 않아도 되는 회복 활동을 함께 두는 것이 좋습니다.'
-    };
-  }
+const getAxisSummary = axisStats => {
+  const coreTags = HAPPINESS_CORE_TAG_GROUPS.map(group => {
+    const axis = getAxisStatByKey(axisStats, group.key);
+    return getDominantAxisTag(axis);
+  });
+  const typeKey = coreTags.join('|');
+  const costAxis = getAxisStatByKey(axisStats, 'cost');
 
   return {
-    title: '일상 탐색형 행복',
-    overview: '일상 속 작은 선택에서 자신에게 맞는 행복을 찾아가는 스타일입니다.',
-    interpretation: '특정한 한 가지 방식에 고정되기보다 상황과 감정에 따라 다양한 행복을 시도하는 편입니다. 아직 분석 신호가 넓게 퍼져 있어, 앞으로 기록이 쌓일수록 더 뚜렷한 성향이 드러날 가능성이 큽니다.',
-    recommendation: '좋았던 활동을 그냥 지나치지 말고 짧게라도 기록해두는 것이 좋습니다. 반복해서 떠오르는 활동과 감정이 쌓이면 나에게 맞는 행복 패턴을 더 정확하게 찾을 수 있습니다.',
-    strength: '한 가지 방식에 갇히지 않고 여러 행복을 실험할 수 있는 유연성이 있습니다.',
-    caution: '다만 기준이 너무 넓으면 무엇이 나에게 진짜 잘 맞는지 흐려질 수 있습니다. 좋았던 순간을 기록한 뒤 왜 좋았는지 한 문장만 덧붙이면 분석의 선명도가 높아집니다.'
+    coreTags,
+    costLabel: getCostLabel(costAxis),
+    title: STYLE_TYPE_NAMES[typeKey] || '일상 탐색형',
+    typeKey
   };
 };
 
-const buildStyleSummary = ({ nickname, topTags, totalSignals }) => {
-  if (topTags.length === 0) {
+const getStyleProfile = axisStats => {
+  const { coreTags, costLabel, title } = getAxisSummary(axisStats);
+  const copies = coreTags.map(tag => STYLE_AXIS_COPY[tag]).filter(Boolean);
+  const [relationTag, placeTag, timeTag, actionTag] = coreTags;
+  const costCopy = {
+    비소비형: '비용을 크게 들이지 않아도 만족을 찾는 흐름이 보여, 반복 가능한 일상형 행복과 잘 맞습니다.',
+    소비형: '돈을 쓰는 경험을 보상이나 전환점으로 활용하는 흐름이 보여, 계획된 소비가 행복의 계기가 되기 쉽습니다.',
+    균형형: '비용 자체보다 상황에 맞는 선택을 더 중요하게 쓰는 편이라, 무료와 유료 행복을 균형 있게 활용할 수 있습니다.'
+  }[costLabel];
+
+  return {
+    title: `${title} · ${costLabel}`,
+    overview: `${relationTag}, ${placeTag}, ${timeTag}, ${actionTag} 흐름이 함께 나타나는 행복 스타일입니다.`,
+    interpretation: `${copies.map(copy => copy.interpretation).join(' ')} ${costCopy}`,
+    recommendation: copies.map(copy => copy.recommendation).join(' '),
+    strength: copies.map(copy => copy.strength).join(' '),
+    caution: copies.map(copy => copy.caution).join(' ')
+  };
+};
+
+const buildStyleSummary = ({ nickname, axisStats, totalSignals }) => {
+  const hasAxisSignals = axisStats.some(axis => axis.total > 0);
+
+  if (!hasAxisSignals) {
     return {
       title: '행복 스타일 분석 대기',
       description: '아직 분석할 수 있는 태그 흐름이 충분하지 않습니다.'
     };
   }
 
-  const profile = getStyleProfile(topTags);
+  const profile = getStyleProfile(axisStats);
   return {
     title: profile.title,
     overview: `${nickname}님은 ${profile.overview}`,
@@ -343,6 +391,7 @@ const buildAnalysisModel = ({
   empathyItems.forEach(item => addTagsToCounter(combinedCounter, getItemTags(item)));
   linkedRecords.forEach(record => addTagsToCounter(combinedCounter, getLinkedRecordTags(record)));
 
+  const axisStats = getAxisStats(combinedCounter);
   const allTagStats = getSortedTagStats(combinedCounter);
   const topTags = allTagStats.slice(0, 6);
   const recentTags = getRecentTagStats(linkedRecords);
@@ -352,7 +401,7 @@ const buildAnalysisModel = ({
     : '사용자';
   const styleSummary = buildStyleSummary({
     nickname,
-    topTags: topTags.slice(0, 3),
+    axisStats,
     totalSignals
   });
   const recommendationItems = getRecommendationItems({
@@ -372,6 +421,7 @@ const buildAnalysisModel = ({
 
   return {
     allTagStats,
+    axisStats,
     topTags,
     totalSignals,
     styleSummary,
@@ -421,12 +471,7 @@ const Analysis = () => {
       recommendationRefreshSeed
     ]
   );
-  const chartGradient = getTagChartGradient(analysis.allTagStats);
-  const chartSegments = getTagChartSegments(analysis.allTagStats);
-  const visibleChartSegments = chartSegments
-    .filter(segment => segment.percentage >= 5)
-    .slice(0, 6);
-  const analysisMaturity = getAnalysisMaturity(analysis.totalSignals);
+  const analysisMaturity = getAnalysisMaturity(analysis.axisStats, analysis.totalSignals);
 
   const handleRefreshRecommendations = () => {
     setRecommendationRefreshSeed(prevSeed => prevSeed + 1);
@@ -470,46 +515,31 @@ const Analysis = () => {
               </button>
             </div>
             <div className="analysis-report">
-              <div className="analysis-report-chart">
-                <div className="analysis-donut-wrap">
+              <div className="analysis-axis-panel">
+                <div className="analysis-axis-panel-head">
                   <span className="analysis-report-signal-badge">{analysis.styleSummary.signalLabel}</span>
-                  <div className="analysis-donut-shell" aria-label="주요 태그 원형 그래프">
-                    <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }} aria-hidden="true" />
-                    {visibleChartSegments.map(segment => (
-                      <span
-                        key={segment.label}
-                        className="analysis-donut-label"
-                        style={{
-                          '--label-x': segment.labelX,
-                          '--label-y': segment.labelY,
-                          '--label-color': segment.color
-                        }}
-                      >
-                        {segment.percentage}%
-                      </span>
-                    ))}
-                  </div>
+                  <strong>5가지 태그 축</strong>
                 </div>
-
-                <div className="analysis-report-chart-copy">
-                  <strong>주요 행복 흐름</strong>
-                  <div className="analysis-report-tag-bars" aria-label="주요 태그 비율">
-                    {analysis.topTags.slice(0, 5).map(tag => (
-                      <div
-                        key={tag.label}
-                        className="analysis-report-tag-bar"
-                        style={{ '--tag-color': tag.color }}
-                      >
-                        <div>
-                          <span>{tag.label}</span>
-                          <strong>{getTagPercentage(tag, analysis.totalSignals)}%</strong>
-                        </div>
-                        <span className="analysis-report-tag-track" aria-hidden="true">
-                          <i style={{ width: `${getTagPercentage(tag, analysis.totalSignals)}%` }} />
-                        </span>
+                <div className="analysis-axis-list" aria-label="5가지 태그 축 비율">
+                  {analysis.axisStats.map(axis => (
+                    <div
+                      key={axis.key}
+                      className="analysis-axis-item"
+                      style={{ '--axis-color': axis.color, '--axis-left': `${axis.leftPercentage}%` }}
+                    >
+                      <div className="analysis-axis-item-head">
+                        <strong>{axis.label}</strong>
+                        <span>{axis.total > 0 ? `${axis.leftPercentage}% / ${axis.rightPercentage}%` : '데이터 대기'}</span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="analysis-axis-track" aria-hidden="true">
+                        <i />
+                      </div>
+                      <div className="analysis-axis-labels">
+                        <span>{axis.leftTag}</span>
+                        <span>{axis.rightTag}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 

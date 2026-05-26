@@ -2,22 +2,35 @@ export const MAX_RECORD_TAGS = 3;
 
 export const HAPPINESS_TAG_GROUPS = [
   {
-    label: '상황',
-    tags: ['혼자', '함께', '실내', '실외']
+    key: 'relation',
+    label: '관계',
+    tags: ['혼자', '함께']
   },
   {
-    label: '조건',
-    tags: ['짧게', '길게', '무료', '유료']
+    key: 'place',
+    label: '장소',
+    tags: ['실내', '실외']
   },
   {
-    label: '상태',
+    key: 'time',
+    label: '시간',
+    tags: ['짧게', '길게']
+  },
+  {
+    key: 'cost',
+    label: '비용',
+    tags: ['무료', '유료']
+  },
+  {
+    key: 'action',
+    label: '행동',
     tags: ['활동적', '휴식']
-  },
-  {
-    label: '감정',
-    tags: ['즐거움', '편안함', '설렘', '뿌듯함', '위로', '감동', '새로움']
   }
 ];
+
+export const HAPPINESS_CORE_TAG_GROUPS = HAPPINESS_TAG_GROUPS.filter(group => group.key !== 'cost');
+
+export const HAPPINESS_COST_TAG_GROUP = HAPPINESS_TAG_GROUPS.find(group => group.key === 'cost');
 
 export const HAPPINESS_TAGS = HAPPINESS_TAG_GROUPS.flatMap(group => group.tags);
 

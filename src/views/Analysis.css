@@ -165,15 +165,6 @@
     gap: 18px;
 }
 
-.analysis-report-chart {
-    display: grid;
-    grid-template-columns: 126px 150px;
-    justify-content: space-between;
-    column-gap: clamp(14px, 4vw, 24px);
-    align-items: center;
-    padding: 4px 0 6px;
-}
-
 .analysis-report-maturity-btn {
     flex: 0 0 118px;
     width: 118px;
@@ -181,104 +172,87 @@
     padding: 7px 9px 8px;
 }
 
-.analysis-donut-wrap {
-    width: 126px;
+.analysis-axis-panel {
     display: flex;
     flex-direction: column;
+    gap: 11px;
+    padding: 12px;
+    border: 1px solid rgba(var(--primary-rgb), 0.12);
+    border-radius: 14px;
+    background: rgba(var(--primary-rgb), 0.045);
+}
+
+.analysis-axis-panel-head {
+    display: flex;
     align-items: center;
-    gap: 9px;
+    justify-content: space-between;
+    gap: 10px;
 }
 
-.analysis-donut-shell {
-    position: relative;
-    width: 124px;
-    height: 124px;
-}
-
-.analysis-donut-label {
-    position: absolute;
-    left: var(--label-x);
-    top: var(--label-y);
-    z-index: 3;
-    transform: translate(-50%, -50%);
-    min-width: 28px;
-    padding: 2px 5px;
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: 999px;
-    background: var(--label-color, var(--primary-color));
-    color: var(--white);
-    font-size: 0.58rem;
-    font-weight: 900;
-    line-height: 1.05;
-    text-align: center;
-    box-shadow: 0 2px 7px rgba(23, 42, 27, 0.14);
-    pointer-events: none;
-}
-
-.analysis-report-chart-copy {
-    width: 150px;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.analysis-report-chart-copy > strong {
+.analysis-axis-panel-head > strong {
     color: var(--text-dark);
     font-size: var(--font-body-sm);
     line-height: 1.3;
 }
 
-.analysis-report-tag-bars {
-    width: 150px;
+.analysis-axis-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
 }
 
-.analysis-report-tag-bar {
+.analysis-axis-item {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 5px;
 }
 
-.analysis-report-tag-bar > div {
+.analysis-axis-item-head,
+.analysis-axis-labels {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
 }
 
-.analysis-report-tag-bar > div span {
-    min-width: 0;
+.analysis-axis-item-head strong {
     color: var(--text-dark);
-    font-size: 0.71rem;
-    font-weight: 850;
+    font-size: 0.76rem;
+    font-weight: 900;
     line-height: 1.2;
 }
 
-.analysis-report-tag-bar strong {
-    flex: 0 0 auto;
+.analysis-axis-item-head span {
     color: var(--primary-color);
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     font-weight: 900;
-    line-height: 1;
+    line-height: 1.2;
 }
 
-.analysis-report-tag-track {
+.analysis-axis-track {
+    position: relative;
     width: 100%;
-    height: 5px;
+    height: 10px;
     border-radius: 999px;
     overflow: hidden;
-    background: rgba(var(--primary-rgb), 0.09);
+    background: rgba(var(--primary-rgb), 0.1);
 }
 
-.analysis-report-tag-track i {
+.analysis-axis-track i {
     display: block;
-    min-width: 8px;
+    width: var(--axis-left);
+    min-width: 4px;
+    max-width: 100%;
     height: 100%;
     border-radius: inherit;
-    background: var(--tag-color, var(--primary-color));
+    background: var(--axis-color, var(--primary-color));
+}
+
+.analysis-axis-labels span {
+    color: var(--text-light);
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1.2;
 }
 
 .analysis-report-hero {
@@ -398,26 +372,6 @@
     color: var(--text-light);
     font-size: var(--font-body-sm);
     line-height: 1.65;
-}
-
-.analysis-donut {
-    position: relative;
-    width: 112px;
-    height: 112px;
-    margin: 6px;
-    transform: translateY(4px);
-    border-radius: 50%;
-    background: var(--analysis-chart);
-    box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.12);
-}
-
-.analysis-donut::after {
-    content: "";
-    position: absolute;
-    inset: 34px;
-    border-radius: 50%;
-    background: var(--white);
-    box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.08);
 }
 
 .analysis-recommend-prompt {
@@ -644,11 +598,6 @@
 
     .analysis-report-head h3 {
         font-size: 1.02rem;
-    }
-
-    .analysis-report-chart-copy {
-        align-items: stretch;
-        text-align: left;
     }
 
 }
