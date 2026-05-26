@@ -43,13 +43,12 @@
 }
 
 .analysis-maturity-btn {
-    flex: 0 0 128px;
-    min-height: 50px;
+    flex: 0 0 auto;
+    min-height: 34px;
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-    padding: 7px 10px 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
     border: 1px solid rgba(var(--primary-rgb), 0.42);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.5);
@@ -61,84 +60,13 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-.analysis-maturity-icon {
-    flex: 0 0 24px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(var(--primary-rgb), 0.11);
-    color: var(--primary-color);
-}
-
-.analysis-maturity-icon svg,
-.analysis-maturity-modal-head svg {
-    width: 16px;
-    height: 16px;
-}
-
-.analysis-maturity-modal-head svg {
-    width: 17px;
-    height: 17px;
-}
-
 .analysis-maturity-label {
     color: var(--text-dark);
-    font-size: 0.77rem;
+    font-size: 0.8rem;
     font-weight: 900;
     line-height: 1.1;
     text-align: center;
     white-space: nowrap;
-}
-
-.analysis-maturity-meter {
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-
-.analysis-maturity-track {
-    position: relative;
-    flex: 1 1 auto;
-    min-width: 0;
-    height: 7px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: rgba(var(--primary-rgb), 0.1);
-}
-
-.analysis-maturity-track::before,
-.analysis-maturity-track::after {
-    content: "";
-    position: absolute;
-    top: -2px;
-    bottom: -2px;
-    z-index: 3;
-    width: 2px;
-    border-radius: 999px;
-    background: rgba(var(--primary-rgb), 0.78);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.72);
-    transform: translateX(-50%);
-}
-
-.analysis-maturity-track::before {
-    left: 33.333%;
-}
-
-.analysis-maturity-track::after {
-    left: 66.666%;
-}
-
-.analysis-maturity-track i {
-    position: relative;
-    z-index: 1;
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.72), rgba(var(--secondary-rgb), 0.88));
 }
 
 .analysis-sections {
@@ -599,7 +527,7 @@
 
 .analysis-maturity-modal {
     position: relative;
-    width: min(100%, 430px);
+    width: min(100%, 420px);
     max-height: none;
     overflow: visible;
     padding: 20px;
@@ -632,22 +560,8 @@
 }
 
 .analysis-maturity-modal-head {
-    display: flex;
-    gap: 12px;
     padding-right: 34px;
     margin-bottom: 14px;
-}
-
-.analysis-maturity-modal-head > span {
-    flex: 0 0 38px;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(var(--primary-rgb), 0.11);
-    color: var(--primary-color);
 }
 
 .analysis-maturity-modal-head h3 {
@@ -664,137 +578,10 @@
     line-height: 1.55;
 }
 
-.analysis-maturity-modal-meter {
-    margin: -2px 0 14px;
-    padding: 13px 16px 13px;
-    border: 1px solid rgba(var(--primary-rgb), 0.12);
-    border-radius: 14px;
-    background: rgba(var(--primary-rgb), 0.045);
-}
-
-.analysis-maturity-modal-track {
-    position: relative;
-    width: min(100%, 310px);
-    height: 66px;
-    margin: 0 auto;
-}
-
-.analysis-maturity-modal-track::before {
-    content: "";
-    position: absolute;
-    top: 8px;
-    left: 0;
-    right: 0;
-    height: 16px;
-    border-radius: 999px;
-    background: rgba(var(--primary-rgb), 0.11);
-}
-
-.analysis-maturity-modal-track > i {
-    position: absolute;
-    top: 8px;
-    left: 0;
-    width: var(--maturity-progress);
-    height: 16px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.72), rgba(var(--secondary-rgb), 0.88));
-}
-
-.analysis-maturity-modal-checkpoint,
-.analysis-maturity-modal-current {
-    position: absolute;
-    top: 0;
-    transform: translateX(-50%);
-}
-
-.analysis-maturity-modal-checkpoint b,
-.analysis-maturity-modal-current b {
-    display: block;
-    width: 2px;
-    height: 26px;
-    border-radius: 999px;
-}
-
-.analysis-maturity-modal-checkpoint b {
-    background: rgba(var(--primary-rgb), 0.28);
-}
-
-.analysis-maturity-modal-current b {
-    background: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.11);
-}
-
-.analysis-maturity-modal-checkpoint em,
-.analysis-maturity-modal-current em {
-    position: absolute;
-    top: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: var(--text-light);
-    font-size: 0.68rem;
-    font-style: normal;
-    font-weight: 900;
-    line-height: 1;
-    white-space: nowrap;
-}
-
-.analysis-maturity-modal-current em {
-    color: var(--primary-color);
-}
-
-.analysis-maturity-modal-checkpoint.checkpoint-10 {
-    left: 33.333%;
-}
-
-.analysis-maturity-modal-checkpoint.checkpoint-20 {
-    left: 66.666%;
-}
-
-.analysis-maturity-modal-checkpoint.checkpoint-30 {
-    left: 100%;
-}
-
-.analysis-maturity-modal-checkpoint.checkpoint-30 em {
-    left: auto;
-    right: 0;
-    transform: none;
-}
-
-.analysis-maturity-modal-stage-icon {
-    position: absolute;
-    top: 43px;
-    left: 50%;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transform: translateX(-50%);
-    background: rgba(var(--primary-rgb), 0.1);
-    color: var(--primary-color);
-}
-
-.analysis-maturity-modal-stage-icon svg {
-    width: 15px;
-    height: 15px;
-}
-
-.analysis-maturity-modal-checkpoint.checkpoint-30 .analysis-maturity-modal-stage-icon {
-    left: auto;
-    right: 0;
-    transform: none;
-}
-
-.analysis-maturity-modal-current {
-    left: clamp(18px, var(--maturity-progress), calc(100% - 18px));
-    z-index: 2;
-}
-
 .analysis-maturity-stage-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
 }
 
 .analysis-maturity-stage-list article {
@@ -844,21 +631,11 @@
     }
 
     .analysis-maturity-btn {
-        flex-basis: 118px;
-        padding: 8px 9px;
+        padding: 8px 10px;
     }
 
     .analysis-report-maturity-btn {
-        flex-basis: 108px;
-        width: 108px;
-        min-height: 48px;
-        padding: 7px 8px;
-    }
-
-    .analysis-report-maturity-btn .analysis-maturity-icon {
-        flex-basis: 22px;
-        width: 22px;
-        height: 22px;
+        min-height: 34px;
     }
 
     .analysis-report-head {

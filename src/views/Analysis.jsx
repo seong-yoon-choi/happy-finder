@@ -7,8 +7,6 @@ import './Analysis.css';
 const HappinessDetailModal = lazy(() => import('../components/HappinessDetailModal'));
 
 const ANALYSIS_MIN_SIGNAL_COUNT = 6;
-const ANALYSIS_MATURITY_MAX_SIGNAL_COUNT = 30;
-
 const TAG_COLORS = [
   '#3f8f46',
   '#78a75b',
@@ -131,24 +129,12 @@ const getTagPercentage = (tag, totalCount) => (
 
 const getAnalysisMaturity = totalSignals => {
   const safeSignals = Math.max(0, Number.isFinite(totalSignals) ? totalSignals : 0);
-  const progress = Math.min(100, Math.round((safeSignals / ANALYSIS_MATURITY_MAX_SIGNAL_COUNT) * 100));
-
-  if (safeSignals >= ANALYSIS_MATURITY_MAX_SIGNAL_COUNT) {
-    return {
-      key: 'perfect',
-      label: '완벽한 분석',
-      range: '30개 이상',
-      progress,
-      description: '행복 데이터가 충분히 쌓여 현재 행복 성향을 가장 안정적으로 해석할 수 있는 단계예요.'
-    };
-  }
 
   if (safeSignals >= 20) {
     return {
       key: 'enough',
       label: '충분한 분석',
-      range: '20~29개',
-      progress,
+      range: '20개 이상',
       description: '기록과 공감 흐름이 많이 쌓여 행복 성향을 꽤 안정적으로 볼 수 있는 단계예요.'
     };
   }
@@ -158,93 +144,16 @@ const getAnalysisMaturity = totalSignals => {
       key: 'stable',
       label: '안정 분석',
       range: '10~19개',
-      progress,
       description: '반복되는 태그 흐름이 보이기 시작해서 추천과 리포트의 방향성이 안정되는 단계예요.'
     };
   }
 
-  if (safeSignals >= ANALYSIS_MIN_SIGNAL_COUNT) {
-    return {
-      key: 'early',
-      label: '초급 분석',
-      range: '6~9개',
-      progress,
-      description: '분석은 가능하지만 아직 데이터가 적어 앞으로의 기록에 따라 성향이 바뀔 수 있어요.'
-    };
-  }
-
   return {
-    key: 'ready',
-    label: '분석 준비',
-    range: '0~5개',
-    progress,
-    description: '행복 메모, 즐겨찾기, 공감이 조금 더 쌓이면 분석을 시작할 수 있어요.'
+    key: 'early',
+    label: '초급 분석',
+    range: '기본 분석',
+    description: '분석은 가능하지만 아직 태그 축의 분포가 충분히 고르게 쌓이지 않아 앞으로의 기록에 따라 성향이 바뀔 수 있어요.'
   };
-};
-
-const SeedIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path
-      d="M12.6 4.4C8.9 6 6.7 8.8 6.7 12.1C6.7 15.8 9 18.4 12.1 18.4C15.5 18.4 17.6 15.9 17.6 12.7C17.6 9.2 15.8 6.4 12.6 4.4Z"
-      fill="currentColor"
-      opacity="0.9"
-    />
-    <path
-      d="M9.7 13.8C11.6 12.1 13 10.1 13.8 7.7"
-      fill="none"
-      stroke="rgba(255,255,255,0.72)"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const LeafGrowthIcon = ({ leaves }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path
-      d="M12 21V9.8"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
-    <path
-      d="M12 10C10.1 6.9 7.6 5.9 5.2 6.4C5.6 9.3 8.1 10.8 12 10Z"
-      fill="currentColor"
-      opacity="0.9"
-    />
-    {leaves >= 2 && (
-      <path
-        d="M12 10C13.8 7 16.4 5.9 18.8 6.5C18.3 9.3 15.9 10.8 12 10Z"
-        fill="currentColor"
-        opacity="0.78"
-      />
-    )}
-    {leaves >= 3 && (
-      <path
-        d="M12 10.6C10.6 13.4 11.1 16.1 13 17.6C14.9 15.6 14.7 12.9 12 10.6Z"
-        fill="currentColor"
-        opacity="0.68"
-      />
-    )}
-    <path d="M6 18.7C9.7 17.2 14.3 17.2 18 18.7" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.6" />
-  </svg>
-);
-
-const AnalysisMaturityIcon = ({ totalSignals }) => {
-  if (totalSignals >= ANALYSIS_MATURITY_MAX_SIGNAL_COUNT) {
-    return <LeafGrowthIcon leaves={3} />;
-  }
-
-  if (totalSignals >= 20) {
-    return <LeafGrowthIcon leaves={2} />;
-  }
-
-  if (totalSignals >= 10) {
-    return <LeafGrowthIcon leaves={1} />;
-  }
-
-  return <SeedIcon />;
 };
 
 const getStyleProfile = topTags => {
@@ -558,14 +467,6 @@ const Analysis = () => {
                 aria-label={`분석 단계 보기: ${analysisMaturity.label}, ${analysis.totalSignals}개`}
               >
                 <span className="analysis-maturity-label">{analysisMaturity.label}</span>
-                <span className="analysis-maturity-meter">
-                  <span className="analysis-maturity-icon">
-                    <AnalysisMaturityIcon totalSignals={analysis.totalSignals} />
-                  </span>
-                  <span className="analysis-maturity-track" aria-hidden="true">
-                    <i style={{ width: `${analysisMaturity.progress}%` }} />
-                  </span>
-                </span>
               </button>
             </div>
             <div className="analysis-report">
@@ -756,73 +657,27 @@ const Analysis = () => {
               &times;
             </button>
             <div className="analysis-maturity-modal-head">
-              <span>
-                <AnalysisMaturityIcon totalSignals={analysis.totalSignals} />
-              </span>
               <div>
                 <h3 id="analysis-maturity-title">분석 단계</h3>
-                <p>기록, 즐겨찾기, 공감, 행복 메모가 쌓일수록 리포트의 신뢰도가 높아져요.</p>
-              </div>
-            </div>
-            <div
-              className="analysis-maturity-modal-meter"
-              style={{ '--maturity-progress': `${analysisMaturity.progress}%` }}
-            >
-              <div className="analysis-maturity-modal-track" aria-label={`현재 분석 데이터 ${analysis.totalSignals}개`}>
-                <i />
-                <span className="analysis-maturity-modal-checkpoint checkpoint-10">
-                  <b />
-                  <em>10개</em>
-                  <span className="analysis-maturity-modal-stage-icon">
-                    <AnalysisMaturityIcon totalSignals={10} />
-                  </span>
-                </span>
-                <span className="analysis-maturity-modal-checkpoint checkpoint-20">
-                  <b />
-                  <em>20개</em>
-                  <span className="analysis-maturity-modal-stage-icon">
-                    <AnalysisMaturityIcon totalSignals={20} />
-                  </span>
-                </span>
-                <span className="analysis-maturity-modal-checkpoint checkpoint-30">
-                  <b />
-                  <em>30개</em>
-                  <span className="analysis-maturity-modal-stage-icon">
-                    <AnalysisMaturityIcon totalSignals={30} />
-                  </span>
-                </span>
-                <span className="analysis-maturity-modal-current">
-                  <b />
-                  <em>{analysis.totalSignals}개</em>
-                </span>
+                <p>5가지 태그 축이 얼마나 고르게 쌓였는지에 따라 리포트의 신뢰도를 나눠요.</p>
               </div>
             </div>
             <div className="analysis-maturity-stage-list">
               {[
                 {
-                  label: '분석 준비',
-                  range: '0~5개',
-                  description: '아직 분석을 확정하기에는 데이터가 부족한 단계예요.'
-                },
-                {
                   label: '초급 분석',
-                  range: '6~9개',
-                  description: '첫 리포트를 볼 수 있지만 성향이 바뀔 수 있는 단계예요.'
+                  range: '일부 축 확인',
+                  description: '태그 흐름은 보이지만 관계, 장소, 시간, 행동, 비용 축이 아직 고르게 쌓이지 않은 단계예요.'
                 },
                 {
                   label: '안정 분석',
-                  range: '10~19개',
-                  description: '반복되는 행복 흐름이 보여 추천과 해석이 안정되는 단계예요.'
+                  range: '주요 축 확인',
+                  description: '여러 축에서 반복되는 방향이 보이기 시작해 성향 해석과 추천의 기준이 안정되는 단계예요.'
                 },
                 {
                   label: '충분한 분석',
-                  range: '20~29개',
-                  description: '행복 성향을 더 선명하게 볼 수 있는 단계예요.'
-                },
-                {
-                  label: '완벽한 분석',
-                  range: '30개 이상',
-                  description: '행복 데이터가 충분히 쌓여 현재 성향을 가장 안정적으로 해석할 수 있는 단계예요.'
+                  range: '5축 균형 확인',
+                  description: '5가지 축의 분포가 충분히 쌓여 현재 행복 성향을 더 믿을 만하게 해석할 수 있는 단계예요.'
                 }
               ].map(stage => (
                 <article
