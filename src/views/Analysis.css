@@ -121,6 +121,7 @@
     border-radius: 999px;
     background: rgba(var(--primary-rgb), 0.78);
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.72);
+    transform: translateX(-50%);
 }
 
 .analysis-maturity-track::before {
@@ -638,7 +639,7 @@
 
 .analysis-maturity-modal-meter {
     margin: -2px 0 18px;
-    padding: 12px 12px 28px;
+    padding: 12px 12px 26px;
     border: 1px solid rgba(var(--primary-rgb), 0.12);
     border-radius: 14px;
     background: rgba(var(--primary-rgb), 0.045);
@@ -646,26 +647,28 @@
 
 .analysis-maturity-modal-track {
     position: relative;
-    height: 36px;
+    width: min(100%, 286px);
+    height: 34px;
+    margin: 0 auto;
 }
 
 .analysis-maturity-modal-track::before {
     content: "";
     position: absolute;
-    top: 8px;
+    top: 7px;
     left: 0;
     right: 0;
-    height: 8px;
+    height: 12px;
     border-radius: 999px;
     background: rgba(var(--primary-rgb), 0.11);
 }
 
 .analysis-maturity-modal-track > i {
     position: absolute;
-    top: 8px;
+    top: 7px;
     left: 0;
     width: var(--maturity-progress);
-    height: 8px;
+    height: 12px;
     border-radius: 999px;
     background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.72), rgba(var(--secondary-rgb), 0.88));
 }
@@ -681,7 +684,7 @@
 .analysis-maturity-modal-current b {
     display: block;
     width: 2px;
-    height: 24px;
+    height: 20px;
     border-radius: 999px;
 }
 
@@ -697,7 +700,7 @@
 .analysis-maturity-modal-checkpoint em,
 .analysis-maturity-modal-current em {
     position: absolute;
-    top: 28px;
+    top: 25px;
     left: 50%;
     transform: translateX(-50%);
     color: var(--text-light);

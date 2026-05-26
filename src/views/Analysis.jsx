@@ -174,6 +174,42 @@ const SproutIcon = () => (
   </svg>
 );
 
+const CloverIcon = ({ leaves }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M12 21C12 17.7 12 15.1 12 12.4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M12 7.2C11 4.1 7 4 6.1 6.9C5.2 9.7 8.5 11.4 12 9.8C15.5 11.4 18.8 9.7 17.9 6.9C17 4 13 4.1 12 7.2Z"
+      fill="currentColor"
+      opacity="0.9"
+    />
+    {leaves >= 4 && (
+      <path
+        d="M12 13.8C9.1 15.2 8.2 18.6 10.9 19.5C13.5 20.4 15.3 17.3 12 13.8Z"
+        fill="currentColor"
+        opacity="0.72"
+      />
+    )}
+  </svg>
+);
+
+const AnalysisMaturityIcon = ({ totalSignals }) => {
+  if (totalSignals >= 20) {
+    return <CloverIcon leaves={4} />;
+  }
+
+  if (totalSignals >= 10) {
+    return <CloverIcon leaves={3} />;
+  }
+
+  return <SproutIcon />;
+};
+
 const getStyleProfile = topTags => {
   const tagSet = new Set(topTags.map(tag => tag.label));
   const hasAny = (...tags) => tags.some(tag => tagSet.has(tag));
@@ -483,7 +519,7 @@ const Analysis = () => {
                 <span className="analysis-maturity-label">{analysisMaturity.label}</span>
                 <span className="analysis-maturity-meter">
                   <span className="analysis-maturity-icon">
-                    <SproutIcon />
+                    <AnalysisMaturityIcon totalSignals={analysis.totalSignals} />
                   </span>
                   <span className="analysis-maturity-track" aria-hidden="true">
                     <i style={{ width: `${analysisMaturity.progress}%` }} />
@@ -665,7 +701,7 @@ const Analysis = () => {
             </button>
             <div className="analysis-maturity-modal-head">
               <span>
-                <SproutIcon />
+                <AnalysisMaturityIcon totalSignals={analysis.totalSignals} />
               </span>
               <div>
                 <h3 id="analysis-maturity-title">분석 단계</h3>
