@@ -99,6 +99,32 @@ const getTagChartGradient = tagStats => {
   return `conic-gradient(${segments.join(', ')})`;
 };
 
+const getTagChartSegments = tagStats => {
+  const totalCount = tagStats.reduce((sum, tag) => sum + tag.count, 0);
+
+  if (totalCount <= 0) {
+    return [];
+  }
+
+  let cursor = 0;
+
+  return tagStats.map(tag => {
+    const start = cursor;
+    const sweep = (tag.count / totalCount) * 360;
+    const end = start + sweep;
+    const middle = start + (sweep / 2);
+    const radians = ((middle - 90) * Math.PI) / 180;
+    cursor = end;
+
+    return {
+      ...tag,
+      percentage: Math.round((tag.count / totalCount) * 100),
+      labelX: `${50 + Math.cos(radians) * 36}%`,
+      labelY: `${50 + Math.sin(radians) * 36}%`
+    };
+  });
+};
+
 const getTagPercentage = (tag, totalCount) => (
   totalCount > 0 ? Math.round((tag.count / totalCount) * 100) : 0
 );
@@ -156,14 +182,20 @@ const getAnalysisMaturity = totalSignals => {
   };
 };
 
-const SoilIcon = () => (
+const SeedIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M5 15.5C7.1 14.6 9 14.6 11.2 15.5C13.6 16.5 16.3 16.5 19 15.4C18.4 18.1 15.6 20 12 20C8.4 20 5.7 18.2 5 15.5Z"
+      d="M12.6 4.4C8.9 6 6.7 8.8 6.7 12.1C6.7 15.8 9 18.4 12.1 18.4C15.5 18.4 17.6 15.9 17.6 12.7C17.6 9.2 15.8 6.4 12.6 4.4Z"
       fill="currentColor"
       opacity="0.9"
     />
-    <path d="M7.2 13.8C10.2 12.6 13.8 12.6 16.8 13.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.75" />
+    <path
+      d="M9.7 13.8C11.6 12.1 13 10.1 13.8 7.7"
+      fill="none"
+      stroke="rgba(255,255,255,0.72)"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -212,7 +244,7 @@ const AnalysisMaturityIcon = ({ totalSignals }) => {
     return <LeafGrowthIcon leaves={1} />;
   }
 
-  return <SoilIcon />;
+  return <SeedIcon />;
 };
 
 const getStyleProfile = topTags => {
@@ -481,6 +513,10 @@ const Analysis = () => {
     ]
   );
   const chartGradient = getTagChartGradient(analysis.allTagStats);
+  const chartSegments = getTagChartSegments(analysis.allTagStats);
+  const visibleChartSegments = chartSegments
+    .filter(segment => segment.percentage >= 5)
+    .slice(0, 6);
   const analysisMaturity = getAnalysisMaturity(analysis.totalSignals);
 
   const handleRefreshRecommendations = () => {
@@ -536,7 +572,22 @@ const Analysis = () => {
               <div className="analysis-report-chart">
                 <div className="analysis-donut-wrap">
                   <span className="analysis-report-signal-badge">{analysis.styleSummary.signalLabel}</span>
-                  <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }} aria-hidden="true" />
+                  <div className="analysis-donut-shell" aria-label="주요 태그 원형 그래프">
+                    <div className="analysis-donut" style={{ '--analysis-chart': chartGradient }} aria-hidden="true" />
+                    {visibleChartSegments.map(segment => (
+                      <span
+                        key={segment.label}
+                        className="analysis-donut-label"
+                        style={{
+                          '--label-x': segment.labelX,
+                          '--label-y': segment.labelY,
+                          '--label-color': segment.color
+                        }}
+                      >
+                        {segment.percentage}%
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="analysis-report-chart-copy">
@@ -722,17 +773,24 @@ const Analysis = () => {
                 <span className="analysis-maturity-modal-checkpoint checkpoint-10">
                   <b />
                   <em>10개</em>
+                  <span className="analysis-maturity-modal-stage-icon">
+                    <AnalysisMaturityIcon totalSignals={10} />
+                  </span>
                 </span>
                 <span className="analysis-maturity-modal-checkpoint checkpoint-20">
                   <b />
                   <em>20개</em>
-                </span>
-                {analysis.totalSignals < ANALYSIS_MATURITY_MAX_SIGNAL_COUNT && (
-                  <span className="analysis-maturity-modal-checkpoint checkpoint-30">
-                    <b />
-                    <em>30개</em>
+                  <span className="analysis-maturity-modal-stage-icon">
+                    <AnalysisMaturityIcon totalSignals={20} />
                   </span>
-                )}
+                </span>
+                <span className="analysis-maturity-modal-checkpoint checkpoint-30">
+                  <b />
+                  <em>30개</em>
+                  <span className="analysis-maturity-modal-stage-icon">
+                    <AnalysisMaturityIcon totalSignals={30} />
+                  </span>
+                </span>
                 <span className="analysis-maturity-modal-current">
                   <b />
                   <em>{analysis.totalSignals}개</em>

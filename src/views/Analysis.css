@@ -261,6 +261,32 @@
     gap: 9px;
 }
 
+.analysis-donut-shell {
+    position: relative;
+    width: 124px;
+    height: 124px;
+}
+
+.analysis-donut-label {
+    position: absolute;
+    left: var(--label-x);
+    top: var(--label-y);
+    z-index: 3;
+    transform: translate(-50%, -50%);
+    min-width: 28px;
+    padding: 2px 5px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 999px;
+    background: var(--label-color, var(--primary-color));
+    color: var(--white);
+    font-size: 0.58rem;
+    font-weight: 900;
+    line-height: 1.05;
+    text-align: center;
+    box-shadow: 0 2px 7px rgba(23, 42, 27, 0.14);
+    pointer-events: none;
+}
+
 .analysis-report-chart-copy {
     width: 150px;
     min-width: 0;
@@ -450,6 +476,7 @@
     position: relative;
     width: 112px;
     height: 112px;
+    margin: 6px;
     transform: translateY(4px);
     border-radius: 50%;
     background: var(--analysis-chart);
@@ -572,10 +599,10 @@
 
 .analysis-maturity-modal {
     position: relative;
-    width: min(100%, 390px);
-    max-height: min(620px, calc(100vh - var(--native-safe-area-top) - var(--native-safe-area-bottom) - 34px));
-    overflow-y: auto;
-    padding: 18px;
+    width: min(100%, 430px);
+    max-height: none;
+    overflow: visible;
+    padding: 20px;
     border: 1px solid rgba(var(--primary-rgb), 0.16);
     border-radius: 20px;
     background: var(--white);
@@ -608,7 +635,7 @@
     display: flex;
     gap: 12px;
     padding-right: 34px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .analysis-maturity-modal-head > span {
@@ -638,8 +665,8 @@
 }
 
 .analysis-maturity-modal-meter {
-    margin: -2px 0 18px;
-    padding: 12px 12px 26px;
+    margin: -2px 0 14px;
+    padding: 13px 16px 13px;
     border: 1px solid rgba(var(--primary-rgb), 0.12);
     border-radius: 14px;
     background: rgba(var(--primary-rgb), 0.045);
@@ -647,28 +674,28 @@
 
 .analysis-maturity-modal-track {
     position: relative;
-    width: min(100%, 286px);
-    height: 34px;
+    width: min(100%, 310px);
+    height: 66px;
     margin: 0 auto;
 }
 
 .analysis-maturity-modal-track::before {
     content: "";
     position: absolute;
-    top: 7px;
+    top: 8px;
     left: 0;
     right: 0;
-    height: 12px;
+    height: 16px;
     border-radius: 999px;
     background: rgba(var(--primary-rgb), 0.11);
 }
 
 .analysis-maturity-modal-track > i {
     position: absolute;
-    top: 7px;
+    top: 8px;
     left: 0;
     width: var(--maturity-progress);
-    height: 12px;
+    height: 16px;
     border-radius: 999px;
     background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.72), rgba(var(--secondary-rgb), 0.88));
 }
@@ -684,7 +711,7 @@
 .analysis-maturity-modal-current b {
     display: block;
     width: 2px;
-    height: 20px;
+    height: 26px;
     border-radius: 999px;
 }
 
@@ -700,7 +727,7 @@
 .analysis-maturity-modal-checkpoint em,
 .analysis-maturity-modal-current em {
     position: absolute;
-    top: 25px;
+    top: 30px;
     left: 50%;
     transform: translateX(-50%);
     color: var(--text-light);
@@ -733,19 +760,45 @@
     transform: none;
 }
 
+.analysis-maturity-modal-stage-icon {
+    position: absolute;
+    top: 43px;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateX(-50%);
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-color);
+}
+
+.analysis-maturity-modal-stage-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+.analysis-maturity-modal-checkpoint.checkpoint-30 .analysis-maturity-modal-stage-icon {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
 .analysis-maturity-modal-current {
     left: clamp(18px, var(--maturity-progress), calc(100% - 18px));
     z-index: 2;
 }
 
 .analysis-maturity-stage-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
 }
 
 .analysis-maturity-stage-list article {
-    padding: 12px;
+    padding: 10px;
     border: 1px solid rgba(var(--primary-rgb), 0.12);
     border-radius: 14px;
     background: rgba(var(--primary-rgb), 0.045);
@@ -761,7 +814,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
 .analysis-maturity-stage-list strong {
@@ -781,8 +834,8 @@
 .analysis-maturity-stage-list p {
     margin: 0;
     color: var(--text-light);
-    font-size: var(--font-body-sm);
-    line-height: 1.5;
+    font-size: 0.73rem;
+    line-height: 1.42;
 }
 
 @media (max-width: 430px) {
