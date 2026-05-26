@@ -17,14 +17,14 @@ export const HAPPINESS_TAG_GROUPS = [
     tags: ['짧게', '길게']
   },
   {
-    key: 'cost',
-    label: '비용',
-    tags: ['무료', '유료']
-  },
-  {
     key: 'action',
     label: '행동',
     tags: ['활동적', '휴식']
+  },
+  {
+    key: 'cost',
+    label: '비용',
+    tags: ['무료', '유료']
   }
 ];
 

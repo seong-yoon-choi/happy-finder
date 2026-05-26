@@ -85,13 +85,6 @@ const HappinessCard = ({ item, onClick }) => {
           )}
           <h3 className="card-title">{item.title}</h3>
           <p className="card-desc-short">{item.description}</p>
-          {visibleTags.length > 0 && (
-            <div className="card-tag-list" aria-label="태그">
-              {visibleTags.map(tag => (
-                <span key={tag}>{tag}</span>
-              ))}
-            </div>
-          )}
         </div>
         {hasPreviewImage && (
           <div className="happiness-card-preview" aria-hidden="true">
@@ -103,12 +96,21 @@ const HappinessCard = ({ item, onClick }) => {
           </div>
         )}
       </div>
-      {hasMemo && (
+      {(visibleTags.length > 0 || hasMemo) && (
         <div className="card-bottom-actions">
-          <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
-            <NoteIcon />
-            <span>{memoCount}</span>
-          </span>
+          {visibleTags.length > 0 && (
+            <div className="card-tag-list" aria-label="태그">
+              {visibleTags.map(tag => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+          )}
+          {hasMemo && (
+            <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
+              <NoteIcon />
+              <span>{memoCount}</span>
+            </span>
+          )}
         </div>
       )}
     </div>
