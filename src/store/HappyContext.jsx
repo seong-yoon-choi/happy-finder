@@ -51,7 +51,7 @@ import {
 } from '../lib/reviewAdminAccess';
 import { requestReviewAdminSession } from '../lib/reviewAdminSession';
 import { APP_PATH, PASSWORD_RESET_PATH, getAppRedirectUrl, getNativeAuthCallbackPathFromUrl } from '../lib/routes';
-import { MAX_RECORD_TAGS, normalizeVisibleTags } from '../lib/happinessTags';
+import { MAX_RECORD_TAGS, normalizeGroupedTags, normalizeVisibleTags } from '../lib/happinessTags';
 
 const LEGACY_LOCAL_CREATOR_ID = 'local-user';
 const DEFAULT_REMINDER_TIME = '12:00';
@@ -1015,7 +1015,7 @@ const normalizeItem = (item, savedStamps = {}) => {
     creatorId: item.creatorId || (item.isCustom && item.creator === 'user' ? getGuestLocalCreatorId() : undefined),
     previewImage: item.previewImage || initialDefaults.previewImage || '',
     previewImageRef,
-    tags: normalizeVisibleTags(itemTags || []),
+    tags: normalizeGroupedTags(itemTags || [], initialDefaults.tags || []),
     totalEnjoyCount: Math.max(baseCount, ownCount),
     totalEmpathyCount: Math.max(0, baseEmpathyCount)
   };
@@ -3058,7 +3058,7 @@ export const HappyProvider = ({ children }) => {
   const addCustomItem = async (title, description, category, visibility = 'private', tags = [], options = {}) => {
     const isPublic = visibility === 'public';
     const canSyncToCloud = Boolean(supabase && authUser?.id);
-    const normalizedTags = normalizeVisibleTags(tags, MAX_RECORD_TAGS);
+    const normalizedTags = normalizeGroupedTags(tags);
     const normalizedPreviewImageRef = normalizeMemoImages(options.previewImageRef ? [options.previewImageRef] : [])[0] || null;
 
     if (isPublic && !canSyncToCloud) {
@@ -3140,7 +3140,7 @@ export const HappyProvider = ({ children }) => {
     let nextCreatorId = targetItem.creatorId;
 
     if (canSyncToCloud) {
-      const normalizedTags = normalizeVisibleTags(targetItem.tags, MAX_RECORD_TAGS);
+      const normalizedTags = normalizeGroupedTags(targetItem.tags);
 
       if (targetItem.isCloudBacked && targetItem.creatorId === authUser.id) {
         let { error } = await supabase

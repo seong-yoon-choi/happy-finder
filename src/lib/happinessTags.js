@@ -27,6 +27,19 @@ export const HAPPINESS_CORE_TAG_GROUPS = HAPPINESS_TAG_GROUPS;
 
 export const HAPPINESS_TAGS = HAPPINESS_TAG_GROUPS.flatMap(group => group.tags);
 
+export const normalizeGroupedTags = (tags, fallbackTags = [], maxCount = MAX_RECORD_TAGS) => {
+  const normalizedTags = normalizeVisibleTags(tags, Infinity);
+  const normalizedFallbackTags = normalizeVisibleTags(fallbackTags, Infinity);
+
+  return HAPPINESS_TAG_GROUPS
+    .map(group => (
+      normalizedTags.find(tag => group.tags.includes(tag))
+      || normalizedFallbackTags.find(tag => group.tags.includes(tag))
+    ))
+    .filter(Boolean)
+    .slice(0, maxCount);
+};
+
 export const normalizeVisibleTags = (tags, maxCount = Infinity) => {
   if (!Array.isArray(tags)) {
     return [];
