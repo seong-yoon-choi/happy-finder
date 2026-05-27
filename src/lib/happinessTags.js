@@ -1,4 +1,4 @@
-export const MAX_RECORD_TAGS = 3;
+export const MAX_RECORD_TAGS = 4;
 
 export const HAPPINESS_TAG_GROUPS = [
   {
@@ -20,17 +20,10 @@ export const HAPPINESS_TAG_GROUPS = [
     key: 'action',
     label: '행동',
     tags: ['활동적', '휴식']
-  },
-  {
-    key: 'cost',
-    label: '비용',
-    tags: ['무료', '유료']
   }
 ];
 
-export const HAPPINESS_CORE_TAG_GROUPS = HAPPINESS_TAG_GROUPS.filter(group => group.key !== 'cost');
-
-export const HAPPINESS_COST_TAG_GROUP = HAPPINESS_TAG_GROUPS.find(group => group.key === 'cost');
+export const HAPPINESS_CORE_TAG_GROUPS = HAPPINESS_TAG_GROUPS;
 
 export const HAPPINESS_TAGS = HAPPINESS_TAG_GROUPS.flatMap(group => group.tags);
 

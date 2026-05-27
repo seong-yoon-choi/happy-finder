@@ -34,7 +34,7 @@ const HappinessCard = ({ item, onClick }) => {
   const previewImageRef = item.previewImageRef;
   const [resolvedPreviewImage, setResolvedPreviewImage] = useState(staticPreviewImage);
   const hasPreviewImage = Boolean(previewImageRef?.path || staticPreviewImage || resolvedPreviewImage);
-  const visibleTags = Array.isArray(item.tags) ? item.tags.slice(0, 3) : [];
+  const visibleTags = Array.isArray(item.tags) ? item.tags.slice(0, 4) : [];
 
   useEffect(() => {
     let isMounted = true;

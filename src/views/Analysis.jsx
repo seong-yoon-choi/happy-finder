@@ -1,7 +1,6 @@
 import React, { lazy, useMemo, useState } from 'react';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import {
-  HAPPINESS_CORE_TAG_GROUPS,
   HAPPINESS_TAG_GROUPS,
   HAPPINESS_TAGS,
   normalizeVisibleTags
@@ -32,7 +31,6 @@ const AXIS_COLORS = {
   relation: '#3f8f46',
   place: '#4d9c9f',
   time: '#d98859',
-  cost: '#f2b84b',
   action: '#6f9e45'
 };
 
@@ -191,30 +189,26 @@ const getDominantAxisTag = axis => {
   return axis.leftCount > axis.rightCount ? axis.leftTag : axis.rightTag;
 };
 
-const getAxisConfidence = axis => (
-  axis.total > 0 ? Math.abs(axis.leftPercentage - 50) * 2 : 0
-);
-
 const getAnalysisMaturity = (axisStats, totalSignals) => {
   const safeSignals = Math.max(0, Number.isFinite(totalSignals) ? totalSignals : 0);
   const coveredAxes = axisStats.filter(axis => axis.total >= 2).length;
-  const stableAxes = axisStats.filter(axis => axis.total >= 2 && getAxisConfidence(axis) >= 20).length;
+  const solidAxes = axisStats.filter(axis => axis.total >= 4).length;
 
-  if (safeSignals >= 12 && coveredAxes >= 5 && stableAxes >= 3) {
+  if (safeSignals >= 24 && coveredAxes >= 4 && solidAxes >= 4) {
     return {
       key: 'enough',
       label: '충분한 분석',
-      range: '5축 균형 확인',
-      description: '5가지 태그 축이 대부분 쌓였고 여러 축에서 반복되는 방향이 보여 현재 행복 성향을 비교적 안정적으로 해석할 수 있어요.'
+      range: '4축 충분 확인',
+      description: '4가지 태그 축이 충분히 쌓여 현재 행복 성향을 비교적 안정적으로 해석할 수 있어요.'
     };
   }
 
-  if (safeSignals >= 8 && coveredAxes >= 3 && stableAxes >= 2) {
+  if (safeSignals >= 12 && coveredAxes >= 4) {
     return {
       key: 'stable',
       label: '안정 분석',
-      range: '주요 축 확인',
-      description: '일부 핵심 축에서 반복되는 방향이 보이기 시작해 추천과 리포트의 기준이 안정되는 단계예요.'
+      range: '4축 흐름 확인',
+      description: '관계, 장소, 시간, 행동 축이 모두 보이기 시작해 추천과 리포트의 기준이 안정되는 단계예요.'
     };
   }
 
@@ -222,50 +216,35 @@ const getAnalysisMaturity = (axisStats, totalSignals) => {
     key: 'early',
     label: '초급 분석',
     range: '일부 축 확인',
-    description: '분석은 가능하지만 아직 5가지 태그 축의 분포가 충분히 고르게 쌓이지 않아 앞으로의 기록에 따라 성향이 바뀔 수 있어요.'
+    description: '분석은 가능하지만 아직 4가지 태그 축의 분포가 충분히 쌓이지 않아 앞으로의 기록에 따라 성향이 바뀔 수 있어요.'
   };
 };
 
 const getAxisStatByKey = (axisStats, key) => axisStats.find(axis => axis.key === key);
 
-const getCostLabel = costAxis => {
-  if (!costAxis || costAxis.total === 0 || Math.abs(costAxis.leftPercentage - costAxis.rightPercentage) <= 10) {
-    return '균형형';
-  }
-
-  return costAxis.leftPercentage > costAxis.rightPercentage ? '비소비형' : '소비형';
-};
-
 const getAxisSummary = axisStats => {
-  const coreTags = HAPPINESS_CORE_TAG_GROUPS.map(group => {
+  const coreTags = HAPPINESS_TAG_GROUPS.map(group => {
     const axis = getAxisStatByKey(axisStats, group.key);
     return getDominantAxisTag(axis);
   });
   const typeKey = coreTags.join('|');
-  const costAxis = getAxisStatByKey(axisStats, 'cost');
 
   return {
     coreTags,
-    costLabel: getCostLabel(costAxis),
     title: STYLE_TYPE_NAMES[typeKey] || '일상 탐색형',
     typeKey
   };
 };
 
 const getStyleProfile = axisStats => {
-  const { coreTags, costLabel, title } = getAxisSummary(axisStats);
+  const { coreTags, title } = getAxisSummary(axisStats);
   const copies = coreTags.map(tag => STYLE_AXIS_COPY[tag]).filter(Boolean);
   const [relationTag, placeTag, timeTag, actionTag] = coreTags;
-  const costCopy = {
-    비소비형: '비용을 크게 들이지 않아도 만족을 찾는 흐름이 보여, 반복 가능한 일상형 행복과 잘 맞습니다.',
-    소비형: '돈을 쓰는 경험을 보상이나 전환점으로 활용하는 흐름이 보여, 계획된 소비가 행복의 계기가 되기 쉽습니다.',
-    균형형: '비용 자체보다 상황에 맞는 선택을 더 중요하게 쓰는 편이라, 무료와 유료 행복을 균형 있게 활용할 수 있습니다.'
-  }[costLabel];
 
   return {
-    title: `${title} · ${costLabel}`,
+    title,
     overview: `${relationTag}, ${placeTag}, ${timeTag}, ${actionTag} 흐름이 함께 나타나는 행복 스타일입니다.`,
-    interpretation: `${copies.map(copy => copy.interpretation).join(' ')} ${costCopy}`,
+    interpretation: copies.map(copy => copy.interpretation).join(' '),
     recommendation: copies.map(copy => copy.recommendation).join(' '),
     strength: copies.map(copy => copy.strength).join(' '),
     caution: copies.map(copy => copy.caution).join(' ')
@@ -518,9 +497,9 @@ const Analysis = () => {
               <div className="analysis-axis-panel">
                 <div className="analysis-axis-panel-head">
                   <span className="analysis-report-signal-badge">{analysis.styleSummary.signalLabel}</span>
-                  <strong>5가지 태그 축</strong>
+                  <strong>4가지 태그 축</strong>
                 </div>
-                <div className="analysis-axis-list" aria-label="5가지 태그 축 비율">
+                <div className="analysis-axis-list" aria-label="4가지 태그 축 비율">
                   {analysis.axisStats.map(axis => (
                     <div
                       key={axis.key}
@@ -689,7 +668,7 @@ const Analysis = () => {
             <div className="analysis-maturity-modal-head">
               <div>
                 <h3 id="analysis-maturity-title">분석 단계</h3>
-                <p>5가지 태그 축이 얼마나 고르게 쌓였는지에 따라 리포트의 신뢰도를 나눠요.</p>
+                <p>4가지 태그 축이 얼마나 고르게 쌓였는지에 따라 리포트의 신뢰도를 나눠요.</p>
               </div>
             </div>
             <div className="analysis-maturity-stage-list">
@@ -697,7 +676,7 @@ const Analysis = () => {
                 {
                   label: '초급 분석',
                   range: '일부 축 확인',
-                  description: '태그 흐름은 보이지만 관계, 장소, 시간, 행동, 비용 축이 아직 고르게 쌓이지 않은 단계예요.'
+                  description: '태그 흐름은 보이지만 관계, 장소, 시간, 행동 축이 아직 고르게 쌓이지 않은 단계예요.'
                 },
                 {
                   label: '안정 분석',
@@ -706,8 +685,8 @@ const Analysis = () => {
                 },
                 {
                   label: '충분한 분석',
-                  range: '5축 균형 확인',
-                  description: '5가지 축의 분포가 충분히 쌓여 현재 행복 성향을 더 믿을 만하게 해석할 수 있는 단계예요.'
+                  range: '4축 충분 확인',
+                  description: '4가지 축의 분포가 충분히 쌓여 현재 행복 성향을 더 믿을 만하게 해석할 수 있는 단계예요.'
                 }
               ].map(stage => (
                 <article

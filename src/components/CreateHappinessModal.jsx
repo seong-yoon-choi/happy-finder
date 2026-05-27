@@ -46,6 +46,20 @@ const CreateTagIcon = () => (
 
 const createDraftHappinessId = () => `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+const getSelectedTagForGroup = (selectedTags, group) => (
+  selectedTags.find(tag => group.tags.includes(tag))
+);
+
+const getMissingTagGroups = selectedTags => (
+  HAPPINESS_TAG_GROUPS.filter(group => !getSelectedTagForGroup(selectedTags, group))
+);
+
+const getOrderedGroupTags = selectedTags => (
+  HAPPINESS_TAG_GROUPS
+    .map(group => getSelectedTagForGroup(selectedTags, group))
+    .filter(Boolean)
+);
+
 const getCreateImageErrorMessage = code => {
   switch (code) {
     case 'CAMERA_PERMISSION_DENIED':
@@ -215,8 +229,10 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    if (selectedTags.length === 0) {
-      setTagError('최소 한 개의 태그를 선택해 주세요.');
+    const missingTagGroups = getMissingTagGroups(selectedTags);
+
+    if (missingTagGroups.length > 0) {
+      setTagError(`${missingTagGroups.map(group => group.label).join(', ')} 태그를 선택해 주세요.`);
       setIsTagPickerOpen(true);
       return;
     }
@@ -254,16 +270,24 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
 
   const handleTagToggle = tag => {
     setSelectedTags(prev => {
-      if (prev.includes(tag)) {
-        return prev.filter(selectedTag => selectedTag !== tag);
+      const targetGroup = HAPPINESS_TAG_GROUPS.find(group => group.tags.includes(tag));
+
+      if (!targetGroup) {
+        return prev;
       }
 
-      if (prev.length >= MAX_RECORD_TAGS) {
+      if (prev.includes(tag)) {
         return prev;
       }
 
       setTagError('');
-      return normalizeVisibleTags([...prev, tag], MAX_RECORD_TAGS);
+      return normalizeVisibleTags(
+        getOrderedGroupTags([
+          ...prev.filter(selectedTag => !targetGroup.tags.includes(selectedTag)),
+          tag
+        ]),
+        MAX_RECORD_TAGS
+      );
     });
   };
 
@@ -450,17 +474,16 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
                           <div className="create-tag-option-grid">
                             {group.tags.map(tag => {
                               const isSelected = selectedTags.includes(tag);
-                              const isDisabled = !isSelected && selectedTags.length >= MAX_RECORD_TAGS;
 
                               return (
                                 <label
                                   key={tag}
-                                  className={`create-tag-option ${isSelected ? 'is-selected' : ''} ${isDisabled ? 'is-disabled' : ''}`}
+                                  className={`create-tag-option ${isSelected ? 'is-selected' : ''}`}
                                 >
                                   <input
-                                    type="checkbox"
+                                    type="radio"
+                                    name={`create-tag-${group.key}`}
                                     checked={isSelected}
-                                    disabled={isDisabled}
                                     onChange={() => handleTagToggle(tag)}
                                   />
                                   <span>{tag}</span>
