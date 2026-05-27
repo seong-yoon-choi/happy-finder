@@ -97,8 +97,8 @@ const EmpathyIcon = ({ isActive = false }) => (
       cx="16"
       cy="16"
       r="10"
-      fill={isActive ? '#ffe36f' : 'none'}
-      stroke={isActive ? '#8a5f00' : 'currentColor'}
+      fill={isActive ? '#ecd27a' : 'none'}
+      stroke={isActive ? '#5d5221' : 'currentColor'}
       strokeWidth="2.1"
     />
     {isActive && (
@@ -110,14 +110,14 @@ const EmpathyIcon = ({ isActive = false }) => (
     <path
       d="M11.3 13.4C11.85 12.85 12.75 12.85 13.3 13.4M18.7 13.4C19.25 12.85 20.15 12.85 20.7 13.4"
       fill="none"
-      stroke={isActive ? '#684504' : 'currentColor'}
+      stroke={isActive ? '#5d5221' : 'currentColor'}
       strokeLinecap="round"
       strokeWidth="2.15"
     />
     <path
       d="M10.7 18.7C12.65 21.2 19.35 21.2 21.3 18.7"
       fill="none"
-      stroke={isActive ? '#684504' : 'currentColor'}
+      stroke={isActive ? '#5d5221' : 'currentColor'}
       strokeLinecap="round"
       strokeWidth="2.25"
     />
