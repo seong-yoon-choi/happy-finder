@@ -518,7 +518,17 @@ const Analysis = () => {
                     >
                       <div className="analysis-axis-item-head">
                         <strong>{axis.label}</strong>
-                        <span>{axis.total > 0 ? `${axis.leftPercentage}% / ${axis.rightPercentage}%` : '데이터 대기'}</span>
+                        <div className="analysis-axis-percentages">
+                          {axis.total > 0 ? (
+                            <>
+                              <span className={axis.dominantSide === 'left' ? 'is-dominant' : ''}>{axis.leftPercentage}%</span>
+                              <span aria-hidden="true">/</span>
+                              <span className={axis.dominantSide === 'right' ? 'is-dominant' : ''}>{axis.rightPercentage}%</span>
+                            </>
+                          ) : (
+                            <span className="analysis-axis-empty">{'\uB370\uC774\uD130 \uB300\uAE30'}</span>
+                          )}
+                        </div>
                       </div>
                       <div className="analysis-axis-track" aria-hidden="true">
                         <i />

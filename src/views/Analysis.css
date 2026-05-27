@@ -224,19 +224,33 @@
 .analysis-axis-item-head strong {
     grid-column: 2;
     color: var(--text-dark);
-    font-size: 0.76rem;
+    font-size: 0.8rem;
     font-weight: 900;
     line-height: 1.2;
     text-align: center;
 }
 
-.analysis-axis-item-head span {
+.analysis-axis-percentages {
     grid-column: 3;
     justify-self: end;
-    color: var(--primary-color);
-    font-size: 0.72rem;
-    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-light);
+    font-size: 0.78rem;
+    font-weight: 800;
     line-height: 1.2;
+}
+
+.analysis-axis-percentages span {
+    color: inherit;
+    font: inherit;
+}
+
+.analysis-axis-percentages span.is-dominant {
+    color: var(--primary-color);
+    font-size: 0.86rem;
+    font-weight: 950;
 }
 
 .analysis-axis-track {
@@ -274,13 +288,14 @@
 
 .analysis-axis-labels span {
     color: var(--text-light);
-    font-size: 0.7rem;
+    font-size: 0.76rem;
     font-weight: 800;
     line-height: 1.2;
 }
 
 .analysis-axis-labels span.is-dominant {
     color: var(--primary-color);
+    font-size: 0.82rem;
     font-weight: 950;
 }
 

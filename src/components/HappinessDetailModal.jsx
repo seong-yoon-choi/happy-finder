@@ -78,28 +78,48 @@ const ShareIcon = () => (
 );
 
 const EmpathyIcon = ({ isActive = false }) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <svg
+    className={`empathy-icon ${isActive ? 'active' : ''}`}
+    viewBox="0 0 32 32"
+    aria-hidden="true"
+    focusable="false"
+  >
+    {isActive && (
+      <g className="empathy-sparkles">
+        <path d="M7 6.4L7.9 8.35L10 9.1L7.9 9.85L7 11.8L6.1 9.85L4 9.1L6.1 8.35Z" />
+        <path d="M25 4.9L25.7 6.45L27.35 7.05L25.7 7.65L25 9.2L24.3 7.65L22.65 7.05L24.3 6.45Z" />
+        <circle cx="26.3" cy="23.4" r="1.15" />
+        <circle cx="5.7" cy="22.2" r="1" />
+      </g>
+    )}
     <circle
-      cx="12"
-      cy="12"
-      r="8.25"
-      fill={isActive ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth="1.8"
+      className="empathy-face"
+      cx="16"
+      cy="16"
+      r="10"
+      fill={isActive ? '#ffe36f' : 'none'}
+      stroke={isActive ? '#8a5f00' : 'currentColor'}
+      strokeWidth="2.1"
+    />
+    {isActive && (
+      <g className="empathy-blush">
+        <circle cx="10.6" cy="18.1" r="1.55" />
+        <circle cx="21.4" cy="18.1" r="1.55" />
+      </g>
+    )}
+    <path
+      d="M11.3 13.4C11.85 12.85 12.75 12.85 13.3 13.4M18.7 13.4C19.25 12.85 20.15 12.85 20.7 13.4"
+      fill="none"
+      stroke={isActive ? '#684504' : 'currentColor'}
+      strokeLinecap="round"
+      strokeWidth="2.15"
     />
     <path
-      d="M8.25 10.2C8.65 9.75 9.35 9.75 9.75 10.2M14.25 10.2C14.65 9.75 15.35 9.75 15.75 10.2"
+      d="M10.7 18.7C12.65 21.2 19.35 21.2 21.3 18.7"
       fill="none"
-      stroke={isActive ? 'var(--background-start)' : 'currentColor'}
+      stroke={isActive ? '#684504' : 'currentColor'}
       strokeLinecap="round"
-      strokeWidth="1.8"
-    />
-    <path
-      d="M8.8 13.55C10.2 15.45 13.8 15.45 15.2 13.55"
-      fill="none"
-      stroke={isActive ? 'var(--background-start)' : 'currentColor'}
-      strokeLinecap="round"
-      strokeWidth="1.8"
+      strokeWidth="2.25"
     />
   </svg>
 );
