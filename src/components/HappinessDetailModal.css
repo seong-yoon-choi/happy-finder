@@ -200,62 +200,62 @@
     width: 60px;
     height: 60px;
     min-width: 60px;
-    border: 1.5px solid rgba(143, 132, 58, 0.48);
+    border: 0;
     border-radius: 50%;
-    background: linear-gradient(145deg, rgba(252, 247, 224, 0.86), rgba(222, 202, 126, 0.32));
-    color: #7d6b22;
+    background: transparent;
+    color: #687247;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font: inherit;
     cursor: pointer;
-    box-shadow: 0 10px 22px rgba(127, 114, 45, 0.14);
-    transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease, transform 0.16s ease;
+    box-shadow: none;
+    padding: 0;
+    transition: color 0.16s ease, transform 0.16s ease;
 }
 
 .detail-empathy-trigger:active {
-    transform: scale(0.94);
+    transform: scale(0.96);
 }
 
 .dark-theme .detail-empathy-trigger {
-    background: linear-gradient(145deg, rgba(228, 207, 122, 0.16), rgba(99, 89, 37, 0.28));
-    border-color: rgba(221, 196, 98, 0.42);
-    color: #d9c16d;
+    background: transparent;
+    color: #c1ca91;
 }
 
 .detail-empathy-trigger.active {
-    border-color: rgba(169, 151, 58, 0.82);
-    background:
-        radial-gradient(circle at 32% 25%, rgba(255, 255, 255, 0.66), transparent 24%),
-        linear-gradient(145deg, #eedb8c 0%, #d3b957 54%, #9fb25d 100%);
-    color: #c9ad42;
-    box-shadow:
-        0 12px 26px rgba(137, 127, 55, 0.24),
-        0 0 0 5px rgba(190, 177, 92, 0.13);
+    background: transparent;
+    color: #5f5125;
+    box-shadow: none;
 }
 
 .dark-theme .detail-empathy-trigger.active {
-    color: #e4ca68;
-    background:
-        radial-gradient(circle at 32% 25%, rgba(255, 255, 255, 0.34), transparent 24%),
-        linear-gradient(145deg, #d5bd62 0%, #8fa34f 100%);
-    box-shadow:
-        0 12px 26px rgba(190, 174, 78, 0.2),
-        0 0 0 5px rgba(204, 184, 87, 0.11);
+    color: #5b4f27;
+    background: transparent;
+    box-shadow: none;
 }
 
 .detail-empathy-trigger svg {
-    width: 34px;
-    height: 34px;
+    width: 58px;
+    height: 58px;
+    display: block;
 }
 
-.detail-empathy-trigger .empathy-sparkles {
-    fill: #f4df93;
-    filter: drop-shadow(0 1px 2px rgba(91, 79, 27, 0.22));
+.detail-empathy-trigger .empathy-face,
+.detail-empathy-trigger .empathy-mouth {
+    transition: fill 0.16s ease, stroke 0.16s ease;
+}
+
+.detail-empathy-trigger .empathy-eye {
+    fill: currentColor;
+}
+
+.detail-empathy-trigger .empathy-mouth {
+    stroke: currentColor;
 }
 
 .detail-empathy-trigger .empathy-blush {
-    fill: rgba(191, 120, 72, 0.34);
+    fill: rgba(187, 111, 88, 0.34);
 }
 
 .detail-empathy-copy {

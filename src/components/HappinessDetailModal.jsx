@@ -84,40 +84,27 @@ const EmpathyIcon = ({ isActive = false }) => (
     aria-hidden="true"
     focusable="false"
   >
-    {isActive && (
-      <g className="empathy-sparkles">
-        <path d="M7 6.4L7.9 8.35L10 9.1L7.9 9.85L7 11.8L6.1 9.85L4 9.1L6.1 8.35Z" />
-        <path d="M25 4.9L25.7 6.45L27.35 7.05L25.7 7.65L25 9.2L24.3 7.65L22.65 7.05L24.3 6.45Z" />
-        <circle cx="26.3" cy="23.4" r="1.15" />
-        <circle cx="5.7" cy="22.2" r="1" />
-      </g>
-    )}
     <circle
       className="empathy-face"
       cx="16"
       cy="16"
-      r="10"
-      fill={isActive ? '#ecd27a' : 'none'}
-      stroke={isActive ? '#5d5221' : 'currentColor'}
-      strokeWidth="2.1"
+      r="14"
+      fill={isActive ? '#e2b85d' : '#f4f0e3'}
+      stroke={isActive ? '#66572b' : '#8d966c'}
+      strokeWidth="1.9"
     />
     {isActive && (
       <g className="empathy-blush">
-        <circle cx="10.6" cy="18.1" r="1.55" />
-        <circle cx="21.4" cy="18.1" r="1.55" />
+        <circle cx="10.3" cy="18.1" r="1.65" />
+        <circle cx="21.7" cy="18.1" r="1.65" />
       </g>
     )}
+    <circle className="empathy-eye" cx="11.8" cy="13.3" r="1.45" />
+    <circle className="empathy-eye" cx="20.2" cy="13.3" r="1.45" />
     <path
-      d="M11.3 13.4C11.85 12.85 12.75 12.85 13.3 13.4M18.7 13.4C19.25 12.85 20.15 12.85 20.7 13.4"
+      className={`empathy-mouth ${isActive ? 'smile' : 'neutral'}`}
+      d={isActive ? 'M10.6 18.3C12.3 21.35 19.7 21.35 21.4 18.3' : 'M11.6 19.4H20.4'}
       fill="none"
-      stroke={isActive ? '#5d5221' : 'currentColor'}
-      strokeLinecap="round"
-      strokeWidth="2.15"
-    />
-    <path
-      d="M10.7 18.7C12.65 21.2 19.35 21.2 21.3 18.7"
-      fill="none"
-      stroke={isActive ? '#5d5221' : 'currentColor'}
       strokeLinecap="round"
       strokeWidth="2.25"
     />
