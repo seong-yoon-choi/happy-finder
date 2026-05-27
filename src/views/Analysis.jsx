@@ -166,6 +166,11 @@ const getAxisStats = counter => HAPPINESS_TAG_GROUPS.map(group => {
   const rightCount = counter.get(rightTag)?.count || 0;
   const total = leftCount + rightCount;
   const leftPercentage = total > 0 ? Math.round((leftCount / total) * 100) : 50;
+  const rightPercentage = total > 0 ? 100 - leftPercentage : 50;
+  const dominantSide = total <= 0 || leftCount === rightCount
+    ? 'none'
+    : leftCount > rightCount ? 'left' : 'right';
+  const dominantPercentage = dominantSide === 'right' ? rightPercentage : leftPercentage;
 
   return {
     key: group.key,
@@ -177,7 +182,9 @@ const getAxisStats = counter => HAPPINESS_TAG_GROUPS.map(group => {
     rightCount,
     total,
     leftPercentage,
-    rightPercentage: total > 0 ? 100 - leftPercentage : 50
+    rightPercentage,
+    dominantSide,
+    dominantPercentage
   };
 });
 
@@ -503,8 +510,11 @@ const Analysis = () => {
                   {analysis.axisStats.map(axis => (
                     <div
                       key={axis.key}
-                      className="analysis-axis-item"
-                      style={{ '--axis-color': axis.color, '--axis-left': `${axis.leftPercentage}%` }}
+                      className={`analysis-axis-item dominant-${axis.dominantSide}`}
+                      style={{
+                        '--axis-color': axis.color,
+                        '--axis-dominant': `${axis.dominantPercentage}%`
+                      }}
                     >
                       <div className="analysis-axis-item-head">
                         <strong>{axis.label}</strong>
@@ -514,8 +524,8 @@ const Analysis = () => {
                         <i />
                       </div>
                       <div className="analysis-axis-labels">
-                        <span>{axis.leftTag}</span>
-                        <span>{axis.rightTag}</span>
+                        <span className={axis.dominantSide === 'left' ? 'is-dominant' : ''}>{axis.leftTag}</span>
+                        <span className={axis.dominantSide === 'right' ? 'is-dominant' : ''}>{axis.rightTag}</span>
                       </div>
                     </div>
                   ))}
