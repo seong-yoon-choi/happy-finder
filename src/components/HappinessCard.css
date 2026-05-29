@@ -61,15 +61,33 @@
     min-width: 0;
 }
 
-.card-note-indicator {
+.card-status-icons {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: flex-end;
+    gap: 7px;
     margin-left: auto;
-    color: var(--primary-color);
-    font-size: clamp(1rem, 3.6vw, 1.08rem);
-    font-weight: 850;
+    flex: 0 0 auto;
+}
+
+.card-note-indicator,
+.card-empathy-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
     line-height: 1;
+}
+
+.card-note-indicator {
+    color: var(--primary-color);
+    opacity: 0.92;
+}
+
+.card-empathy-indicator {
+    color: #5f5125;
 }
 
 .card-bottom-actions {
@@ -82,9 +100,27 @@
 }
 
 .card-note-indicator svg {
-    width: 21px;
-    height: 21px;
+    width: 22px;
+    height: 22px;
     flex: 0 0 auto;
+}
+
+.card-empathy-indicator svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+.card-empathy-eye {
+    fill: currentColor;
+}
+
+.card-empathy-mouth {
+    stroke: currentColor;
+}
+
+.card-empathy-blush {
+    fill: rgba(187, 111, 88, 0.34);
 }
 
 .custom-badge {

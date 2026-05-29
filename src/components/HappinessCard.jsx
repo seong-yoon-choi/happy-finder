@@ -25,11 +25,39 @@ const NoteIcon = () => (
   </svg>
 );
 
+const CardEmpathyIcon = () => (
+  <svg className="card-empathy-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <circle
+      className="card-empathy-face"
+      cx="16"
+      cy="16"
+      r="14"
+      fill="#e2b85d"
+      stroke="#66572b"
+      strokeWidth="1.9"
+    />
+    <g className="card-empathy-blush">
+      <circle cx="10.3" cy="18.1" r="1.65" />
+      <circle cx="21.7" cy="18.1" r="1.65" />
+    </g>
+    <circle className="card-empathy-eye" cx="11.8" cy="13.3" r="1.45" />
+    <circle className="card-empathy-eye" cx="20.2" cy="13.3" r="1.45" />
+    <path
+      className="card-empathy-mouth"
+      d="M10.6 18.3C12.3 21.35 19.7 21.35 21.4 18.3"
+      fill="none"
+      strokeLinecap="round"
+      strokeWidth="2.25"
+    />
+  </svg>
+);
+
 const HappinessCard = ({ item, onClick }) => {
-  const { getItemMemos, isItemOwnedByCurrentUser } = useHappy();
+  const { getItemMemos, isItemOwnedByCurrentUser, userEmpathies } = useHappy();
   const isOwner = isItemOwnedByCurrentUser(item.id);
   const memoCount = getItemMemos(item.id).length;
   const hasMemo = memoCount > 0;
+  const isEmpathized = Boolean(userEmpathies?.[item.id]);
   const staticPreviewImage = typeof item.previewImage === 'string' ? item.previewImage.trim() : '';
   const previewImageRef = item.previewImageRef;
   const [resolvedPreviewImage, setResolvedPreviewImage] = useState(staticPreviewImage);
@@ -96,7 +124,7 @@ const HappinessCard = ({ item, onClick }) => {
           </div>
         )}
       </div>
-      {(visibleTags.length > 0 || hasMemo) && (
+      {(visibleTags.length > 0 || hasMemo || isEmpathized) && (
         <div className="card-bottom-actions">
           {visibleTags.length > 0 && (
             <div className="card-tag-list" aria-label="태그">
@@ -105,11 +133,19 @@ const HappinessCard = ({ item, onClick }) => {
               ))}
             </div>
           )}
-          {hasMemo && (
-            <span className="card-note-indicator" aria-label={`memo ${memoCount}`}>
-              <NoteIcon />
-              <span>{memoCount}</span>
-            </span>
+          {(isEmpathized || hasMemo) && (
+            <div className="card-status-icons">
+              {isEmpathized && (
+                <span className="card-empathy-indicator" aria-label="공감한 행복">
+                  <CardEmpathyIcon />
+                </span>
+              )}
+              {hasMemo && (
+                <span className="card-note-indicator" aria-label={`기록 ${memoCount}개`}>
+                  <NoteIcon />
+                </span>
+              )}
+            </div>
           )}
         </div>
       )}
