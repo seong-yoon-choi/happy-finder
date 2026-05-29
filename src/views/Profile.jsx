@@ -19,13 +19,13 @@ const ProfileFavoriteIcon = ({ isActive = false }) => (
   </svg>
 );
 
-const ProfileEmpathyIcon = ({ isActive = false }) => (
+const ProfileEmpathyIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
     <circle
       cx="12"
       cy="12"
       r="8.25"
-      fill={isActive ? 'currentColor' : 'none'}
+      fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
     />
@@ -33,7 +33,7 @@ const ProfileEmpathyIcon = ({ isActive = false }) => (
     <circle cx="14.85" cy="10.4" r="1" fill="currentColor" />
     <path
       d="M8.8 13.7C10.2 15.65 13.8 15.65 15.2 13.7"
-      stroke={isActive ? 'var(--white)' : 'currentColor'}
+      stroke="currentColor"
       strokeLinecap="round"
       strokeWidth="1.8"
     />
@@ -141,7 +141,7 @@ const Profile = () => {
           aria-pressed={activeTab === 'empathies'}
         >
           <span className="profile-tab-icon" aria-hidden="true">
-            <ProfileEmpathyIcon isActive={activeTab === 'empathies'} />
+            <ProfileEmpathyIcon />
           </span>
           <span className="profile-tab-label">내가 공감한 행복</span>
           <strong>{empathizedItems.length}</strong>

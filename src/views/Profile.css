@@ -244,11 +244,10 @@
     width: 48px;
     min-width: 48px;
     min-height: 48px;
-    display: grid;
-    grid-template-columns: 1fr;
-    justify-items: center;
+    display: inline-flex;
+    justify-content: center;
     align-items: center;
-    gap: 0;
+    gap: 6px;
     appearance: none;
     -webkit-appearance: none;
     border: 1px solid transparent;
@@ -261,15 +260,14 @@
     font-weight: 800;
     cursor: pointer;
     overflow: hidden;
-    transition: flex-basis 0.18s ease, min-width 0.18s ease, width 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+    transition: flex 0.22s ease, width 0.22s ease, min-width 0.22s ease, padding 0.22s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
 }
 
 .profile-tab-btn.active {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     width: auto;
     min-width: 0;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    justify-items: stretch;
+    justify-content: flex-start;
     gap: 8px;
     padding: 0 clamp(10px, 2.8vw, 14px);
     background: var(--white);
@@ -303,24 +301,29 @@
 
 .profile-tab-label {
     min-width: 0;
+    max-width: 0;
     white-space: nowrap;
     overflow: hidden;
-    display: none;
     align-self: center;
+    opacity: 0;
     font-size: 0.78rem;
     text-align: left;
     text-overflow: ellipsis;
+    transform: translateX(-4px);
+    transition: max-width 0.2s ease, opacity 0.16s ease, transform 0.2s ease;
 }
 
 .profile-tab-btn.active .profile-tab-label {
-    display: block;
+    max-width: 100%;
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .profile-tab-btn strong {
-    display: none;
     min-width: 24px;
     height: 24px;
     border-radius: 999px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0 8px;
@@ -328,10 +331,16 @@
     color: var(--primary-color);
     font-size: 0.78rem;
     line-height: 1;
+    opacity: 0;
+    max-width: 0;
+    transform: translateX(-4px);
+    transition: max-width 0.2s ease, opacity 0.16s ease, transform 0.2s ease;
 }
 
 .profile-tab-btn.active strong {
-    display: inline-flex;
+    max-width: 42px;
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .dark-theme .profile-tabs {
