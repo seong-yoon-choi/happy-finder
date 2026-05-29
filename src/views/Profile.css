@@ -227,8 +227,8 @@
 }
 
 .profile-tabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    align-items: center;
     gap: 8px;
     padding: 6px;
     margin-inline: var(--screen-side-padding);
@@ -240,27 +240,38 @@
 }
 
 .profile-tab-btn {
-    width: 100%;
-    min-width: 0;
-    min-height: 54px;
+    flex: 0 0 48px;
+    width: 48px;
+    min-width: 48px;
+    min-height: 48px;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: 1fr;
+    justify-items: center;
     align-items: center;
-    gap: 8px;
+    gap: 0;
     appearance: none;
     -webkit-appearance: none;
     border: 1px solid transparent;
     border-radius: clamp(16px, 4vw, 18px);
     background: transparent;
     color: var(--text-light);
-    padding: 0 clamp(10px, 2.8vw, 14px);
-    text-align: left;
-    line-height: 1.35;
+    padding: 0;
+    text-align: center;
+    line-height: 1.2;
     font-weight: 800;
     cursor: pointer;
+    overflow: hidden;
+    transition: flex-basis 0.18s ease, min-width 0.18s ease, width 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
 }
 
 .profile-tab-btn.active {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    justify-items: stretch;
+    gap: 8px;
+    padding: 0 clamp(10px, 2.8vw, 14px);
     background: var(--white);
     color: var(--primary-color);
     border-color: rgba(var(--primary-rgb), 0.3);
@@ -268,8 +279,8 @@
 }
 
 .profile-tab-icon {
-    width: 26px;
-    height: 26px;
+    width: 25px;
+    height: 25px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
@@ -285,25 +296,42 @@
     height: 17px;
 }
 
+.profile-tab-icon-text {
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
 .profile-tab-label {
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
+    display: none;
+    align-self: center;
+    font-size: 0.78rem;
+    text-align: left;
     text-overflow: ellipsis;
 }
 
+.profile-tab-btn.active .profile-tab-label {
+    display: block;
+}
+
 .profile-tab-btn strong {
-    min-width: 28px;
-    height: 28px;
+    display: none;
+    min-width: 24px;
+    height: 24px;
     border-radius: 999px;
-    display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0 8px;
     background: rgba(var(--primary-rgb), 0.14);
     color: var(--primary-color);
-    font-size: 0.9rem;
+    font-size: 0.78rem;
     line-height: 1;
+}
+
+.profile-tab-btn.active strong {
+    display: inline-flex;
 }
 
 .dark-theme .profile-tabs {
