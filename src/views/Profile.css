@@ -283,7 +283,7 @@
     padding: 0 clamp(12px, 3.2vw, 16px);
     background: var(--white);
     color: var(--primary-color);
-    border-color: rgba(var(--primary-rgb), 0.3);
+    border-color: rgba(var(--primary-rgb), 0.38);
     box-shadow: 0 8px 18px rgba(var(--primary-rgb), 0.16);
 }
 

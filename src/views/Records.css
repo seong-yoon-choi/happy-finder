@@ -78,7 +78,7 @@
     grid-template-columns: 38px 38px 54px;
     gap: 4px;
     padding: 4px;
-    border: 1px solid rgba(var(--primary-rgb), 0.16);
+    border: 1px solid rgba(var(--primary-rgb), 0.26);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.62);
     box-shadow: 0 10px 20px rgba(26, 51, 31, 0.06);
@@ -163,7 +163,7 @@
 .records-month-shift-btn {
     width: 38px;
     height: 38px;
-    border: 1px solid rgba(var(--primary-rgb), 0.26);
+    border: 1px solid rgba(var(--primary-rgb), 0.34);
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.72);
     color: var(--primary-color);
@@ -186,7 +186,7 @@
 .records-month-display {
     min-width: 142px;
     min-height: 38px;
-    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.28);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.66);
     color: var(--text-dark);
@@ -215,7 +215,7 @@
 .records-calendar-open-btn {
     width: 38px;
     height: 38px;
-    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.7);
     color: var(--primary-color);
@@ -246,7 +246,7 @@
     position: relative;
     min-width: 0;
     min-height: 58px;
-    border: 1px solid rgba(var(--primary-rgb), 0.16);
+    border: 1px solid rgba(var(--primary-rgb), 0.26);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.64);
     color: var(--text-dark);
@@ -370,7 +370,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 12px 14px;
-    border: 1px solid rgba(var(--primary-rgb), 0.16);
+    border: 1px solid rgba(var(--primary-rgb), 0.26);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.72);
     box-shadow: 0 10px 24px rgba(26, 51, 31, 0.06);
@@ -412,7 +412,7 @@
     width: min(33%, 112px);
     aspect-ratio: 1 / 1;
     align-self: center;
-    border: 1px solid rgba(var(--primary-rgb), 0.14);
+    border: 1px solid rgba(var(--primary-rgb), 0.24);
     border-radius: 14px;
     background: rgba(var(--primary-rgb), 0.08);
     overflow: hidden;
@@ -727,7 +727,7 @@
     flex: 0 0 auto;
     width: 38px;
     height: 38px;
-    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.28);
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.74);
     color: var(--text-dark);
@@ -783,7 +783,7 @@
     flex: 0 0 auto;
     width: 38px;
     height: 38px;
-    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.28);
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.74);
     color: var(--text-dark);
@@ -887,7 +887,7 @@
 .record-calendar-day {
     position: relative;
     min-height: 48px;
-    border: 1px solid rgba(var(--primary-rgb), 0.16);
+    border: 1px solid rgba(var(--primary-rgb), 0.26);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.68);
     color: var(--text-dark);
@@ -1001,7 +1001,7 @@
 
 .record-calendar-preview-row {
     width: 100%;
-    border: 1px solid rgba(var(--primary-rgb), 0.14);
+    border: 1px solid rgba(var(--primary-rgb), 0.24);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.66);
     color: inherit;
@@ -1135,7 +1135,7 @@
     flex: 0 0 auto;
     width: 38px;
     height: 38px;
-    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    border: 1px solid rgba(var(--primary-rgb), 0.28);
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.74);
     color: var(--text-dark);
