@@ -155,6 +155,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   const [submitError, setSubmitError] = useState('');
   const [fieldValidation, setFieldValidation] = useState({ title: false, description: false, pulse: 0 });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMissingImageConfirmOpen, setIsMissingImageConfirmOpen] = useState(false);
 
   const cleanupPreviewImage = image => {
     if (!image) {
@@ -187,6 +188,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     setSubmitError('');
     setFieldValidation({ title: false, description: false, pulse: 0 });
     setIsSubmitting(false);
+    setIsMissingImageConfirmOpen(false);
   };
 
   const handleClose = () => {
@@ -198,6 +200,16 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     isOpen,
     onClose: handleClose,
     historyKey: 'create-happiness'
+  });
+
+  const closeMissingImageConfirm = () => {
+    setIsMissingImageConfirmOpen(false);
+  };
+
+  const requestCloseMissingImageConfirm = useModalBackNavigation({
+    isOpen: isOpen && isMissingImageConfirmOpen,
+    onClose: closeMissingImageConfirm,
+    historyKey: 'create-image-fallback'
   });
 
   const closePreviewImage = () => {
@@ -214,8 +226,10 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     historyKey: 'create-image-viewer'
   });
 
-  const handleSubmit = async event => {
-    event.preventDefault();
+  const submitCustomHappiness = async ({ allowFallbackImage = false } = {}) => {
+    if (isSubmitting) {
+      return;
+    }
 
     const trimmedTitle = title.trim();
     const trimmedDescription = description.trim();
@@ -237,8 +251,15 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (!allowFallbackImage && !previewImage) {
+      setSubmitError('');
+      setIsMissingImageConfirmOpen(true);
+      return;
+    }
+
     setSubmitError('');
     setTagError('');
+    setIsMissingImageConfirmOpen(false);
     setFieldValidation({ title: false, description: false, pulse: 0 });
     setIsSubmitting(true);
     const result = await addCustomItem(
@@ -266,6 +287,11 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
 
     resetForm({ shouldCleanupImage: false });
     onClose();
+  };
+
+  const handleSubmit = event => {
+    event.preventDefault();
+    void submitCustomHappiness();
   };
 
   const handleTagToggle = tag => {
@@ -299,6 +325,7 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     const busyKey = `create:${source}`;
     setImageBusyTarget(busyKey);
     setImageFeedback('');
+    setIsMissingImageConfirmOpen(false);
 
     const pickResult = source === 'camera'
       ? await takeMemoPhoto()
@@ -566,6 +593,39 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
           </form>
         </div>
       </div>
+
+      {isMissingImageConfirmOpen && (
+        <div
+          className="create-image-fallback-overlay"
+          onClick={event => {
+            event.stopPropagation();
+            requestCloseMissingImageConfirm();
+          }}
+        >
+          <div
+            className="create-image-fallback-dialog"
+            onClick={event => event.stopPropagation()}
+          >
+            <img src="/happy-finder-icon.svg" alt="" aria-hidden="true" />
+            <h3>이미지 없이 저장할까요?</h3>
+            <p>이미지가 없으면 세잎 클로버 이미지로 대체됩니다.</p>
+            <div className="create-image-fallback-actions">
+              <button type="button" onClick={() => requestCloseMissingImageConfirm()}>
+                사진 추가하기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void submitCustomHappiness({ allowFallbackImage: true });
+                }}
+                disabled={isSubmitting}
+              >
+                확인하고 저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activePreviewImage && (
         <div

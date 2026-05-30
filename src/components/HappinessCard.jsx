@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
 import './HappinessCard.css';
 
+const FALLBACK_HAPPINESS_IMAGE = '/happy-finder-icon.svg';
+
 const NoteIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
@@ -61,7 +63,8 @@ const HappinessCard = ({ item, onClick }) => {
   const staticPreviewImage = typeof item.previewImage === 'string' ? item.previewImage.trim() : '';
   const previewImageRef = item.previewImageRef;
   const [resolvedPreviewImage, setResolvedPreviewImage] = useState(staticPreviewImage);
-  const hasPreviewImage = Boolean(previewImageRef?.path || staticPreviewImage || resolvedPreviewImage);
+  const hasCustomPreviewImage = Boolean(previewImageRef?.path || staticPreviewImage || resolvedPreviewImage);
+  const previewImageSrc = resolvedPreviewImage || FALLBACK_HAPPINESS_IMAGE;
   const visibleTags = Array.isArray(item.tags) ? item.tags.slice(0, 4) : [];
 
   useEffect(() => {
@@ -99,10 +102,13 @@ const HappinessCard = ({ item, onClick }) => {
 
   return (
     <div
-      className={`glass-card happiness-card compact ${hasPreviewImage ? 'with-preview-image' : ''}`}
+      className={`glass-card happiness-card compact with-preview-image ${hasCustomPreviewImage ? 'has-custom-preview' : 'has-fallback-preview'}`}
       onClick={() => onClick(item)}
     >
       <div className="happiness-card-main">
+        <div className="happiness-card-preview" aria-hidden="true">
+          <img src={previewImageSrc} alt="" loading="lazy" />
+        </div>
         <div className="happiness-card-copy">
           {item.isCustom && isOwner && (
             <div className="card-top-row">
@@ -114,15 +120,6 @@ const HappinessCard = ({ item, onClick }) => {
           <h3 className="card-title">{item.title}</h3>
           <p className="card-desc-short">{item.description}</p>
         </div>
-        {hasPreviewImage && (
-          <div className="happiness-card-preview" aria-hidden="true">
-            {resolvedPreviewImage ? (
-              <img src={resolvedPreviewImage} alt="" loading="lazy" />
-            ) : (
-              <span className="happiness-card-preview-placeholder" />
-            )}
-          </div>
-        )}
       </div>
       {(visibleTags.length > 0 || hasMemo || isEmpathized) && (
         <div className="card-bottom-actions">

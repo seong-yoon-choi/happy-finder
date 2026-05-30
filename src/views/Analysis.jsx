@@ -11,6 +11,8 @@ import './Analysis.css';
 const HappinessDetailModal = lazy(() => import('../components/HappinessDetailModal'));
 
 const ANALYSIS_MIN_SIGNAL_COUNT = 6;
+const ANALYSIS_MIN_DATE = new Date(2026, 0, 1);
+const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 const TAG_COLORS = [
   '#3f8f46',
   '#78a75b',
@@ -33,6 +35,209 @@ const AXIS_COLORS = {
   time: '#d98859',
   action: '#6f9e45'
 };
+
+const weekRangeFormatter = new Intl.DateTimeFormat('ko-KR', {
+  month: 'numeric',
+  day: 'numeric'
+});
+
+const getSafeDate = value => {
+  const date = value instanceof Date ? value : new Date(value || Date.now());
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+};
+
+const getDateKey = date => {
+  const safeDate = getSafeDate(date);
+  const year = safeDate.getFullYear();
+  const month = String(safeDate.getMonth() + 1).padStart(2, '0');
+  const day = String(safeDate.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+const addDays = (date, amount) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount);
+const addWeeks = (date, amount) => addDays(date, amount * 7);
+const getMonthStart = date => {
+  const safeDate = getSafeDate(date);
+  return new Date(safeDate.getFullYear(), safeDate.getMonth(), 1);
+};
+const getMonthIndex = date => date.getFullYear() * 12 + date.getMonth();
+const getWeekStart = value => {
+  const date = getSafeDate(value);
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
+};
+const getWeekDays = weekStartDate => Array.from({ length: 7 }, (_, index) => addDays(weekStartDate, index));
+const getAnalysisMaxDate = () => {
+  const today = new Date();
+  return getDateKey(today) < getDateKey(ANALYSIS_MIN_DATE) ? ANALYSIS_MIN_DATE : today;
+};
+const clampAnalysisMonthDate = date => {
+  const monthDate = getMonthStart(date);
+  const maxMonthDate = getMonthStart(getAnalysisMaxDate());
+
+  if (getMonthIndex(monthDate) < getMonthIndex(ANALYSIS_MIN_DATE)) {
+    return getMonthStart(ANALYSIS_MIN_DATE);
+  }
+
+  if (getMonthIndex(monthDate) > getMonthIndex(maxMonthDate)) {
+    return maxMonthDate;
+  }
+
+  return monthDate;
+};
+const clampAnalysisWeekStartDate = date => {
+  const weekStartDate = getWeekStart(date);
+  const minWeekStartDate = getWeekStart(ANALYSIS_MIN_DATE);
+  const maxWeekStartDate = getWeekStart(getAnalysisMaxDate());
+
+  if (getDateKey(weekStartDate) < getDateKey(minWeekStartDate)) {
+    return minWeekStartDate;
+  }
+
+  if (getDateKey(weekStartDate) > getDateKey(maxWeekStartDate)) {
+    return maxWeekStartDate;
+  }
+
+  return weekStartDate;
+};
+const getDefaultWeekDayKey = weekStartDate => {
+  const today = getAnalysisMaxDate();
+  const weekDays = getWeekDays(weekStartDate).filter(date => getDateKey(date) <= getDateKey(today));
+  const todayKey = getDateKey(today);
+
+  return weekDays.some(date => getDateKey(date) === todayKey)
+    ? todayKey
+    : getDateKey(weekDays[weekDays.length - 1] || weekStartDate);
+};
+const getWeekRangeLabel = weekStartDate => {
+  const weekEndDate = addDays(weekStartDate, 6);
+  return `${weekStartDate.getFullYear()}년 ${weekRangeFormatter.format(weekStartDate)} - ${weekRangeFormatter.format(weekEndDate)}`;
+};
+const getMonthWeekLabel = weekStartDate => {
+  const monthStart = getMonthStart(weekStartDate);
+  const firstWeekStart = getWeekStart(monthStart);
+  const weekNumber = Math.floor((weekStartDate.getTime() - firstWeekStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+
+  return `${weekStartDate.getMonth() + 1}월 ${weekNumber}주`;
+};
+const getSelectableAnalysisYears = () => {
+  const maxDate = getAnalysisMaxDate();
+  const years = [];
+
+  for (let year = ANALYSIS_MIN_DATE.getFullYear(); year <= maxDate.getFullYear(); year += 1) {
+    years.push(year);
+  }
+
+  return years;
+};
+const getSelectableAnalysisMonths = year => {
+  const maxMonthDate = getMonthStart(getAnalysisMaxDate());
+  const startMonth = year === ANALYSIS_MIN_DATE.getFullYear() ? ANALYSIS_MIN_DATE.getMonth() : 0;
+  const endMonth = year === maxMonthDate.getFullYear() ? maxMonthDate.getMonth() : 11;
+
+  return Array.from({ length: Math.max(0, endMonth - startMonth + 1) }, (_, index) => startMonth + index);
+};
+const getWeekOptionsForMonth = monthDate => {
+  const monthStart = clampAnalysisMonthDate(monthDate);
+  const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+  const firstWeekStart = getWeekStart(monthStart);
+  const lastWeekStart = getWeekStart(monthEnd);
+  const options = [];
+
+  for (
+    let cursor = clampAnalysisWeekStartDate(firstWeekStart);
+    getDateKey(cursor) <= getDateKey(clampAnalysisWeekStartDate(lastWeekStart));
+    cursor = addWeeks(cursor, 1)
+  ) {
+    const overlapsMonth = getWeekDays(cursor).some(date => (
+      date.getFullYear() === monthStart.getFullYear()
+      && date.getMonth() === monthStart.getMonth()
+    ));
+
+    if (overlapsMonth) {
+      options.push(cursor);
+    }
+  }
+
+  return options;
+};
+const getRecordDate = record => getSafeDate(record?.createdAt || record?.updatedAt);
+const getActivityDate = activity => getSafeDate(activity?.createdAt);
+
+const buildWeeklyActivityModel = ({ records = [], activityLog = [], weekStartDate }) => {
+  const days = getWeekDays(weekStartDate).map((date, index) => ({
+    key: getDateKey(date),
+    date,
+    label: WEEKDAY_LABELS[index],
+    dayNumber: date.getDate(),
+    recordCount: 0,
+    memoCount: 0,
+    empathyCount: 0,
+    favoriteCount: 0,
+    total: 0,
+    x: index * (100 / 6),
+    y: 84
+  }));
+  const dayMap = new Map(days.map(day => [day.key, day]));
+
+  records.forEach(record => {
+    const day = dayMap.get(getDateKey(getRecordDate(record)));
+
+    if (!day) {
+      return;
+    }
+
+    if (record.sourceType === 'list') {
+      day.memoCount += 1;
+    } else {
+      day.recordCount += 1;
+    }
+  });
+
+  activityLog.forEach(activity => {
+    const day = dayMap.get(getDateKey(getActivityDate(activity)));
+
+    if (!day) {
+      return;
+    }
+
+    if (activity.type === 'empathy') {
+      day.empathyCount += 1;
+    }
+
+    if (activity.type === 'favorite') {
+      day.favoriteCount += 1;
+    }
+  });
+
+  days.forEach(day => {
+    day.total = day.recordCount + day.memoCount + day.empathyCount + day.favoriteCount;
+  });
+
+  const maxDailyTotal = Math.max(1, ...days.map(day => day.total));
+  days.forEach(day => {
+    day.y = 84 - ((day.total / maxDailyTotal) * 58);
+  });
+
+  return {
+    days,
+    linePoints: days.map(day => `${day.x},${day.y}`).join(' '),
+    total: days.reduce((sum, day) => sum + day.total, 0)
+  };
+};
+
+const CalendarIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path
+      d="M7 4.75V7.25M17 4.75V7.25M5.75 9.25H18.25M7.25 6H16.75C18.2688 6 19.5 7.23122 19.5 8.75V17.25C19.5 18.7688 18.2688 20 16.75 20H7.25C5.73122 20 4.5 18.7688 4.5 17.25V8.75C4.5 7.23122 5.73122 6 7.25 6Z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const STYLE_TYPE_NAMES = {
   '혼자|실내|짧게|활동적': '자기 루틴 실행형',
@@ -420,6 +625,7 @@ const buildAnalysisModel = ({
 const Analysis = () => {
   const {
     authUserNickname,
+    getActivityLog,
     getAllRecords,
     getFavoriteItems,
     getMyItems,
@@ -431,8 +637,13 @@ const Analysis = () => {
   const [selectedRecommendation, setSelectedRecommendation] = useState(null);
   const [isReportExpanded, setIsReportExpanded] = useState(false);
   const [isMaturityModalOpen, setIsMaturityModalOpen] = useState(false);
+  const [selectedWeekStartDate, setSelectedWeekStartDate] = useState(() => clampAnalysisWeekStartDate(new Date()));
+  const [selectedWeekDayKey, setSelectedWeekDayKey] = useState(() => getDefaultWeekDayKey(clampAnalysisWeekStartDate(new Date())));
+  const [isWeekPickerOpen, setIsWeekPickerOpen] = useState(false);
+  const [weekPickerMonthDate, setWeekPickerMonthDate] = useState(() => clampAnalysisMonthDate(new Date()));
 
   const records = getAllRecords();
+  const activityLog = getActivityLog();
   const favoriteItems = getFavoriteItems();
   const myItems = getMyItems();
   const analysis = useMemo(
@@ -458,6 +669,24 @@ const Analysis = () => {
     ]
   );
   const analysisMaturity = getAnalysisMaturity(analysis.axisStats, analysis.totalSignals);
+  const weeklyAnalysis = useMemo(
+    () => buildWeeklyActivityModel({
+      records,
+      activityLog,
+      weekStartDate: selectedWeekStartDate
+    }),
+    [activityLog, records, selectedWeekStartDate]
+  );
+  const selectedWeekDay = weeklyAnalysis.days.find(day => day.key === selectedWeekDayKey)
+    || weeklyAnalysis.days.find(day => day.total > 0)
+    || weeklyAnalysis.days[0];
+  const minWeekStartDate = getWeekStart(ANALYSIS_MIN_DATE);
+  const maxWeekStartDate = getWeekStart(getAnalysisMaxDate());
+  const canMoveToPreviousWeek = getDateKey(selectedWeekStartDate) > getDateKey(minWeekStartDate);
+  const canMoveToNextWeek = getDateKey(selectedWeekStartDate) < getDateKey(maxWeekStartDate);
+  const weekPickerYears = getSelectableAnalysisYears();
+  const weekPickerMonths = getSelectableAnalysisMonths(weekPickerMonthDate.getFullYear());
+  const weekPickerOptions = getWeekOptionsForMonth(weekPickerMonthDate);
 
   const handleRefreshRecommendations = () => {
     setRecommendationRefreshSeed(prevSeed => prevSeed + 1);
@@ -465,6 +694,44 @@ const Analysis = () => {
 
   const handleCloseRecommendation = () => {
     setSelectedRecommendation(null);
+  };
+
+  const handleMoveAnalysisWeek = amount => {
+    const nextWeekStartDate = clampAnalysisWeekStartDate(addWeeks(selectedWeekStartDate, amount));
+
+    if (getDateKey(nextWeekStartDate) === getDateKey(selectedWeekStartDate)) {
+      return;
+    }
+
+    setSelectedWeekStartDate(nextWeekStartDate);
+    setSelectedWeekDayKey(getDefaultWeekDayKey(nextWeekStartDate));
+  };
+
+  const openWeekPicker = () => {
+    setWeekPickerMonthDate(clampAnalysisMonthDate(selectedWeekStartDate));
+    setIsWeekPickerOpen(true);
+  };
+
+  const handleChangeWeekPickerYear = event => {
+    const nextYear = Number(event.target.value);
+    const selectableMonths = getSelectableAnalysisMonths(nextYear);
+    const currentMonth = weekPickerMonthDate.getMonth();
+    const nextMonth = selectableMonths.includes(currentMonth)
+      ? currentMonth
+      : selectableMonths[selectableMonths.length - 1];
+
+    setWeekPickerMonthDate(clampAnalysisMonthDate(new Date(nextYear, nextMonth, 1)));
+  };
+
+  const handleChangeWeekPickerMonth = event => {
+    setWeekPickerMonthDate(clampAnalysisMonthDate(new Date(weekPickerMonthDate.getFullYear(), Number(event.target.value), 1)));
+  };
+
+  const handleSelectWeek = weekStartDate => {
+    const nextWeekStartDate = clampAnalysisWeekStartDate(weekStartDate);
+    setSelectedWeekStartDate(nextWeekStartDate);
+    setSelectedWeekDayKey(getDefaultWeekDayKey(nextWeekStartDate));
+    setIsWeekPickerOpen(false);
   };
 
   return (
@@ -479,15 +746,100 @@ const Analysis = () => {
         </div>
       </header>
 
-      {analysis.isLocked ? (
-        <main className="analysis-sections analysis-locked-wrap">
+      <main className="analysis-sections">
+        <section className="analysis-week-section">
+          <div className="analysis-section-head analysis-section-head-row">
+            <div>
+              <h3>이번주 행복 분석</h3>
+              <p>
+                {weeklyAnalysis.total > 0
+                  ? `이번주에는 ${weeklyAnalysis.total}개의 행복을 찾았어요!`
+                  : '이번주에는 아직 쌓인 행복 활동이 없어요.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="analysis-week-controls" aria-label="주간 행복 분석 주 선택">
+            <button
+              type="button"
+              className="analysis-week-shift-btn"
+              onClick={() => handleMoveAnalysisWeek(-1)}
+              disabled={!canMoveToPreviousWeek}
+              aria-label="이전 주 분석 보기"
+            >
+              &lt;
+            </button>
+            <button
+              type="button"
+              className="analysis-week-range-btn"
+              onClick={openWeekPicker}
+              aria-label={`${getWeekRangeLabel(selectedWeekStartDate)} 주 선택`}
+            >
+              <span>{getMonthWeekLabel(selectedWeekStartDate)}</span>
+              <strong>{getWeekRangeLabel(selectedWeekStartDate)}</strong>
+              <CalendarIcon />
+            </button>
+            <button
+              type="button"
+              className="analysis-week-shift-btn"
+              onClick={() => handleMoveAnalysisWeek(1)}
+              disabled={!canMoveToNextWeek}
+              aria-label="다음 주 분석 보기"
+            >
+              &gt;
+            </button>
+          </div>
+
+          <div className="analysis-week-chart-wrap">
+            <div className="analysis-week-chart" aria-label="요일별 행복 활동 그래프">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <polyline points={weeklyAnalysis.linePoints} />
+              </svg>
+              {weeklyAnalysis.days.map(day => (
+                <button
+                  key={day.key}
+                  type="button"
+                  className={`analysis-week-point ${selectedWeekDay?.key === day.key ? 'active' : ''}`}
+                  style={{
+                    '--point-x': `${day.x}%`,
+                    '--point-y': `${day.y}%`
+                  }}
+                  onClick={() => setSelectedWeekDayKey(day.key)}
+                  aria-label={`${day.label}요일 행복 활동 ${day.total}개`}
+                >
+                  <span>{day.total}</span>
+                  <i aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+            <div className="analysis-week-labels" aria-hidden="true">
+              {weeklyAnalysis.days.map(day => (
+                <span key={day.key}>
+                  {day.label}
+                  <small>{day.dayNumber}</small>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="analysis-week-detail">
+            <strong>{selectedWeekDay?.label}요일 활동</strong>
+            <div>
+              <span>공감 {selectedWeekDay?.empathyCount || 0}</span>
+              <span>기록 {selectedWeekDay?.recordCount || 0}</span>
+              <span>행복 메모 {selectedWeekDay?.memoCount || 0}</span>
+              <span>즐겨찾기 {selectedWeekDay?.favoriteCount || 0}</span>
+            </div>
+          </div>
+        </section>
+
+        {analysis.isLocked ? (
           <section className="analysis-locked-card">
             <strong>아직 분석 기록이 부족해요.</strong>
             <p>더 많은 기록과 공감이 필요해요. 행복 메모, 즐겨찾기, 공감이 6개 이상 쌓이면 분석을 보여줄게요.</p>
           </section>
-        </main>
       ) : (
-        <main className="analysis-sections">
+        <>
           <section className="analysis-style-section">
             <div className="analysis-section-head analysis-section-head-row analysis-report-head">
               <h3>나의 행복 분석 리포트</h3>
@@ -641,7 +993,85 @@ const Analysis = () => {
               <p className="analysis-empty-line">아직 추천할 행복이 부족해요. 기록과 공감을 조금 더 쌓아주세요.</p>
             )}
           </section>
-        </main>
+        </>
+      )}
+      </main>
+
+      {isWeekPickerOpen && (
+        <div
+          className="analysis-week-picker-overlay"
+          data-block-pull-refresh="true"
+          onClick={() => setIsWeekPickerOpen(false)}
+        >
+          <div
+            className="analysis-week-picker-modal"
+            data-block-pull-refresh="true"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="analysis-week-picker-title"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="analysis-week-picker-header">
+              <div>
+                <span>WEEK</span>
+                <h3 id="analysis-week-picker-title">연도, 월, 주 선택</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsWeekPickerOpen(false)}
+                aria-label="주 선택 닫기"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="analysis-week-picker-selects">
+              <label>
+                <span>연도</span>
+                <select
+                  value={weekPickerMonthDate.getFullYear()}
+                  onChange={handleChangeWeekPickerYear}
+                  aria-label="연도 선택"
+                >
+                  {weekPickerYears.map(year => (
+                    <option key={year} value={year}>{year}년</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>월</span>
+                <select
+                  value={weekPickerMonthDate.getMonth()}
+                  onChange={handleChangeWeekPickerMonth}
+                  aria-label="월 선택"
+                >
+                  {weekPickerMonths.map(month => (
+                    <option key={month} value={month}>{month + 1}월</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="analysis-week-picker-list">
+              {weekPickerOptions.map(weekStartDate => {
+                const weekKey = getDateKey(weekStartDate);
+                const isSelected = weekKey === getDateKey(selectedWeekStartDate);
+
+                return (
+                  <button
+                    key={weekKey}
+                    type="button"
+                    className={isSelected ? 'active' : ''}
+                    onClick={() => handleSelectWeek(weekStartDate)}
+                  >
+                    <strong>{getMonthWeekLabel(weekStartDate)}</strong>
+                    <span>{getWeekRangeLabel(weekStartDate)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
 
       {selectedRecommendation && (

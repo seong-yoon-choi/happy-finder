@@ -113,6 +113,7 @@ const APP_STORAGE_KEYS = [
   'happy_stamps',
   'happy_favorites',
   'happy_empathies',
+  'happy_activity_log',
   'happy_memos',
   'happy_free_records',
   'happy_theme',
@@ -1202,11 +1203,53 @@ const normalizeFlagMap = (value) => {
   }, {});
 };
 
+const ACTIVITY_LOG_TYPES = new Set(['favorite', 'empathy']);
+
+const normalizeActivityLog = value => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(entry => isRecord(entry) && ACTIVITY_LOG_TYPES.has(entry.type))
+    .map(entry => {
+      const createdAt = typeof entry.createdAt === 'string' && entry.createdAt.trim()
+        ? entry.createdAt.trim()
+        : new Date().toISOString();
+      const itemId = typeof entry.itemId === 'string' ? entry.itemId.trim() : '';
+
+      return {
+        id: typeof entry.id === 'string' && entry.id.trim()
+          ? entry.id.trim()
+          : `activity_${entry.type}_${itemId}_${createdAt}`,
+        type: entry.type,
+        itemId,
+        createdAt
+      };
+    })
+    .filter(entry => entry.itemId && !Number.isNaN(Date.parse(entry.createdAt)))
+    .sort((leftEntry, rightEntry) => (
+      getComparableDateValue(rightEntry.createdAt) - getComparableDateValue(leftEntry.createdAt)
+    ))
+    .slice(0, 1000);
+};
+
+const mergeActivityLogs = (baseLogs = [], incomingLogs = []) => {
+  const logMap = new Map();
+
+  [...normalizeActivityLog(baseLogs), ...normalizeActivityLog(incomingLogs)].forEach(entry => {
+    logMap.set(entry.id, entry);
+  });
+
+  return normalizeActivityLog(Array.from(logMap.values()));
+};
+
 const createCloudSnapshotPayload = ({
   items,
   userStamps,
   userFavorites,
   userEmpathies,
+  userActivityLog,
   userMemos,
   freeRecords,
   isDarkMode,
@@ -1218,6 +1261,7 @@ const createCloudSnapshotPayload = ({
   userStamps,
   userFavorites,
   userEmpathies,
+  userActivityLog: normalizeActivityLog(userActivityLog),
   userMemos,
   freeRecords,
   isDarkMode,
@@ -1233,6 +1277,7 @@ const normalizeCloudSnapshot = (payload) => {
     userStamps: nextUserStamps,
     userFavorites: normalizeFlagMap(payload?.userFavorites),
     userEmpathies: normalizeFlagMap(payload?.userEmpathies),
+    userActivityLog: normalizeActivityLog(payload?.userActivityLog),
     userMemos: normalizeMemoMap(payload?.userMemos),
     freeRecords: normalizeFreeRecords(payload?.freeRecords),
     isDarkMode: Boolean(payload?.isDarkMode),
@@ -1510,6 +1555,10 @@ const mergeCloudSnapshotsForAuthenticatedUser = ({
         ...normalizedCloudSnapshot.userEmpathies,
         ...normalizedLocalSnapshot.userEmpathies
       },
+      userActivityLog: mergeActivityLogs(
+        normalizedCloudSnapshot.userActivityLog,
+        normalizedLocalSnapshot.userActivityLog
+      ),
       userMemos: mergeMemoMap(
         normalizedCloudSnapshot.userMemos,
         normalizedLocalSnapshot.userMemos
@@ -1554,6 +1603,11 @@ export const HappyProvider = ({ children }) => {
   const [userEmpathies, setUserEmpathies] = useState(() => {
     const savedEmpathies = readStoredJson('happy_empathies', {});
     return normalizeFlagMap(savedEmpathies);
+  });
+
+  const [userActivityLog, setUserActivityLog] = useState(() => {
+    const savedActivityLog = readStoredJson('happy_activity_log', []);
+    return normalizeActivityLog(savedActivityLog);
   });
 
   const [userMemos, setUserMemos] = useState(() => {
@@ -2313,13 +2367,14 @@ export const HappyProvider = ({ children }) => {
       userStamps,
       userFavorites,
       userEmpathies,
+      userActivityLog,
       userMemos,
       freeRecords,
       isDarkMode,
       globalStreak,
       reminderSettings
     };
-  }, [items, userStamps, userFavorites, userEmpathies, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   const syncRemoteCatalogItems = useEffectEvent(async () => {
     if (!supabase) {
@@ -2369,6 +2424,7 @@ export const HappyProvider = ({ children }) => {
     setUserStamps(snapshot.userStamps);
     setUserFavorites(snapshot.userFavorites);
     setUserEmpathies(snapshot.userEmpathies);
+    setUserActivityLog(snapshot.userActivityLog);
     setUserMemos(snapshot.userMemos);
     setFreeRecords(snapshot.freeRecords);
     setIsDarkMode(snapshot.isDarkMode);
@@ -2382,7 +2438,7 @@ export const HappyProvider = ({ children }) => {
     }
 
     isApplyingCloudSnapshotRef.current = false;
-  }, [items, userStamps, userFavorites, userEmpathies, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id) {
@@ -2602,6 +2658,10 @@ export const HappyProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('happy_empathies', JSON.stringify(userEmpathies));
   }, [userEmpathies]);
+
+  useEffect(() => {
+    localStorage.setItem('happy_activity_log', JSON.stringify(userActivityLog));
+  }, [userActivityLog]);
 
   useEffect(() => {
     localStorage.setItem('happy_memos', JSON.stringify(userMemos));
@@ -2832,6 +2892,7 @@ export const HappyProvider = ({ children }) => {
         userStamps,
         userFavorites,
         userEmpathies,
+        userActivityLog,
         userMemos,
         freeRecords,
         isDarkMode,
@@ -2872,7 +2933,7 @@ export const HappyProvider = ({ children }) => {
         cloudSyncTimeoutRef.current = null;
       }
     };
-  }, [authUser?.id, items, userStamps, userFavorites, userEmpathies, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [authUser?.id, items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!isNativeNotificationPlatform()) {
@@ -3565,7 +3626,27 @@ export const HappyProvider = ({ children }) => {
     return isOwnedByCurrentUser(matchedItem, authUser);
   };
 
+  const addActivityLogEntry = (type, itemId) => {
+    if (!ACTIVITY_LOG_TYPES.has(type) || typeof itemId !== 'string' || !itemId.trim()) {
+      return;
+    }
+
+    const createdAt = new Date().toISOString();
+    const nextEntry = {
+      id: `activity_${type}_${itemId}_${createdAt}_${Math.random().toString(36).slice(2, 7)}`,
+      type,
+      itemId: itemId.trim(),
+      createdAt
+    };
+
+    setUserActivityLog(prev => normalizeActivityLog([nextEntry, ...prev]));
+  };
+
+  const getActivityLog = () => normalizeActivityLog(userActivityLog);
+
   const toggleFavorite = (itemId) => {
+    const isFavorite = Boolean(userFavorites[itemId]);
+
     setUserFavorites(prev => {
       const isFav = prev[itemId];
       if (isFav) {
@@ -3576,6 +3657,10 @@ export const HappyProvider = ({ children }) => {
         return { ...prev, [itemId]: true };
       }
     });
+
+    if (!isFavorite) {
+      addActivityLogEntry('favorite', itemId);
+    }
   };
 
   const createEmpathyOwnerNotification = async (itemId) => {
@@ -3623,6 +3708,7 @@ export const HappyProvider = ({ children }) => {
     }));
 
     if (!isEmpathized) {
+      addActivityLogEntry('empathy', itemId);
       void createEmpathyOwnerNotification(itemId);
     }
   };
@@ -3650,6 +3736,7 @@ export const HappyProvider = ({ children }) => {
     setUserStamps(emptyProgress);
     setUserFavorites({});
     setUserEmpathies({});
+    setUserActivityLog([]);
     setUserMemos({});
     setFreeRecords([]);
     setIsDarkMode(false);
@@ -4855,6 +4942,7 @@ export const HappyProvider = ({ children }) => {
       deleteMemo,
       getAllRecords,
       getFreeRecords,
+      getActivityLog,
       addFreeRecord,
       updateFreeRecord,
       deleteFreeRecord,

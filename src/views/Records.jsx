@@ -765,9 +765,12 @@ const Records = () => {
   };
 
   const openCalendar = () => {
-    const nextPreviewDate = getWeekDisplayDate(visibleWeekStartDate, selectedRecordDate);
+    const nextMonthDate = recordViewMode === 'month' ? calendarMonthDate : visibleWeekMonthDate;
+    const nextPreviewDate = recordViewMode === 'month'
+      ? getDefaultCalendarPreviewDate(nextMonthDate)
+      : getWeekDisplayDate(visibleWeekStartDate, selectedRecordDate);
 
-    setCalendarMonthDate(visibleWeekMonthDate);
+    setCalendarMonthDate(nextMonthDate);
     setCalendarPreviewDate(nextPreviewDate);
     setIsCalendarOpen(true);
   };
@@ -1188,6 +1191,14 @@ const Records = () => {
                 aria-label={`${getMonthLabel(calendarMonthDate)} 선택 변경`}
               >
                 <strong>{getMonthLabel(calendarMonthDate)}</strong>
+              </button>
+              <button
+                type="button"
+                className="records-calendar-open-btn"
+                onClick={openCalendar}
+                aria-label={`${getMonthLabel(calendarMonthDate)} 달력으로 날짜 보기`}
+              >
+                <CalendarIcon />
               </button>
               <button
                 type="button"

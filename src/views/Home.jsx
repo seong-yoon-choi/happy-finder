@@ -93,6 +93,22 @@ const itemMatchesSelectedTags = (item, selectedTags) => {
   return selectedTags.some(tag => itemTags.includes(tag));
 };
 
+const TODAY_HAPPINESS_TITLE = '오늘의 행복';
+
+const getLocalDateKey = value => {
+  const date = value ? new Date(value) : new Date();
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
 const Home = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [shouldOpenRecord, setShouldOpenRecord] = useState(false);
@@ -101,11 +117,23 @@ const Home = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
   const [sessionShuffleSeed] = useState(() => `${Date.now()}-${Math.random()}`);
-  const { items, authUserNickname } = useHappy();
+  const [isTodayComposerOpen, setIsTodayComposerOpen] = useState(false);
+  const [todayHappinessText, setTodayHappinessText] = useState('');
+  const [todayHappinessError, setTodayHappinessError] = useState(false);
+  const {
+    items,
+    authUserNickname,
+    getFreeRecords,
+    addFreeRecord,
+    updateFreeRecord
+  } = useHappy();
 
   const viewerPossessiveLabel = authUserNickname ? `${authUserNickname} 님의` : '나의';
   const normalizedSearchQuery = normalizeSearchValue(searchQuery);
   const hasActiveFilters = Boolean(normalizedSearchQuery || selectedTags.length > 0);
+  const todayDateKey = getLocalDateKey(new Date());
+  const todayHappinessRecord = getFreeRecords()
+    .find(record => getLocalDateKey(record.createdAt || record.updatedAt) === todayDateKey);
 
   const shuffledItems = useMemo(() => {
     return [...items].sort((leftItem, rightItem) => {
@@ -162,6 +190,46 @@ const Home = () => {
     setSelectedTags([]);
   }, []);
 
+  const openTodayComposer = useCallback(() => {
+    setTodayHappinessText(todayHappinessRecord?.content || '');
+    setTodayHappinessError(false);
+    setIsTodayComposerOpen(true);
+  }, [todayHappinessRecord?.content]);
+
+  const closeTodayComposer = useCallback(() => {
+    setIsTodayComposerOpen(false);
+    setTodayHappinessError(false);
+  }, []);
+
+  const handleSaveTodayHappiness = useCallback(() => {
+    const nextContent = todayHappinessText.trim();
+
+    if (!nextContent) {
+      setTodayHappinessError(true);
+      return;
+    }
+
+    if (todayHappinessRecord?.id) {
+      updateFreeRecord(
+        todayHappinessRecord.id,
+        nextContent,
+        todayHappinessRecord.images || [],
+        { title: todayHappinessRecord.title || TODAY_HAPPINESS_TITLE }
+      );
+    } else {
+      addFreeRecord(nextContent, [], { title: TODAY_HAPPINESS_TITLE });
+    }
+
+    setTodayHappinessText('');
+    setTodayHappinessError(false);
+    setIsTodayComposerOpen(false);
+  }, [
+    addFreeRecord,
+    todayHappinessRecord,
+    todayHappinessText,
+    updateFreeRecord
+  ]);
+
   const emptyStateTitle = normalizedSearchQuery
     ? '검색에 맞는 결과가 존재하지 않아요'
     : selectedTags.length > 0
@@ -177,6 +245,47 @@ const Home = () => {
         <h1>Happy Finder</h1>
         <p>오늘 {viewerPossessiveLabel} 일상에 어떤 행복을 가져와 볼까요?</p>
       </header>
+
+      <section className={`home-today-card ${todayHappinessRecord ? 'has-record' : 'is-empty'} ${isTodayComposerOpen ? 'is-editing' : ''}`}>
+        <button
+          type="button"
+          className="home-today-open"
+          onClick={openTodayComposer}
+          aria-label="오늘의 행복 바로 적기"
+        >
+          <span className="home-today-image" aria-hidden="true">
+            <img src="/happy-finder-icon.svg" alt="" />
+          </span>
+          <span className="home-today-copy">
+            <span className="home-today-label">오늘의 행복</span>
+            <strong>{todayHappinessRecord?.title || '오늘의 행복을 적어보세요'}</strong>
+            <span>{todayHappinessRecord?.content || '작게 좋았던 순간을 바로 남길 수 있어요.'}</span>
+          </span>
+        </button>
+
+        {isTodayComposerOpen && (
+          <div className="home-today-composer">
+            <textarea
+              value={todayHappinessText}
+              onChange={event => {
+                setTodayHappinessText(event.target.value);
+                setTodayHappinessError(false);
+              }}
+              placeholder="오늘 좋았던 순간을 짧게 적어보세요"
+              aria-label="오늘의 행복 입력"
+              rows={3}
+              maxLength={140}
+            />
+            {todayHappinessError && (
+              <p className="home-today-error">오늘의 행복을 먼저 적어주세요.</p>
+            )}
+            <div className="home-today-actions">
+              <button type="button" onClick={closeTodayComposer}>취소</button>
+              <button type="button" onClick={handleSaveTodayHappiness}>저장</button>
+            </div>
+          </div>
+        )}
+      </section>
 
       <div className="home-tools" aria-label="행복 목록 도구">
         <div
