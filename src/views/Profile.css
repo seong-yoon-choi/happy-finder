@@ -231,9 +231,11 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    width: fit-content;
+    max-width: calc(100% - (var(--screen-side-padding) * 2));
     padding: 6px;
-    margin-inline: var(--screen-side-padding);
-    margin-bottom: 24px;
+    margin: 0 auto 24px;
+    box-sizing: border-box;
     border: 1px solid var(--glass-border);
     border-radius: clamp(20px, 5vw, 24px);
     background: rgba(255, 255, 255, 0.58);
@@ -268,7 +270,7 @@
     flex: 0 1 auto;
     width: auto;
     min-width: 0;
-    max-width: calc(100% - 112px);
+    max-width: min(198px, calc(100vw - 146px));
     justify-content: flex-start;
     gap: 8px;
     padding: 0 clamp(10px, 2.8vw, 14px);
@@ -316,7 +318,7 @@
 }
 
 .profile-tab-btn.active .profile-tab-label {
-    max-width: 100%;
+    max-width: clamp(54px, 28vw, 112px);
     opacity: 1;
     transform: translateX(0);
 }

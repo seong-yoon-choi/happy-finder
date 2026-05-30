@@ -1,6 +1,7 @@
 import React, { lazy, useCallback, useState } from 'react';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import ShareOptionsModal from '../components/ShareOptionsModal';
+import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import {
   chooseMemoPhoto,
   deleteMemoStoredImages,
@@ -1025,6 +1026,36 @@ const Records = () => {
     });
   };
 
+  const requestCloseMonthPicker = useModalBackNavigation({
+    isOpen: isMonthPickerOpen,
+    onClose: () => setIsMonthPickerOpen(false),
+    historyKey: 'record-month-picker'
+  });
+
+  const requestCloseCalendar = useModalBackNavigation({
+    isOpen: isCalendarOpen,
+    onClose: () => setIsCalendarOpen(false),
+    historyKey: 'record-calendar'
+  });
+
+  const requestCloseRecordDetail = useModalBackNavigation({
+    isOpen: Boolean(activeRecord),
+    onClose: closeRecordDetail,
+    historyKey: 'record-detail'
+  });
+
+  const requestCloseComposer = useModalBackNavigation({
+    isOpen: isComposerOpen,
+    onClose: resetComposer,
+    historyKey: 'record-composer'
+  });
+
+  const requestCloseImage = useModalBackNavigation({
+    isOpen: Boolean(activeImage),
+    onClose: closeImage,
+    historyKey: 'record-image-viewer'
+  });
+
   return (
     <div className="view-container records-view">
       <header className="records-header">
@@ -1213,7 +1244,7 @@ const Records = () => {
         <div
           className="record-month-picker-overlay"
           data-block-pull-refresh="true"
-          onClick={() => setIsMonthPickerOpen(false)}
+          onClick={() => requestCloseMonthPicker()}
         >
           <div
             className="record-month-picker-modal"
@@ -1228,7 +1259,7 @@ const Records = () => {
               <button
                 type="button"
                 className="record-month-picker-close"
-                onClick={() => setIsMonthPickerOpen(false)}
+                onClick={() => requestCloseMonthPicker()}
                 aria-label="월 선택 닫기"
               >
                 &times;
@@ -1276,7 +1307,7 @@ const Records = () => {
         <div
           className="record-calendar-overlay"
           data-block-pull-refresh="true"
-          onClick={() => setIsCalendarOpen(false)}
+          onClick={() => requestCloseCalendar()}
         >
           <div
             className="record-calendar-modal"
@@ -1315,7 +1346,7 @@ const Records = () => {
               <button
                 type="button"
                 className="record-calendar-close"
-                onClick={() => setIsCalendarOpen(false)}
+                onClick={() => requestCloseCalendar()}
                 aria-label="달력 닫기"
               >
                 &times;
@@ -1407,7 +1438,7 @@ const Records = () => {
         <div
           className="record-detail-overlay"
           data-block-pull-refresh="true"
-          onClick={closeRecordDetail}
+          onClick={() => requestCloseRecordDetail()}
         >
           <div
             className="record-detail-modal"
@@ -1447,7 +1478,7 @@ const Records = () => {
                 <button
                   type="button"
                   className="record-detail-close"
-                  onClick={closeRecordDetail}
+                  onClick={() => requestCloseRecordDetail()}
                   aria-label="기록 상세 닫기"
                 >
                   &times;
@@ -1512,14 +1543,14 @@ const Records = () => {
       )}
 
       {isComposerOpen && (
-        <div className="record-composer-overlay" data-block-pull-refresh="true" onClick={() => resetComposer()}>
+        <div className="record-composer-overlay" data-block-pull-refresh="true" onClick={() => requestCloseComposer()}>
           <div className="record-note-modal" data-block-pull-refresh="true" onClick={event => event.stopPropagation()}>
             <div className="record-note-header">
               <div>
                 <span>NOTE</span>
                 <h3>{isEditingRecord ? '기록 수정하기' : '기록 남기기'}</h3>
               </div>
-              <button type="button" className="record-note-close" onClick={() => resetComposer()} aria-label="기록 작성 닫기">
+              <button type="button" className="record-note-close" onClick={() => requestCloseComposer()} aria-label="기록 작성 닫기">
                 &times;
               </button>
             </div>
@@ -1597,12 +1628,12 @@ const Records = () => {
       )}
 
       {activeImage && (
-        <div className="record-image-viewer-overlay" onClick={closeImage}>
+        <div className="record-image-viewer-overlay" onClick={() => requestCloseImage()}>
           <div className="record-image-viewer" onClick={event => event.stopPropagation()}>
             <button
               type="button"
               className="record-image-viewer-close"
-              onClick={closeImage}
+              onClick={() => requestCloseImage()}
               aria-label="사진 닫기"
             >
               &times;

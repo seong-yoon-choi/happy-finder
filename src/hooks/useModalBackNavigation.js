@@ -4,6 +4,7 @@ const MODAL_HISTORY_STATE_KEY = '__happyFinderModalKey';
 
 let modalHistorySequence = 0;
 const activeModalKeys = new Set();
+const activeModalStack = [];
 
 const normalizeHistoryState = state => (
   state && typeof state === 'object' ? state : {}
@@ -18,6 +19,24 @@ const getModalHistoryKey = state => {
 
 const getCurrentUrl = () => `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
+const addActiveModal = modalEntryKey => {
+  activeModalKeys.add(modalEntryKey);
+  activeModalStack.push(modalEntryKey);
+};
+
+const removeActiveModal = modalEntryKey => {
+  activeModalKeys.delete(modalEntryKey);
+
+  for (let index = activeModalStack.length - 1; index >= 0; index -= 1) {
+    if (activeModalStack[index] === modalEntryKey) {
+      activeModalStack.splice(index, 1);
+      break;
+    }
+  }
+};
+
+const getTopActiveModalKey = () => activeModalStack[activeModalStack.length - 1] || null;
+
 const useModalBackNavigation = ({
   isOpen,
   onClose,
@@ -25,6 +44,7 @@ const useModalBackNavigation = ({
   historyKey = 'modal'
 }) => {
   const onCloseRef = useRef(onClose);
+  const canCloseRef = useRef(canClose);
   const afterCloseRef = useRef(null);
   const modalEntryKeyRef = useRef(null);
   const hasHistoryEntryRef = useRef(false);
@@ -33,6 +53,10 @@ const useModalBackNavigation = ({
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    canCloseRef.current = canClose;
+  }, [canClose]);
 
   const clearPendingCleanup = useCallback(() => {
     if (!cleanupTimeoutRef.current) {
@@ -55,7 +79,7 @@ const useModalBackNavigation = ({
   }, []);
 
   const requestClose = useCallback(afterClose => {
-    if (!canClose) {
+    if (!canCloseRef.current) {
       return;
     }
 
@@ -78,10 +102,10 @@ const useModalBackNavigation = ({
     hasHistoryEntryRef.current = false;
     modalEntryKeyRef.current = null;
     finalizeClose();
-  }, [canClose, clearPendingCleanup, finalizeClose]);
+  }, [clearPendingCleanup, finalizeClose]);
 
   useEffect(() => {
-    if (!isOpen || !canClose || typeof window === 'undefined') {
+    if (!isOpen || !canCloseRef.current || typeof window === 'undefined') {
       return undefined;
     }
 
@@ -95,7 +119,7 @@ const useModalBackNavigation = ({
 
     modalEntryKeyRef.current = modalEntryKey;
     hasHistoryEntryRef.current = true;
-    activeModalKeys.add(modalEntryKey);
+    addActiveModal(modalEntryKey);
 
     window.history[shouldReplaceCurrentEntry ? 'replaceState' : 'pushState'](
       {
@@ -111,15 +135,31 @@ const useModalBackNavigation = ({
         return;
       }
 
+      if (getTopActiveModalKey() !== modalEntryKey) {
+        return;
+      }
+
       clearPendingCleanup();
 
       if (getModalHistoryKey(window.history.state) === modalEntryKey) {
         return;
       }
 
+      if (!canCloseRef.current) {
+        window.history.pushState(
+          {
+            ...normalizeHistoryState(window.history.state),
+            [MODAL_HISTORY_STATE_KEY]: modalEntryKey
+          },
+          '',
+          getCurrentUrl()
+        );
+        return;
+      }
+
       hasHistoryEntryRef.current = false;
       modalEntryKeyRef.current = null;
-      activeModalKeys.delete(modalEntryKey);
+      removeActiveModal(modalEntryKey);
       finalizeClose();
     };
 
@@ -131,14 +171,14 @@ const useModalBackNavigation = ({
       clearPendingCleanup();
 
       if (!hasHistoryEntryRef.current || modalEntryKeyRef.current !== modalEntryKey) {
-        activeModalKeys.delete(modalEntryKey);
+        removeActiveModal(modalEntryKey);
         return;
       }
 
       const shouldRewindHistory = getModalHistoryKey(window.history.state) === modalEntryKey;
       hasHistoryEntryRef.current = false;
       modalEntryKeyRef.current = null;
-      activeModalKeys.delete(modalEntryKey);
+      removeActiveModal(modalEntryKey);
 
       if (shouldRewindHistory) {
         cleanupTimeoutRef.current = window.setTimeout(() => {
@@ -150,7 +190,7 @@ const useModalBackNavigation = ({
         }, 0);
       }
     };
-  }, [canClose, clearPendingCleanup, finalizeClose, historyKey, isOpen]);
+  }, [clearPendingCleanup, finalizeClose, historyKey, isOpen]);
 
   return requestClose;
 };
