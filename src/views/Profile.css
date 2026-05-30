@@ -230,23 +230,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    width: fit-content;
-    max-width: calc(100% - (var(--screen-side-padding) * 2));
-    padding: 6px;
+    gap: clamp(8px, 2.4vw, 10px);
+    width: calc(100% - (var(--screen-side-padding) * 2));
+    max-width: 430px;
+    padding: 7px;
     margin: 0 auto 24px;
     box-sizing: border-box;
     border: 1px solid var(--glass-border);
-    border-radius: clamp(20px, 5vw, 24px);
+    border-radius: clamp(22px, 5.5vw, 26px);
     background: rgba(255, 255, 255, 0.58);
     box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.1);
 }
 
 .profile-tab-btn {
-    flex: 0 0 48px;
-    width: 48px;
-    min-width: 48px;
-    min-height: 48px;
+    flex: 0 0 clamp(54px, 15vw, 60px);
+    width: clamp(54px, 15vw, 60px);
+    min-width: 0;
+    min-height: clamp(54px, 15vw, 60px);
     display: inline-flex;
     justify-content: center;
     align-items: center;
@@ -263,17 +263,24 @@
     font-weight: 800;
     cursor: pointer;
     overflow: hidden;
-    transition: flex-basis 0.22s ease, width 0.22s ease, min-width 0.22s ease, max-width 0.22s ease, padding 0.22s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+    transition:
+        flex-grow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+        flex-basis 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+        padding 0.24s ease,
+        background 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        color 0.18s ease;
 }
 
 .profile-tab-btn.active {
-    flex: 0 1 auto;
+    flex: 1 1 0;
     width: auto;
     min-width: 0;
-    max-width: min(198px, calc(100vw - 146px));
     justify-content: flex-start;
-    gap: 8px;
-    padding: 0 clamp(10px, 2.8vw, 14px);
+    gap: clamp(8px, 2.2vw, 10px);
+    padding: 0 clamp(12px, 3.2vw, 16px);
     background: var(--white);
     color: var(--primary-color);
     border-color: rgba(var(--primary-rgb), 0.3);
@@ -281,8 +288,8 @@
 }
 
 .profile-tab-icon {
-    width: 25px;
-    height: 25px;
+    width: clamp(30px, 8vw, 34px);
+    height: clamp(30px, 8vw, 34px);
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
@@ -291,41 +298,47 @@
     color: var(--primary-color);
     line-height: 1;
     flex-shrink: 0;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), background 0.18s ease, color 0.18s ease;
 }
 
 .profile-tab-icon svg {
-    width: 17px;
-    height: 17px;
+    width: clamp(20px, 5.6vw, 23px);
+    height: clamp(20px, 5.6vw, 23px);
 }
 
 .profile-tab-icon-text {
-    font-size: 1.1rem;
+    font-size: clamp(1.22rem, 4vw, 1.38rem);
     font-weight: 900;
 }
 
+.profile-tab-btn.active .profile-tab-icon {
+    transform: scale(1.04);
+}
+
 .profile-tab-label {
+    flex: 1 1 auto;
     min-width: 0;
     max-width: 0;
     white-space: nowrap;
     overflow: hidden;
     align-self: center;
     opacity: 0;
-    font-size: 0.78rem;
+    font-size: clamp(0.84rem, 2.8vw, 0.92rem);
     text-align: left;
     text-overflow: ellipsis;
     transform: translateX(-4px);
-    transition: max-width 0.2s ease, opacity 0.16s ease, transform 0.2s ease;
+    transition: max-width 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease 0.04s, transform 0.24s ease;
 }
 
 .profile-tab-btn.active .profile-tab-label {
-    max-width: clamp(54px, 28vw, 112px);
+    max-width: clamp(44px, 26vw, 132px);
     opacity: 1;
     transform: translateX(0);
 }
 
 .profile-tab-btn strong {
     min-width: 0;
-    height: 24px;
+    height: 26px;
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
@@ -333,18 +346,19 @@
     padding: 0;
     background: rgba(var(--primary-rgb), 0.14);
     color: var(--primary-color);
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     line-height: 1;
     opacity: 0;
     max-width: 0;
     transform: translateX(-4px);
-    transition: max-width 0.2s ease, opacity 0.16s ease, transform 0.2s ease;
+    flex-shrink: 0;
+    transition: max-width 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.18s ease 0.04s, transform 0.24s ease, padding 0.2s ease;
 }
 
 .profile-tab-btn.active strong {
-    min-width: 24px;
-    max-width: 42px;
-    padding: 0 8px;
+    min-width: 26px;
+    max-width: 46px;
+    padding: 0 9px;
     opacity: 1;
     transform: translateX(0);
 }
