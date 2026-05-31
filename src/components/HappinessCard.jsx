@@ -60,6 +60,7 @@ const HappinessCard = ({ item, onClick }) => {
   const memoCount = getItemMemos(item.id).length;
   const hasMemo = memoCount > 0;
   const isEmpathized = Boolean(userEmpathies?.[item.id]);
+  const statusIconCount = Number(isEmpathized) + Number(hasMemo);
   const staticPreviewImage = typeof item.previewImage === 'string' ? item.previewImage.trim() : '';
   const previewImageRef = item.previewImageRef;
   const [resolvedPreviewImage, setResolvedPreviewImage] = useState(staticPreviewImage);
@@ -102,7 +103,7 @@ const HappinessCard = ({ item, onClick }) => {
 
   return (
     <div
-      className={`glass-card happiness-card compact with-preview-image ${hasCustomPreviewImage ? 'has-custom-preview' : 'has-fallback-preview'}`}
+      className={`glass-card happiness-card compact with-preview-image ${hasCustomPreviewImage ? 'has-custom-preview' : 'has-fallback-preview'} ${statusIconCount > 0 ? 'has-status-icons' : ''} ${statusIconCount > 1 ? 'has-two-status-icons' : ''}`}
       onClick={() => onClick(item)}
     >
       <div className="happiness-card-main">
