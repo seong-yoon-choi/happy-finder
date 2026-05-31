@@ -311,11 +311,11 @@ const Home = () => {
           </span>
           <span className="home-today-copy">
             <span className="home-today-label">오늘의 행복</span>
-            <strong className={todayHappinessRecord?.title ? '' : 'is-placeholder'}>
-              {todayHappinessRecord?.title || ' '}
+            <strong className={todayHappinessRecord?.title ? '' : 'home-today-empty-title'}>
+              {todayHappinessRecord?.title || '오늘의 행복이 아직 없어요'}
             </strong>
-            <span className={todayHappinessRecord?.content ? '' : 'is-placeholder'}>
-              {todayHappinessRecord?.content || ' '}
+            <span className={todayHappinessRecord?.content ? '' : 'home-today-empty-copy'}>
+              {todayHappinessRecord?.content || '눌러서 오늘 좋았던 순간을 가볍게 남겨보세요.'}
             </span>
           </span>
         </button>
