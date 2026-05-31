@@ -119,10 +119,6 @@ const HappinessCard = ({ item, onClick }) => {
           )}
           <h3 className="card-title">{item.title}</h3>
           <p className="card-desc-short">{item.description}</p>
-        </div>
-      </div>
-      {(visibleTags.length > 0 || hasMemo || isEmpathized) && (
-        <div className="card-bottom-actions">
           {visibleTags.length > 0 && (
             <div className="card-tag-list" aria-label="태그">
               {visibleTags.map(tag => (
@@ -130,19 +126,19 @@ const HappinessCard = ({ item, onClick }) => {
               ))}
             </div>
           )}
-          {(isEmpathized || hasMemo) && (
-            <div className="card-status-icons">
-              {isEmpathized && (
-                <span className="card-empathy-indicator" aria-label="공감한 행복">
-                  <CardEmpathyIcon />
-                </span>
-              )}
-              {hasMemo && (
-                <span className="card-note-indicator" aria-label={`기록 ${memoCount}개`}>
-                  <NoteIcon />
-                </span>
-              )}
-            </div>
+        </div>
+      </div>
+      {(isEmpathized || hasMemo) && (
+        <div className="card-status-icons">
+          {isEmpathized && (
+            <span className="card-empathy-indicator" aria-label="공감한 행복">
+              <CardEmpathyIcon />
+            </span>
+          )}
+          {hasMemo && (
+            <span className="card-note-indicator" aria-label={`기록 ${memoCount}개`}>
+              <NoteIcon />
+            </span>
           )}
         </div>
       )}
