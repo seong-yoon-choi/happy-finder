@@ -175,7 +175,7 @@ const buildWeeklyActivityModel = ({ records = [], activityLog = [], weekStartDat
     empathyCount: 0,
     favoriteCount: 0,
     total: 0,
-    x: index * (100 / 6),
+    x: 8 + (index * (84 / 6)),
     y: 84
   }));
   const dayMap = new Map(days.map(day => [day.key, day]));
@@ -217,6 +217,8 @@ const buildWeeklyActivityModel = ({ records = [], activityLog = [], weekStartDat
   const maxDailyTotal = Math.max(1, ...days.map(day => day.total));
   days.forEach(day => {
     day.y = 84 - ((day.total / maxDailyTotal) * 58);
+    day.tooltipX = Math.min(82, Math.max(18, day.x));
+    day.tooltipY = Math.max(48, day.y);
   });
 
   return {
@@ -811,6 +813,21 @@ const Analysis = () => {
                   <i aria-hidden="true" />
                 </button>
               ))}
+              {selectedWeekDay && (
+                <div
+                  className="analysis-week-tooltip"
+                  style={{
+                    '--tooltip-x': `${selectedWeekDay.tooltipX}%`,
+                    '--tooltip-y': `${selectedWeekDay.tooltipY}%`
+                  }}
+                >
+                  <strong>{selectedWeekDay.label}요일 활동</strong>
+                  <span>공감 {selectedWeekDay.empathyCount}</span>
+                  <span>기록 {selectedWeekDay.recordCount}</span>
+                  <span>행복 메모 {selectedWeekDay.memoCount}</span>
+                  <span>즐겨찾기 {selectedWeekDay.favoriteCount}</span>
+                </div>
+              )}
             </div>
             <div className="analysis-week-labels" aria-hidden="true">
               {weeklyAnalysis.days.map(day => (
@@ -822,15 +839,6 @@ const Analysis = () => {
             </div>
           </div>
 
-          <div className="analysis-week-detail">
-            <strong>{selectedWeekDay?.label}요일 활동</strong>
-            <div>
-              <span>공감 {selectedWeekDay?.empathyCount || 0}</span>
-              <span>기록 {selectedWeekDay?.recordCount || 0}</span>
-              <span>행복 메모 {selectedWeekDay?.memoCount || 0}</span>
-              <span>즐겨찾기 {selectedWeekDay?.favoriteCount || 0}</span>
-            </div>
-          </div>
         </section>
 
         {analysis.isLocked ? (

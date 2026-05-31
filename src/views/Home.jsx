@@ -1,9 +1,11 @@
-import React, { lazy, useCallback, useMemo, useState } from 'react';
+import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import CreateHappinessModal from '../components/CreateHappinessModal';
 import HappinessCard from '../components/HappinessCard';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { HAPPINESS_TAG_GROUPS, normalizeVisibleTags } from '../lib/happinessTags';
+import { getMemoImageSrc } from '../lib/memoImages';
+import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
 import './Home.css';
 
@@ -109,6 +111,47 @@ const getLocalDateKey = value => {
   return `${year}-${month}-${day}`;
 };
 
+const TodayHappinessImage = ({ record }) => {
+  const previewImage = Array.isArray(record?.images) ? record.images[0] : null;
+  const [src, setSrc] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadImage = async () => {
+      if (!previewImage) {
+        setSrc('');
+        return;
+      }
+
+      const nextSrc = await getMemoImageSrc({
+        image: previewImage,
+        supabase
+      });
+
+      if (isMounted) {
+        setSrc(nextSrc);
+      }
+    };
+
+    void loadImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [previewImage]);
+
+  if (src) {
+    return <img src={src} alt="" loading="lazy" />;
+  }
+
+  if (record) {
+    return <img className="is-fallback" src="/happy-finder-icon.svg" alt="" loading="lazy" />;
+  }
+
+  return <span className="home-today-image-blank" aria-hidden="true" />;
+};
+
 const Home = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [shouldOpenRecord, setShouldOpenRecord] = useState(false);
@@ -117,9 +160,13 @@ const Home = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
   const [sessionShuffleSeed] = useState(() => `${Date.now()}-${Math.random()}`);
-  const [isTodayComposerOpen, setIsTodayComposerOpen] = useState(false);
-  const [todayHappinessText, setTodayHappinessText] = useState('');
-  const [todayHappinessError, setTodayHappinessError] = useState(false);
+  const [isTodayRecordModalOpen, setIsTodayRecordModalOpen] = useState(false);
+  const [todayHappinessTitle, setTodayHappinessTitle] = useState('');
+  const [todayHappinessContent, setTodayHappinessContent] = useState('');
+  const [todayHappinessValidation, setTodayHappinessValidation] = useState({
+    title: false,
+    content: false
+  });
   const {
     items,
     authUserNickname,
@@ -190,22 +237,33 @@ const Home = () => {
     setSelectedTags([]);
   }, []);
 
-  const openTodayComposer = useCallback(() => {
-    setTodayHappinessText(todayHappinessRecord?.content || '');
-    setTodayHappinessError(false);
-    setIsTodayComposerOpen(true);
-  }, [todayHappinessRecord?.content]);
+  const openTodayRecordModal = () => {
+    setTodayHappinessTitle(todayHappinessRecord?.title || '');
+    setTodayHappinessContent(todayHappinessRecord?.content || '');
+    setTodayHappinessValidation({ title: false, content: false });
+    setIsTodayRecordModalOpen(true);
+  };
 
-  const closeTodayComposer = useCallback(() => {
-    setIsTodayComposerOpen(false);
-    setTodayHappinessError(false);
-  }, []);
+  const closeTodayRecordModal = () => {
+    setIsTodayRecordModalOpen(false);
+    setTodayHappinessValidation({ title: false, content: false });
+  };
 
-  const handleSaveTodayHappiness = useCallback(() => {
-    const nextContent = todayHappinessText.trim();
+  const requestCloseTodayRecordModal = useModalBackNavigation({
+    isOpen: isTodayRecordModalOpen,
+    onClose: closeTodayRecordModal,
+    historyKey: 'home-today-record'
+  });
 
-    if (!nextContent) {
-      setTodayHappinessError(true);
+  const handleSaveTodayHappiness = () => {
+    const nextTitle = todayHappinessTitle.trim();
+    const nextContent = todayHappinessContent.trim();
+
+    if (!nextTitle || !nextContent) {
+      setTodayHappinessValidation({
+        title: !nextTitle,
+        content: !nextContent
+      });
       return;
     }
 
@@ -214,21 +272,16 @@ const Home = () => {
         todayHappinessRecord.id,
         nextContent,
         todayHappinessRecord.images || [],
-        { title: todayHappinessRecord.title || TODAY_HAPPINESS_TITLE }
+        { title: nextTitle }
       );
     } else {
-      addFreeRecord(nextContent, [], { title: TODAY_HAPPINESS_TITLE });
+      addFreeRecord(nextContent, [], { title: nextTitle || TODAY_HAPPINESS_TITLE });
     }
 
-    setTodayHappinessText('');
-    setTodayHappinessError(false);
-    setIsTodayComposerOpen(false);
-  }, [
-    addFreeRecord,
-    todayHappinessRecord,
-    todayHappinessText,
-    updateFreeRecord
-  ]);
+    setTodayHappinessTitle('');
+    setTodayHappinessContent('');
+    closeTodayRecordModal();
+  };
 
   const emptyStateTitle = normalizedSearchQuery
     ? '검색에 맞는 결과가 존재하지 않아요'
@@ -246,45 +299,26 @@ const Home = () => {
         <p>오늘 {viewerPossessiveLabel} 일상에 어떤 행복을 가져와 볼까요?</p>
       </header>
 
-      <section className={`home-today-card ${todayHappinessRecord ? 'has-record' : 'is-empty'} ${isTodayComposerOpen ? 'is-editing' : ''}`}>
+      <section className={`home-today-card ${todayHappinessRecord ? 'has-record' : 'is-empty'}`}>
         <button
           type="button"
           className="home-today-open"
-          onClick={openTodayComposer}
-          aria-label="오늘의 행복 바로 적기"
+          onClick={openTodayRecordModal}
+          aria-label="오늘의 행복 기록하기"
         >
           <span className="home-today-image" aria-hidden="true">
-            <img src="/happy-finder-icon.svg" alt="" />
+            <TodayHappinessImage record={todayHappinessRecord} />
           </span>
           <span className="home-today-copy">
             <span className="home-today-label">오늘의 행복</span>
-            <strong>{todayHappinessRecord?.title || '오늘의 행복을 적어보세요'}</strong>
-            <span>{todayHappinessRecord?.content || '작게 좋았던 순간을 바로 남길 수 있어요.'}</span>
+            <strong className={todayHappinessRecord?.title ? '' : 'is-placeholder'}>
+              {todayHappinessRecord?.title || ' '}
+            </strong>
+            <span className={todayHappinessRecord?.content ? '' : 'is-placeholder'}>
+              {todayHappinessRecord?.content || ' '}
+            </span>
           </span>
         </button>
-
-        {isTodayComposerOpen && (
-          <div className="home-today-composer">
-            <textarea
-              value={todayHappinessText}
-              onChange={event => {
-                setTodayHappinessText(event.target.value);
-                setTodayHappinessError(false);
-              }}
-              placeholder="오늘 좋았던 순간을 짧게 적어보세요"
-              aria-label="오늘의 행복 입력"
-              rows={3}
-              maxLength={140}
-            />
-            {todayHappinessError && (
-              <p className="home-today-error">오늘의 행복을 먼저 적어주세요.</p>
-            )}
-            <div className="home-today-actions">
-              <button type="button" onClick={closeTodayComposer}>취소</button>
-              <button type="button" onClick={handleSaveTodayHappiness}>저장</button>
-            </div>
-          </div>
-        )}
       </section>
 
       <div className="home-tools" aria-label="행복 목록 도구">
@@ -363,6 +397,67 @@ const Home = () => {
           </div>
         )}
       </div>
+
+      {isTodayRecordModalOpen && (
+        <div
+          className="home-today-modal-overlay"
+          data-block-pull-refresh="true"
+          onClick={() => requestCloseTodayRecordModal()}
+        >
+          <div
+            className="home-today-modal"
+            data-block-pull-refresh="true"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="home-today-modal-title"
+            onClick={event => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="home-today-modal-close"
+              onClick={() => requestCloseTodayRecordModal()}
+              aria-label="오늘의 행복 닫기"
+            >
+              &times;
+            </button>
+            <div className="home-today-modal-head">
+              <span>오늘의 행복</span>
+              <h2 id="home-today-modal-title">오늘 좋았던 순간을 남겨보세요</h2>
+            </div>
+            <div className="home-today-modal-image" aria-hidden="true">
+              <TodayHappinessImage record={todayHappinessRecord} />
+            </div>
+            <input
+              className={todayHappinessValidation.title ? 'has-error' : ''}
+              type="text"
+              value={todayHappinessTitle}
+              onChange={event => {
+                setTodayHappinessTitle(event.target.value);
+                setTodayHappinessValidation(prev => ({ ...prev, title: false }));
+              }}
+              placeholder={todayHappinessValidation.title ? '제목을 적어주세요' : '제목'}
+              aria-label="오늘의 행복 제목"
+              maxLength={30}
+            />
+            <textarea
+              className={todayHappinessValidation.content ? 'has-error' : ''}
+              value={todayHappinessContent}
+              onChange={event => {
+                setTodayHappinessContent(event.target.value);
+                setTodayHappinessValidation(prev => ({ ...prev, content: false }));
+              }}
+              placeholder={todayHappinessValidation.content ? '내용을 적어주세요' : '내용'}
+              aria-label="오늘의 행복 내용"
+              rows={5}
+              maxLength={300}
+            />
+            <div className="home-today-modal-actions">
+              <button type="button" onClick={() => requestCloseTodayRecordModal()}>취소</button>
+              <button type="button" onClick={handleSaveTodayHappiness}>기록에 저장</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedCard && (
         <LazyLoadBoundary

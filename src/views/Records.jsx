@@ -1222,12 +1222,12 @@ const Records = () => {
                     onClick={() => openTimelineEntry(record)}
                     aria-label={`${getTimelineEntryTitle(record)} ${activeTabLabel} 전체 보기`}
                   >
+                    <RecordPreviewThumb images={record.images} />
                     <div className="record-preview-content">
                       <time>{formatRecordDateTime(record)}</time>
                       <h3>{getTimelineEntryTitle(record)}</h3>
                       <p>{getRecordSnippet(record.content)}</p>
                     </div>
-                    <RecordPreviewThumb images={record.images} />
                   </button>
                 </article>
               ))}
@@ -1426,12 +1426,12 @@ const Records = () => {
                       className="record-calendar-preview-row"
                       onClick={() => openTimelineEntry(record)}
                     >
+                      <RecordPreviewThumb images={record.images} />
                       <div className="record-calendar-preview-content">
                         <time>{formatRecordDateTime(record)}</time>
                         <strong>{getTimelineEntryTitle(record)}</strong>
                         <p>{getRecordSnippet(record.content)}</p>
                       </div>
-                      <RecordPreviewThumb images={record.images} />
                     </button>
                   ))}
                 </div>
