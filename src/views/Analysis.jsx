@@ -163,6 +163,18 @@ const getWeekOptionsForMonth = monthDate => {
 };
 const getRecordDate = record => getSafeDate(record?.createdAt || record?.updatedAt);
 const getActivityDate = activity => getSafeDate(activity?.createdAt);
+const getWeekPointX = index => (100 / 14) + (index * (100 / 7));
+const getWeekTooltipPlacement = index => {
+  if (index === 0) {
+    return 'start';
+  }
+
+  if (index === 6) {
+    return 'end';
+  }
+
+  return 'center';
+};
 
 const buildWeeklyActivityModel = ({ records = [], activityLog = [], weekStartDate }) => {
   const days = getWeekDays(weekStartDate).map((date, index) => ({
@@ -175,8 +187,9 @@ const buildWeeklyActivityModel = ({ records = [], activityLog = [], weekStartDat
     empathyCount: 0,
     favoriteCount: 0,
     total: 0,
-    x: 8 + (index * (84 / 6)),
-    y: 84
+    x: getWeekPointX(index),
+    y: 84,
+    tooltipPlacement: getWeekTooltipPlacement(index)
   }));
   const dayMap = new Map(days.map(day => [day.key, day]));
 
@@ -217,8 +230,8 @@ const buildWeeklyActivityModel = ({ records = [], activityLog = [], weekStartDat
   const maxDailyTotal = Math.max(1, ...days.map(day => day.total));
   days.forEach(day => {
     day.y = 84 - ((day.total / maxDailyTotal) * 58);
-    day.tooltipX = Math.min(82, Math.max(18, day.x));
-    day.tooltipY = Math.max(48, day.y);
+    day.tooltipX = day.x;
+    day.tooltipY = day.y;
   });
 
   return {
@@ -679,9 +692,9 @@ const Analysis = () => {
     }),
     [activityLog, records, selectedWeekStartDate]
   );
-  const selectedWeekDay = weeklyAnalysis.days.find(day => day.key === selectedWeekDayKey)
-    || weeklyAnalysis.days.find(day => day.total > 0)
-    || weeklyAnalysis.days[0];
+  const selectedWeekDay = selectedWeekDayKey
+    ? weeklyAnalysis.days.find(day => day.key === selectedWeekDayKey)
+    : null;
   const minWeekStartDate = getWeekStart(ANALYSIS_MIN_DATE);
   const maxWeekStartDate = getWeekStart(getAnalysisMaxDate());
   const canMoveToPreviousWeek = getDateKey(selectedWeekStartDate) > getDateKey(minWeekStartDate);
@@ -777,7 +790,6 @@ const Analysis = () => {
               onClick={openWeekPicker}
               aria-label={`${getWeekRangeLabel(selectedWeekStartDate)} 주 선택`}
             >
-              <span>{getMonthWeekLabel(selectedWeekStartDate)}</span>
               <strong>{getWeekRangeLabel(selectedWeekStartDate)}</strong>
               <CalendarIcon />
             </button>
@@ -793,7 +805,11 @@ const Analysis = () => {
           </div>
 
           <div className="analysis-week-chart-wrap">
-            <div className="analysis-week-chart" aria-label="요일별 행복 활동 그래프">
+            <div
+              className="analysis-week-chart"
+              aria-label="요일별 행복 활동 그래프"
+              onClick={() => setSelectedWeekDayKey(null)}
+            >
               <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
                 <polyline points={weeklyAnalysis.linePoints} />
               </svg>
@@ -806,7 +822,10 @@ const Analysis = () => {
                     '--point-x': `${day.x}%`,
                     '--point-y': `${day.y}%`
                   }}
-                  onClick={() => setSelectedWeekDayKey(day.key)}
+                  onClick={event => {
+                    event.stopPropagation();
+                    setSelectedWeekDayKey(day.key);
+                  }}
                   aria-label={`${day.label}요일 행복 활동 ${day.total}개`}
                 >
                   <span>{day.total}</span>
@@ -820,6 +839,7 @@ const Analysis = () => {
                     '--tooltip-x': `${selectedWeekDay.tooltipX}%`,
                     '--tooltip-y': `${selectedWeekDay.tooltipY}%`
                   }}
+                  data-placement={selectedWeekDay.tooltipPlacement}
                 >
                   <strong>{selectedWeekDay.label}요일 활동</strong>
                   <span>공감 {selectedWeekDay.empathyCount}</span>

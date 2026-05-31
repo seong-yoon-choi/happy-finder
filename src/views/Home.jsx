@@ -4,9 +4,18 @@ import HappinessCard from '../components/HappinessCard';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { HAPPINESS_TAG_GROUPS, normalizeVisibleTags } from '../lib/happinessTags';
-import { getMemoImageSrc } from '../lib/memoImages';
+import {
+  chooseMemoPhoto,
+  deleteMemoStoredImages,
+  getMemoImageSrc,
+  isNativeMemoImageAvailable,
+  MEMO_IMAGE_MAX_COUNT,
+  persistMemoImage,
+  takeMemoPhoto
+} from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
+import './Records.css';
 import './Home.css';
 
 const loadHappinessDetailModal = () => import('../components/HappinessDetailModal');
@@ -96,6 +105,25 @@ const itemMatchesSelectedTags = (item, selectedTags) => {
 };
 
 const TODAY_HAPPINESS_TITLE = '오늘의 행복';
+const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
+
+const createTodayDraftRecordId = () => `fr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const getImageErrorMessage = code => {
+  switch (code) {
+    case 'CAMERA_PERMISSION_DENIED':
+      return '카메라 권한이 필요해요. 설정에서 권한을 허용해 주세요.';
+    case 'PHOTO_PERMISSION_DENIED':
+      return '사진 접근 권한이 필요해요. 설정에서 권한을 허용해 주세요.';
+    case 'PHOTO_PICK_CANCELLED':
+    case 'OS-PLUG-CAMR-0006':
+      return '';
+    case 'IMAGE_LIMIT_REACHED':
+      return `사진은 기록 하나에 최대 ${MEMO_IMAGE_MAX_COUNT}장까지 첨부할 수 있어요.`;
+    default:
+      return '사진을 처리하지 못했어요. 잠시 후 다시 시도해주세요.';
+  }
+};
 
 const getLocalDateKey = value => {
   const date = value ? new Date(value) : new Date();
@@ -152,6 +180,75 @@ const TodayHappinessImage = ({ record }) => {
   return <span className="home-today-image-blank" aria-hidden="true" />;
 };
 
+const TodayRecordImageThumb = ({ image, onRemove }) => {
+  const [src, setSrc] = useState('');
+  const imageId = image.id;
+  const imagePath = image.path;
+  const imageStorageType = image.storageType;
+  const imageContentType = image.contentType;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadImage = async () => {
+      const nextSrc = await getMemoImageSrc({
+        image: {
+          id: imageId,
+          path: imagePath,
+          storageType: imageStorageType,
+          contentType: imageContentType
+        },
+        supabase
+      });
+
+      if (isMounted) {
+        setSrc(nextSrc);
+      }
+    };
+
+    void loadImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [imageContentType, imageId, imagePath, imageStorageType]);
+
+  return (
+    <div className="record-image-thumb">
+      <button
+        type="button"
+        className="record-image-open"
+        disabled={!src}
+        aria-label="첨부 사진"
+      >
+        {src ? <img src={src} alt="" loading="lazy" /> : <span />}
+      </button>
+      <button
+        type="button"
+        className="record-image-remove"
+        onClick={() => onRemove(image)}
+        aria-label="첨부 사진 삭제"
+      >
+        &times;
+      </button>
+    </div>
+  );
+};
+
+const TodayRecordImageStrip = ({ images = [], onRemove }) => {
+  if (images.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="record-image-strip">
+      {images.map(image => (
+        <TodayRecordImageThumb key={image.id} image={image} onRemove={onRemove} />
+      ))}
+    </div>
+  );
+};
+
 const Home = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [shouldOpenRecord, setShouldOpenRecord] = useState(false);
@@ -163,13 +260,20 @@ const Home = () => {
   const [isTodayRecordModalOpen, setIsTodayRecordModalOpen] = useState(false);
   const [todayHappinessTitle, setTodayHappinessTitle] = useState('');
   const [todayHappinessContent, setTodayHappinessContent] = useState('');
+  const [todayHappinessImages, setTodayHappinessImages] = useState([]);
+  const [todayDraftRecordId, setTodayDraftRecordId] = useState(() => createTodayDraftRecordId());
+  const [todayImageFeedback, setTodayImageFeedback] = useState('');
+  const [todayImageBusyTarget, setTodayImageBusyTarget] = useState('');
   const [todayHappinessValidation, setTodayHappinessValidation] = useState({
     title: false,
-    content: false
+    content: false,
+    pulse: 0
   });
   const {
     items,
     authUserNickname,
+    authUser,
+    isReviewAuthUser,
     getFreeRecords,
     addFreeRecord,
     updateFreeRecord
@@ -178,6 +282,8 @@ const Home = () => {
   const viewerPossessiveLabel = authUserNickname ? `${authUserNickname} 님의` : '나의';
   const normalizedSearchQuery = normalizeSearchValue(searchQuery);
   const hasActiveFilters = Boolean(normalizedSearchQuery || selectedTags.length > 0);
+  const isTodayImageEnabled = isNativeMemoImageAvailable();
+  const cloudAuthUserId = authUser?.id && !isReviewAuthUser ? authUser.id : null;
   const todayDateKey = getLocalDateKey(new Date());
   const todayHappinessRecord = getFreeRecords()
     .find(record => getLocalDateKey(record.createdAt || record.updatedAt) === todayDateKey);
@@ -237,17 +343,58 @@ const Home = () => {
     setSelectedTags([]);
   }, []);
 
+  const cleanupTodayImages = useCallback(images => {
+    if (!Array.isArray(images) || images.length === 0) {
+      return;
+    }
+
+    void deleteMemoStoredImages({ images, supabase });
+  }, []);
+
+  const cleanupUncommittedTodayImages = useCallback(() => {
+    if (todayHappinessImages.length === 0) {
+      return;
+    }
+
+    const originalImages = todayHappinessRecord?.images || [];
+
+    if (!todayHappinessRecord?.id) {
+      cleanupTodayImages(todayHappinessImages);
+      return;
+    }
+
+    const originalImageIds = new Set(originalImages.map(image => image.id));
+    const uncommittedImages = todayHappinessImages.filter(image => !originalImageIds.has(image.id));
+    cleanupTodayImages(uncommittedImages);
+  }, [cleanupTodayImages, todayHappinessImages, todayHappinessRecord]);
+
   const openTodayRecordModal = () => {
+    const nextDraftId = todayHappinessRecord?.id || createTodayDraftRecordId();
+
     setTodayHappinessTitle(todayHappinessRecord?.title || '');
     setTodayHappinessContent(todayHappinessRecord?.content || '');
-    setTodayHappinessValidation({ title: false, content: false });
+    setTodayHappinessImages(Array.isArray(todayHappinessRecord?.images) ? todayHappinessRecord.images : []);
+    setTodayDraftRecordId(nextDraftId);
+    setTodayImageFeedback('');
+    setTodayImageBusyTarget('');
+    setTodayHappinessValidation({ title: false, content: false, pulse: 0 });
     setIsTodayRecordModalOpen(true);
   };
 
-  const closeTodayRecordModal = () => {
+  const closeTodayRecordModal = useCallback(({ shouldCleanup = true } = {}) => {
+    if (shouldCleanup) {
+      cleanupUncommittedTodayImages();
+    }
+
     setIsTodayRecordModalOpen(false);
-    setTodayHappinessValidation({ title: false, content: false });
-  };
+    setTodayHappinessTitle('');
+    setTodayHappinessContent('');
+    setTodayHappinessImages([]);
+    setTodayDraftRecordId(createTodayDraftRecordId());
+    setTodayImageFeedback('');
+    setTodayImageBusyTarget('');
+    setTodayHappinessValidation({ title: false, content: false, pulse: 0 });
+  }, [cleanupUncommittedTodayImages]);
 
   const requestCloseTodayRecordModal = useModalBackNavigation({
     isOpen: isTodayRecordModalOpen,
@@ -260,10 +407,11 @@ const Home = () => {
     const nextContent = todayHappinessContent.trim();
 
     if (!nextTitle || !nextContent) {
-      setTodayHappinessValidation({
+      setTodayHappinessValidation(prev => ({
         title: !nextTitle,
-        content: !nextContent
-      });
+        content: !nextContent,
+        pulse: prev.pulse + 1
+      }));
       return;
     }
 
@@ -271,16 +419,71 @@ const Home = () => {
       updateFreeRecord(
         todayHappinessRecord.id,
         nextContent,
-        todayHappinessRecord.images || [],
+        todayHappinessImages,
         { title: nextTitle }
       );
     } else {
-      addFreeRecord(nextContent, [], { title: nextTitle || TODAY_HAPPINESS_TITLE });
+      addFreeRecord(nextContent, todayHappinessImages, {
+        id: todayDraftRecordId,
+        title: nextTitle || TODAY_HAPPINESS_TITLE
+      });
     }
 
-    setTodayHappinessTitle('');
-    setTodayHappinessContent('');
-    closeTodayRecordModal();
+    closeTodayRecordModal({ shouldCleanup: false });
+  };
+
+  const handleAttachTodayImage = async source => {
+    if (!isTodayImageEnabled) {
+      return;
+    }
+
+    if (todayHappinessImages.length >= MEMO_IMAGE_MAX_COUNT) {
+      setTodayImageFeedback(getImageErrorMessage('IMAGE_LIMIT_REACHED'));
+      return;
+    }
+
+    const recordId = todayHappinessRecord?.id || todayDraftRecordId;
+    const busyKey = `today:${source}`;
+    setTodayImageBusyTarget(busyKey);
+    setTodayImageFeedback('');
+
+    const pickResult = source === 'camera'
+      ? await takeMemoPhoto()
+      : await chooseMemoPhoto();
+
+    if (!pickResult.success) {
+      setTodayImageBusyTarget('');
+      setTodayImageFeedback(getImageErrorMessage(pickResult.code));
+      return;
+    }
+
+    try {
+      const persistedImage = await persistMemoImage({
+        supabase,
+        authUserId: cloudAuthUserId,
+        itemId: FREE_RECORD_IMAGE_ITEM_ID,
+        memoId: recordId,
+        mediaResult: pickResult.photo,
+        source
+      });
+
+      setTodayHappinessImages(prev => [...prev, persistedImage]);
+    } catch {
+      setTodayImageFeedback(getImageErrorMessage('PERSIST_FAILED'));
+    } finally {
+      setTodayImageBusyTarget('');
+    }
+  };
+
+  const handleRemoveTodayImage = image => {
+    setTodayHappinessImages(prev => prev.filter(candidate => candidate.id !== image.id));
+
+    const originalImages = todayHappinessRecord?.images || [];
+    const isOriginalImage = originalImages.some(originalImage => originalImage.id === image.id);
+
+    if (!isOriginalImage) {
+      cleanupTodayImages([image]);
+    }
   };
 
   const emptyStateTitle = normalizedSearchQuery
@@ -400,60 +603,99 @@ const Home = () => {
 
       {isTodayRecordModalOpen && (
         <div
-          className="home-today-modal-overlay"
+          className="record-composer-overlay"
           data-block-pull-refresh="true"
           onClick={() => requestCloseTodayRecordModal()}
         >
           <div
-            className="home-today-modal"
+            className="record-note-modal"
             data-block-pull-refresh="true"
             role="dialog"
             aria-modal="true"
             aria-labelledby="home-today-modal-title"
             onClick={event => event.stopPropagation()}
           >
-            <button
-              type="button"
-              className="home-today-modal-close"
-              onClick={() => requestCloseTodayRecordModal()}
-              aria-label="오늘의 행복 닫기"
-            >
-              &times;
-            </button>
-            <div className="home-today-modal-head">
-              <span>오늘의 행복</span>
-              <h2 id="home-today-modal-title">오늘 좋았던 순간을 남겨보세요</h2>
+            <div className="record-note-header">
+              <div>
+                <span>NOTE</span>
+                <h3 id="home-today-modal-title">오늘의 행복 기록하기</h3>
+              </div>
+              <button
+                type="button"
+                className="record-note-close"
+                onClick={() => requestCloseTodayRecordModal()}
+                aria-label="오늘의 행복 닫기"
+              >
+                &times;
+              </button>
             </div>
-            <div className="home-today-modal-image" aria-hidden="true">
-              <TodayHappinessImage record={todayHappinessRecord} />
-            </div>
+
             <input
-              className={todayHappinessValidation.title ? 'has-error' : ''}
+              className={`record-note-title-input ${todayHappinessValidation.title ? `record-field-prompt ${todayHappinessValidation.pulse % 2 === 0 ? 'pulse-even' : 'pulse-odd'}` : ''}`}
               type="text"
               value={todayHappinessTitle}
               onChange={event => {
                 setTodayHappinessTitle(event.target.value);
-                setTodayHappinessValidation(prev => ({ ...prev, title: false }));
+                if (event.target.value.trim()) {
+                  setTodayHappinessValidation(prev => ({ ...prev, title: false }));
+                }
               }}
               placeholder={todayHappinessValidation.title ? '제목을 적어주세요' : '제목'}
               aria-label="오늘의 행복 제목"
-              maxLength={30}
+              maxLength={48}
+              autoFocus
             />
             <textarea
-              className={todayHappinessValidation.content ? 'has-error' : ''}
+              className={todayHappinessValidation.content ? `record-field-prompt ${todayHappinessValidation.pulse % 2 === 0 ? 'pulse-even' : 'pulse-odd'}` : ''}
               value={todayHappinessContent}
               onChange={event => {
                 setTodayHappinessContent(event.target.value);
-                setTodayHappinessValidation(prev => ({ ...prev, content: false }));
+                if (event.target.value.trim()) {
+                  setTodayHappinessValidation(prev => ({ ...prev, content: false }));
+                }
               }}
-              placeholder={todayHappinessValidation.content ? '내용을 적어주세요' : '내용'}
+              placeholder={todayHappinessValidation.content ? '내용을 적어주세요' : '짧게 한 줄도 좋고, 길게 적는 일기도 좋아요'}
               aria-label="오늘의 행복 내용"
-              rows={5}
-              maxLength={300}
+              rows={9}
+              maxLength={1600}
             />
-            <div className="home-today-modal-actions">
-              <button type="button" onClick={() => requestCloseTodayRecordModal()}>취소</button>
-              <button type="button" onClick={handleSaveTodayHappiness}>기록에 저장</button>
+
+            <TodayRecordImageStrip
+              images={todayHappinessImages}
+              onRemove={handleRemoveTodayImage}
+            />
+
+            {todayImageFeedback && <p className="records-image-feedback">{todayImageFeedback}</p>}
+
+            <div className="record-note-footer">
+              <div className="records-photo-actions">
+                {isTodayImageEnabled && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleAttachTodayImage('camera')}
+                      disabled={Boolean(todayImageBusyTarget)}
+                    >
+                      {todayImageBusyTarget === 'today:camera' ? '촬영 중...' : '카메라'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAttachTodayImage('gallery')}
+                      disabled={Boolean(todayImageBusyTarget)}
+                    >
+                      {todayImageBusyTarget === 'today:gallery' ? '선택 중...' : '앨범'}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="btn-primary record-note-save"
+                onClick={handleSaveTodayHappiness}
+              >
+                기록 저장하기
+              </button>
             </div>
           </div>
         </div>
