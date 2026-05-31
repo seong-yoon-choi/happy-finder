@@ -93,9 +93,6 @@
 .home-today-image-blank {
     width: 64%;
     height: 64%;
-    border-radius: 12px;
-    border: 1px solid rgba(var(--primary-rgb), 0.24);
-    background: rgba(var(--primary-rgb), 0.08);
     position: relative;
 }
 
