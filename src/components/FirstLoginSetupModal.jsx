@@ -95,7 +95,7 @@ const FirstLoginSetupModal = ({
                 disabled={isAuthBusy || areRequiredAgreementsReadOnly}
                 aria-label="만 14세 이상 동의"
               />
-              <span>필수: 만 14세 이상</span>
+              <span>[필수] 만 14세 이상입니다.</span>
             </div>
 
             <div className="first-login-check required">
@@ -107,11 +107,12 @@ const FirstLoginSetupModal = ({
                 aria-label="이용약관 동의"
               />
               <span>
-                필수:
+                [필수]
                 {' '}
                 <a href="/terms/index.html" className="first-login-link">
                   이용약관
                 </a>
+                에 동의합니다.
               </span>
             </div>
 
@@ -124,11 +125,12 @@ const FirstLoginSetupModal = ({
                 aria-label="개인정보처리방침 동의"
               />
               <span>
-                필수:
+                [필수]
                 {' '}
                 <a href="/privacy/index.html" className="first-login-link">
-                  개인정보처리방침
+                  개인정보 수집 및 이용
                 </a>
+                에 동의합니다.
               </span>
             </div>
 
@@ -141,11 +143,12 @@ const FirstLoginSetupModal = ({
                 aria-label="마케팅 수신 동의"
               />
               <span>
-                선택:
+                [선택]
                 {' '}
                 <a href="/marketing/index.html" className="first-login-link">
-                  마케팅 수신
+                  마케팅 정보 수신
                 </a>
+                에 동의합니다.
               </span>
             </div>
           </div>
