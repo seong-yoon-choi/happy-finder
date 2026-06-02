@@ -144,6 +144,12 @@
     cursor: pointer;
 }
 
+.landing-nav-link-btn:disabled {
+    opacity: 0.62;
+    cursor: wait;
+    transform: none;
+}
+
 .landing-nav-link-btn.is-authenticated,
 .landing-secondary-cta.is-authenticated {
     cursor: pointer;
@@ -151,6 +157,13 @@
     border-color: rgba(var(--primary-rgb), 0.42);
     color: var(--primary-color);
     box-shadow: 0 10px 24px rgba(var(--primary-rgb), 0.12);
+}
+
+.landing-nav-logout-btn {
+    color: var(--text-light);
+    background: rgba(255, 255, 255, 0.58);
+    border-color: rgba(var(--primary-rgb), 0.2);
+    box-shadow: none;
 }
 
 .landing-app-button,

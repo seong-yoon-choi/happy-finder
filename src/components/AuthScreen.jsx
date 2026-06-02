@@ -5,8 +5,8 @@ import { AppleIcon, GoogleIcon } from './AuthProviderIcons';
 import './AuthScreen.css';
 
 const socialButtons = [
-  { provider: 'apple', label: 'Apple로 계속하기', Icon: AppleIcon },
-  { provider: 'google', label: 'Google로 계속하기', Icon: GoogleIcon }
+  { provider: 'google', label: 'Google로 계속하기', Icon: GoogleIcon },
+  { provider: 'apple', label: 'Apple로 계속하기', Icon: AppleIcon }
 ];
 
 const PasswordVisibilityIcon = ({ isVisible = false }) => (

@@ -496,7 +496,7 @@ function PublicSiteContent({ pathname, onNavigate }) {
   const requestedPostAuthPath = getRequestedPostAuthPathFromUrl();
   const [isAuthScreenRequested, setIsAuthScreenRequested] = useState(() => Boolean(initialRequestedMode));
   const [authScreenMode, setAuthScreenMode] = useState(() => initialRequestedMode || 'login');
-  const { authUser, isPasswordRecovery } = useHappy();
+  const { authUser, isPasswordRecovery, isAuthBusy, signOutFromSupabase } = useHappy();
   const isAuthenticated = Boolean(authUser);
 
   const isProfileRoute = isProfilePath(pathname);
@@ -538,6 +538,10 @@ function PublicSiteContent({ pathname, onNavigate }) {
     resetAuthScreenRequest();
   };
 
+  const handlePublicSignOut = async () => {
+    await signOutFromSupabase();
+  };
+
   return (
     <>
       {isProfileRoute ? (
@@ -566,6 +570,8 @@ function PublicSiteContent({ pathname, onNavigate }) {
             onNavigate={onNavigate}
             onOpenAuth={() => openAuthScreen('login')}
             onOpenProfile={() => onNavigate(PROFILE_PATH)}
+            onSignOut={handlePublicSignOut}
+            isAuthBusy={isAuthBusy}
             isAuthenticated={isAuthenticated}
           />
         </LazyLoadBoundary>
@@ -573,6 +579,8 @@ function PublicSiteContent({ pathname, onNavigate }) {
         <LandingPage
           onOpenAuth={() => openAuthScreen('login')}
           onOpenProfile={() => onNavigate(PROFILE_PATH)}
+          onSignOut={handlePublicSignOut}
+          isAuthBusy={isAuthBusy}
           onNavigate={onNavigate}
           isAuthenticated={isAuthenticated}
         />

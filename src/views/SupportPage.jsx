@@ -49,7 +49,15 @@ const getSubmissionErrorMessage = (error, fallbackMessage) => {
   return fallbackMessage;
 };
 
-const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthenticated = false }) => {
+const SupportPage = ({
+  onNavigate,
+  onOpenAuth,
+  onOpenProfile,
+  onSignOut,
+  pathname,
+  isAuthBusy = false,
+  isAuthenticated = false
+}) => {
   const { authUser, isReviewAuthUser } = useHappy();
   const [qnaForm, setQnaForm] = useState(initialQnaForm);
   const [feedbackForm, setFeedbackForm] = useState(initialFeedbackForm);
@@ -178,6 +186,16 @@ const SupportPage = ({ onNavigate, onOpenAuth, onOpenProfile, pathname, isAuthen
             >
               {accountActionLabel}
             </button>
+            {isAuthenticated && (
+              <button
+                type="button"
+                className="support-nav-link-btn support-nav-logout-btn"
+                onClick={onSignOut}
+                disabled={isAuthBusy}
+              >
+                {isAuthBusy ? '처리 중...' : '로그아웃'}
+              </button>
+            )}
           </div>
         </nav>
 

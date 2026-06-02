@@ -115,12 +115,25 @@
     box-shadow: var(--glass-shadow);
 }
 
+.support-nav-link-btn:disabled {
+    opacity: 0.62;
+    cursor: wait;
+    transform: none;
+}
+
 .support-nav-link-btn.is-authenticated {
     cursor: pointer;
     background: rgba(255, 255, 255, 0.92);
     border-color: rgba(var(--primary-rgb), 0.42);
     color: var(--primary-color);
     box-shadow: 0 10px 24px rgba(var(--primary-rgb), 0.12);
+}
+
+.support-nav-logout-btn {
+    color: var(--text-light);
+    background: rgba(255, 255, 255, 0.58);
+    border-color: rgba(var(--primary-rgb), 0.2);
+    box-shadow: none;
 }
 
 .support-app-button {

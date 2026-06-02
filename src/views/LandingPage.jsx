@@ -20,7 +20,14 @@ const quickFacts = [
   }
 ];
 
-const LandingPage = ({ onOpenAuth, onOpenProfile, onNavigate, isAuthenticated = false }) => {
+const LandingPage = ({
+  onOpenAuth,
+  onOpenProfile,
+  onSignOut,
+  onNavigate,
+  isAuthBusy = false,
+  isAuthenticated = false
+}) => {
   const navigateToPath = nextPath => () => onNavigate?.(nextPath);
   const handleAccountAction = isAuthenticated ? onOpenProfile : onOpenAuth;
   const accountActionLabel = isAuthenticated ? '프로필' : '로그인';
@@ -43,6 +50,16 @@ const LandingPage = ({ onOpenAuth, onOpenProfile, onNavigate, isAuthenticated = 
               >
                 {accountActionLabel}
               </button>
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  className="landing-nav-link-btn landing-nav-logout-btn"
+                  onClick={onSignOut}
+                  disabled={isAuthBusy}
+                >
+                  {isAuthBusy ? '처리 중...' : '로그아웃'}
+                </button>
+              )}
             </div>
           </nav>
 

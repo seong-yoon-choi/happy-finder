@@ -109,7 +109,7 @@
 .auth-screen-social-btn.google {
     background: #ffffff;
     color: #1f1f1f;
-    border-color: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.12);
 }
 
 .auth-screen-social-btn.apple {
@@ -408,6 +408,113 @@
 
 .dark-theme .auth-screen-guest-btn {
     background: rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 760px) {
+    .auth-screen-overlay {
+        align-items: center;
+        padding: 48px;
+        background:
+            radial-gradient(circle at 18% 20%, rgba(var(--secondary-rgb), 0.22), transparent 28%),
+            radial-gradient(circle at 84% 82%, rgba(var(--primary-rgb), 0.14), transparent 32%),
+            linear-gradient(145deg, rgba(255, 254, 248, 0.98), rgba(244, 239, 224, 0.98));
+    }
+
+    .auth-screen-panel {
+        width: min(900px, calc(100vw - 96px));
+        max-height: calc(100dvh - 96px);
+        display: grid;
+        grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1fr);
+        column-gap: 44px;
+        row-gap: 14px;
+        padding: 42px;
+        border-radius: 28px;
+        background:
+            linear-gradient(90deg, rgba(var(--primary-rgb), 0.07), transparent 42%),
+            rgba(255, 255, 255, 0.92);
+        box-shadow: 0 28px 70px rgba(26, 48, 30, 0.18);
+    }
+
+    .dark-theme .auth-screen-panel {
+        background:
+            linear-gradient(90deg, rgba(var(--primary-rgb), 0.1), transparent 42%),
+            rgba(32, 39, 60, 0.94);
+    }
+
+    .auth-screen-panel > :not(.auth-screen-close):not(.auth-screen-copy) {
+        grid-column: 2;
+    }
+
+    .auth-screen-copy {
+        grid-column: 1;
+        grid-row: 1 / span 9;
+        align-self: center;
+        max-width: 310px;
+        gap: 16px;
+        padding-right: 6px;
+    }
+
+    .auth-screen-copy h1 {
+        font-size: clamp(2.25rem, 3.2vw, 3.05rem);
+        line-height: 1.05;
+    }
+
+    .auth-screen-copy p {
+        max-width: 28em;
+        color: var(--text-light);
+        font-size: 1rem;
+        line-height: 1.65;
+    }
+
+    .auth-screen-mode-tabs {
+        border-radius: 15px;
+        padding: 4px;
+        background: rgba(var(--primary-rgb), 0.08);
+    }
+
+    .auth-screen-mode-btn {
+        border-radius: 12px;
+        padding: 10px 14px;
+    }
+
+    .auth-screen-form {
+        gap: 9px;
+    }
+
+    .auth-screen-input,
+    .auth-screen-guest-btn,
+    .auth-screen-social-btn {
+        border-radius: 13px;
+    }
+
+    .auth-screen-socials {
+        gap: 8px;
+    }
+
+    .auth-screen-social-btn {
+        min-height: 46px;
+        justify-content: flex-start;
+        padding: 10px 14px;
+        box-shadow: 0 8px 18px rgba(27, 49, 31, 0.06);
+    }
+
+    .auth-screen-social-btn.google {
+        background: #ffffff;
+    }
+
+    .auth-screen-social-btn.apple {
+        background: #191919;
+    }
+
+    .auth-screen-social-text {
+        flex: 1 1 auto;
+        text-align: left;
+    }
+
+    .auth-screen-submit,
+    .auth-screen-guest-btn {
+        min-height: 46px;
+    }
 }
 
 @media (max-width: 640px) {
