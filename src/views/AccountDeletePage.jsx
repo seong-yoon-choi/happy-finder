@@ -58,6 +58,7 @@ const AccountDeletePage = () => {
         <div className="account-delete-copy">
           <span className="account-delete-eyebrow">ACCOUNT</span>
           <h1>계정 삭제</h1>
+          <p>Happy Finder 계정과 연결된 기록을 삭제하려면 본인 확인이 필요합니다.</p>
         </div>
 
         {isAuthLoading ? (
@@ -76,7 +77,7 @@ const AccountDeletePage = () => {
           <>
             <div className="account-delete-account">
               <strong>{authUser.email}</strong>
-              <span>아래 입력칸에 현재 이메일 주소를 그대로 입력하면 삭제를 진행합니다.</span>
+              <span>아래 입력칸에 현재 이메일 주소를 그대로 입력하면 삭제를 진행할 수 있습니다.</span>
             </div>
 
             <label className="account-delete-field">

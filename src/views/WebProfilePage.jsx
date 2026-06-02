@@ -100,8 +100,8 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
         <div className="web-profile-header">
           <div className="web-profile-copy">
             <span className="web-profile-eyebrow">PROFILE</span>
-            <h1>웹 프로필</h1>
-            <p>공개 웹에서 계정 상태를 확인하고, 필요한 계정 작업을 진행할 수 있어요.</p>
+            <h1>계정과 문의 내역을 관리하세요</h1>
+            <p>로그인 정보, 문의 답변, 비밀번호 재설정, 계정 삭제를 웹에서 확인할 수 있습니다.</p>
           </div>
 
           <div className="web-profile-header-actions">

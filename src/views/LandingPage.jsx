@@ -2,21 +2,39 @@ import React from 'react';
 import { ACCOUNT_DELETE_PATH, SUPPORT_PATH } from '../lib/routes';
 import './LandingPage.css';
 
-const quickFacts = [
+const previewItems = [
+  {
+    title: '빗소리 들으며 집중하기',
+    copy: '창가에 앉아 빗소리에 맞춰 작업하니 마음이 차분해졌어요.',
+    tags: ['혼자', '실내', '길게', '휴식']
+  },
+  {
+    title: '산책하며 예쁜 꽃 보기',
+    copy: '익숙한 길에서도 작은 꽃을 발견하니 하루가 가벼워졌어요.',
+    tags: ['혼자', '실외', '짧게', '활동']
+  }
+];
+
+const featureCards = [
+  {
+    label: '둘러보기',
+    title: '다른 사람의 행복을 살펴보기',
+    description: '누군가가 행복했던 순간을 보고, 내 일상에서도 따라 해보고 싶은 작은 행동을 발견할 수 있습니다.'
+  },
   {
     label: '기록',
-    value: '내 행복을 바로 남기기',
-    description: '다른 사람의 행복 경험을 따라 해보고, 오늘 내가 느낀 순간도 사진과 글로 남길 수 있습니다.'
+    title: '오늘의 행복을 남기기',
+    description: '사진, 제목, 내용으로 오늘 좋았던 순간을 빠르게 남기고 기록 탭에서 다시 돌아볼 수 있습니다.'
   },
   {
-    label: '관리',
-    value: '즐겨찾기와 기록',
-    description: '마음에 드는 행복은 즐겨찾기로 저장하고, 각 항목마다 내 경험을 덧붙여 다시 돌아볼 수 있습니다.'
+    label: '공감',
+    title: '따뜻한 흔적을 남기기',
+    description: '내가 공감한 행복과 내가 만든 행복에 남겨진 공감이 쌓이며 서로의 작은 기쁨을 이어줍니다.'
   },
   {
-    label: '루틴',
-    value: '꾸준히 이어가는 흐름',
-    description: '작은 행복을 자주 보고 기록하면서 나에게 잘 맞는 행복의 패턴을 만들어갈 수 있습니다.'
+    label: '분석',
+    title: '나의 행복 패턴 보기',
+    description: '태그, 기록, 메모, 공감, 즐겨찾기를 바탕으로 내가 어떤 행복을 자주 만나는지 확인할 수 있습니다.'
   }
 ];
 
@@ -42,7 +60,7 @@ const LandingPage = ({
             </a>
 
             <div className="landing-nav-links">
-              <button type="button" className="landing-nav-link-btn" onClick={navigateToPath(SUPPORT_PATH)}>QnA &amp; Feedback</button>
+              <button type="button" className="landing-nav-link-btn" onClick={navigateToPath(SUPPORT_PATH)}>문의·피드백</button>
               <button
                 type="button"
                 className={`landing-nav-link-btn ${isAuthenticated ? 'is-authenticated' : ''}`}
@@ -65,22 +83,18 @@ const LandingPage = ({
 
           <div className="landing-hero">
             <div className="landing-hero-copy">
-              <p className="landing-eyebrow">Share small happiness in everyday life.</p>
+              <div className="landing-hero-mark">
+                <img src="/happy-finder-icon.svg" alt="" />
+                <span>Happy Finder</span>
+              </div>
               <h1>
-                다른 사람들은
+                일상 속 작은 행복을
                 <br />
-                언제 행복했을까요?
-                <br />
-                나도 그 행복을
-                <br />
-                <span className="landing-hero-nowrap">일상에 가져와 보세요.</span>
+                발견하고 기록하세요
               </h1>
               <p className="landing-lead">
-                Happy Finder는 사람들이 언제 행복했는지 보여주고,
-                오늘의 작은 기쁨을 사진과 글로 남길 수 있게 도와줍니다.
-              </p>
-              <p className="landing-lead landing-lead-secondary">
-                마음에 드는 행복은 저장하고, 직접 해본 순간은 기록하며 나만의 행복 패턴을 만들어 보세요.
+                다른 사람들은 언제 행복했는지 둘러보고, 나도 해보고 싶은 순간을 저장하고,
+                오늘의 행복은 사진과 글로 남겨보세요.
               </p>
 
               <div className="landing-hero-actions">
@@ -91,31 +105,105 @@ const LandingPage = ({
                 >
                   {accountActionLabel}
                 </button>
+                <button
+                  type="button"
+                  className="landing-secondary-cta"
+                  onClick={navigateToPath(SUPPORT_PATH)}
+                >
+                  문의하기
+                </button>
+              </div>
+
+              <div className="landing-hero-metrics" aria-label="앱 핵심 흐름">
+                <span>기록</span>
+                <span>공감</span>
+                <span>메모</span>
+                <span>분석</span>
               </div>
             </div>
 
-            <aside className="landing-panel landing-hero-side" aria-label="앱 핵심 기능">
-              <div className="landing-panel-head">
-                <h2>앱에서 바로 할 수 있는 일</h2>
-              </div>
+            <aside className="landing-app-preview" aria-label="Happy Finder 앱 화면 예시">
+              <div className="landing-phone">
+                <div className="landing-phone-top">
+                  <div>
+                    <span>Happy Finder</span>
+                    <strong>오늘도 행복한 하루 되세요</strong>
+                  </div>
+                  <i aria-hidden="true">⌁</i>
+                </div>
 
-              <div className="landing-feature-list">
-              {quickFacts.map(item => (
-                  <article key={item.label} className="landing-feature-item">
-                  <span className="landing-fact-label">{item.label}</span>
-                  <strong>{item.value}</strong>
-                  <p>{item.description}</p>
-                </article>
-              ))}
+                <section className="landing-today-card">
+                  <span>오늘의 행복</span>
+                  <div className="landing-today-row">
+                    <img src="/happiness-sample-journal.svg" alt="" />
+                    <div>
+                      <strong>따뜻한 햇살과 커피 한 잔</strong>
+                      <p>작은 순간을 기록하면 행복이 더 선명해집니다.</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="landing-mini-list">
+                  <div className="landing-mini-list-head">
+                    <strong>행복 리스트</strong>
+                    <span>공감과 메모</span>
+                  </div>
+                  {previewItems.map(item => (
+                    <article key={item.title} className="landing-mini-item">
+                      <div className="landing-mini-thumb" aria-hidden="true" />
+                      <div className="landing-mini-copy">
+                        <strong>{item.title}</strong>
+                        <p>{item.copy}</p>
+                        <div className="landing-mini-tags">
+                          {item.tags.map(tag => <span key={tag}>{tag}</span>)}
+                        </div>
+                      </div>
+                      <div className="landing-mini-icons" aria-hidden="true">
+                        <span>◡</span>
+                        <span>▤</span>
+                      </div>
+                    </article>
+                  ))}
+                </section>
+
+                <section className="landing-analysis-card">
+                  <div>
+                    <span>이번주 행복 분석</span>
+                    <strong>6개의 행복 데이터 기반</strong>
+                  </div>
+                  <div className="landing-analysis-lines" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+                </section>
               </div>
             </aside>
           </div>
         </header>
 
+        <section className="landing-section" aria-labelledby="landing-feature-title">
+          <div className="landing-section-head">
+            <span>APP FLOW</span>
+            <h2 id="landing-feature-title">Happy Finder에서 이어지는 흐름</h2>
+          </div>
+          <div className="landing-feature-list">
+            {featureCards.map(item => (
+              <article key={item.label} className="landing-feature-item">
+                <span className="landing-fact-label">{item.label}</span>
+                <div>
+                  <strong>{item.title}</strong>
+                  <p>{item.description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <footer className="landing-footer">
           <div className="landing-footer-copy">
             <strong>Happy Finder</strong>
-            <p>사람들의 행복 경험을 내 일상으로 가져오는 앱.</p>
+            <p>작은 행복을 발견하고, 기록하고, 다시 돌아보는 앱.</p>
           </div>
 
           <div className="landing-footer-links">

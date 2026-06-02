@@ -177,7 +177,7 @@ const SupportPage = ({
 
           <div className="support-nav-links">
             <button type="button" className="support-nav-link-btn" onClick={handleNavigate(SUPPORT_PATH)}>
-              QnA &amp; Feedback
+              문의·피드백
             </button>
             <button
               type="button"
@@ -201,7 +201,11 @@ const SupportPage = ({
 
         <header className="support-hero">
           <div className="support-copy">
-            <p className="support-kicker">Support</p>
+            <p className="support-kicker">SUPPORT</p>
+            <h1>Happy Finder에 전하고 싶은 이야기를 남겨주세요</h1>
+            <p>
+              앱 사용 중 궁금한 점, 오류, 개선 아이디어를 보내주시면 확인 후 필요한 내용을 안내드립니다.
+            </p>
             <div className="support-tab-links" aria-label="문의 유형 선택">
               <button
                 type="button"
@@ -223,8 +227,8 @@ const SupportPage = ({
           </div>
 
           <aside className="support-side-note">
-            <strong>Happy Finder에 전하고 싶은 내용을 남겨주세요</strong>
-            <p>불편했던 점, 궁금한 점, 개선 아이디어가 있다면 아래 폼으로 바로 전달할 수 있어요.</p>
+            <strong>더 나은 행복 기록을 위해 확인할게요</strong>
+            <p>계정, 기록, 공감, 분석, 알림, 웹 이용과 관련된 내용을 구체적으로 남겨주세요.</p>
           </aside>
         </header>
 
@@ -233,7 +237,7 @@ const SupportPage = ({
             <section className="support-panel support-panel-wide">
               <div className="support-form-header">
                 <h2>서비스 피드백</h2>
-                <p>좋았던 점이나 아쉬웠던 점, 추가되면 좋을 기능을 자유롭게 적어주세요.</p>
+                <p>좋았던 부분, 아쉬웠던 부분, 출시 전 더 다듬으면 좋을 기능을 자유롭게 적어주세요.</p>
               </div>
 
               <form className="support-form" onSubmit={handleFeedbackSubmit}>
@@ -301,7 +305,7 @@ const SupportPage = ({
             <section className="support-panel support-panel-wide">
               <div className="support-form-header">
                 <h2>Q&amp;A 문의</h2>
-                <p>사용, 계정, 정책, 오류 관련 문의를 남겨주세요.</p>
+                <p>사용 방법, 로그인, 계정, 정책, 오류 관련 문의를 남겨주세요.</p>
               </div>
 
               <form className="support-form" onSubmit={handleQnaSubmit}>

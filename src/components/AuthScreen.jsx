@@ -303,7 +303,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
 
   const headline = (() => {
     if (isSignupMode) {
-      return '회원가입하고 행복 기록을 이어가세요';
+      return '나의 행복 기록을 이어가세요';
     }
 
     if (isResetRequestMode) {
@@ -314,12 +314,12 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       return '새 비밀번호를 설정해주세요';
     }
 
-    return '로그인하고 행복 찾기를 이어가세요';
+    return '로그인하고 행복 찾기를 계속하세요';
   })();
 
   const description = (() => {
     if (isSignupMode) {
-      return '이메일 인증번호를 확인한 뒤 가입이 완료되며, 첫 진입 화면에서 닉네임과 약관 동의를 설정할 수 있어요.';
+      return '이메일 인증 후 닉네임과 필수 동의를 설정하면 기록, 공감, 메모, 분석을 계정에 연결할 수 있어요.';
     }
 
     if (isResetRequestMode) {
@@ -330,7 +330,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
       return '재설정 링크로 들어오셨다면 여기에서 새 비밀번호를 바로 저장할 수 있어요.';
     }
 
-    return '로그인하면 기기 변경 후에도 기록을 계속 관리할 수 있어요.';
+    return '로그인하면 기기를 바꿔도 내가 만든 행복, 기록, 공감, 메모와 분석 흐름을 계속 관리할 수 있어요.';
   })();
 
   const submitLabel = (() => {
