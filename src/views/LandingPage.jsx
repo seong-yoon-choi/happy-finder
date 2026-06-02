@@ -2,19 +2,6 @@ import React from 'react';
 import { ACCOUNT_DELETE_PATH, SUPPORT_PATH } from '../lib/routes';
 import './LandingPage.css';
 
-const previewItems = [
-  {
-    title: '빗소리 들으며 집중하기',
-    copy: '창가에 앉아 빗소리에 맞춰 작업하니 마음이 차분해졌어요.',
-    tags: ['혼자', '실내', '길게', '휴식']
-  },
-  {
-    title: '산책하며 예쁜 꽃 보기',
-    copy: '익숙한 길에서도 작은 꽃을 발견하니 하루가 가벼워졌어요.',
-    tags: ['혼자', '실외', '짧게', '활동']
-  }
-];
-
 const featureCards = [
   {
     label: '둘러보기',
@@ -35,6 +22,21 @@ const featureCards = [
     label: '분석',
     title: '나의 행복 패턴 보기',
     description: '태그, 기록, 메모, 공감, 즐겨찾기를 바탕으로 내가 어떤 행복을 자주 만나는지 확인할 수 있습니다.'
+  }
+];
+
+const appSummaryPoints = [
+  {
+    title: '행복 둘러보기',
+    description: '다른 사람이 행복했던 순간을 보고 나에게 맞는 작은 행동을 발견합니다.'
+  },
+  {
+    title: '기록과 메모',
+    description: '오늘 좋았던 일, 다시 해보고 싶은 행동, 사진과 감정을 함께 남깁니다.'
+  },
+  {
+    title: '공감과 분석',
+    description: '공감, 즐겨찾기, 메모, 기록이 쌓이면 나의 행복 패턴을 확인할 수 있습니다.'
   }
 ];
 
@@ -122,61 +124,26 @@ const LandingPage = ({
               </div>
             </div>
 
-            <aside className="landing-app-preview" aria-label="Happy Finder 앱 화면 예시">
-              <div className="landing-phone">
-                <div className="landing-phone-top">
-                  <div>
-                    <span>Happy Finder</span>
-                    <strong>오늘도 행복한 하루 되세요</strong>
-                  </div>
-                  <i aria-hidden="true">⌁</i>
-                </div>
+            <aside className="landing-app-summary" aria-label="Happy Finder 앱 설명">
+              <div className="landing-summary-image">
+                <img src="/happiness-sample-journal.svg" alt="" />
+              </div>
+              <div className="landing-summary-copy">
+                <span>APP OVERVIEW</span>
+                <h2>작은 행복을 발견하고, 모아두고, 다시 돌아보는 앱</h2>
+                <p>
+                  Happy Finder는 거창한 변화보다 일상에서 스쳐 지나가는 작은 기쁨에 집중합니다.
+                  다른 사람의 행복을 참고하고, 내 행복을 기록하며, 반복되는 패턴을 자연스럽게 찾아보세요.
+                </p>
+              </div>
 
-                <section className="landing-today-card">
-                  <span>오늘의 행복</span>
-                  <div className="landing-today-row">
-                    <img src="/happiness-sample-journal.svg" alt="" />
-                    <div>
-                      <strong>따뜻한 햇살과 커피 한 잔</strong>
-                      <p>작은 순간을 기록하면 행복이 더 선명해집니다.</p>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="landing-mini-list">
-                  <div className="landing-mini-list-head">
-                    <strong>행복 리스트</strong>
-                    <span>공감과 메모</span>
-                  </div>
-                  {previewItems.map(item => (
-                    <article key={item.title} className="landing-mini-item">
-                      <div className="landing-mini-thumb" aria-hidden="true" />
-                      <div className="landing-mini-copy">
-                        <strong>{item.title}</strong>
-                        <p>{item.copy}</p>
-                        <div className="landing-mini-tags">
-                          {item.tags.map(tag => <span key={tag}>{tag}</span>)}
-                        </div>
-                      </div>
-                      <div className="landing-mini-icons" aria-hidden="true">
-                        <span>◡</span>
-                        <span>▤</span>
-                      </div>
-                    </article>
-                  ))}
-                </section>
-
-                <section className="landing-analysis-card">
-                  <div>
-                    <span>이번주 행복 분석</span>
-                    <strong>6개의 행복 데이터 기반</strong>
-                  </div>
-                  <div className="landing-analysis-lines" aria-hidden="true">
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                </section>
+              <div className="landing-summary-list">
+                {appSummaryPoints.map(item => (
+                  <article key={item.title} className="landing-summary-item">
+                    <strong>{item.title}</strong>
+                    <p>{item.description}</p>
+                  </article>
+                ))}
               </div>
             </aside>
           </div>
