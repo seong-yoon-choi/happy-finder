@@ -162,6 +162,9 @@ add column if not exists is_public boolean not null default false;
 alter table public.happiness_items
 add column if not exists tags text[] not null default '{}'::text[];
 
+alter table public.happiness_items
+drop constraint if exists happiness_items_tags_check;
+
 update public.happiness_items as hi
 set tags = coalesce((
   select array_agg(tag order by first_ord)

@@ -1,3 +1,6 @@
+-- Align existing Supabase projects with the account-only app flow and the
+-- current four-category happiness tag model.
+
 alter table public.happiness_items
 add column if not exists tags text[] not null default '{}'::text[];
 
@@ -60,8 +63,9 @@ from (
 where hi.id = tag_defaults.id
   and hi.source = 'system';
 
-alter table public.happiness_items
-drop constraint if exists happiness_items_tags_check;
+delete from public.happiness_items
+where source = 'custom'
+  and owner_user_id is null;
 
 alter table public.happiness_items
 add constraint happiness_items_tags_check
