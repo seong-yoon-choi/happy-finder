@@ -183,10 +183,10 @@
 .landing-hero-copy h1 {
     position: relative;
     z-index: 1;
-    max-width: 12em;
+    max-width: 13em;
     color: var(--landing-green-deep);
-    font-size: clamp(2.18rem, 4.4vw, 3.85rem);
-    line-height: 1.14;
+    font-size: clamp(1.42rem, 2.1vw, 2rem);
+    line-height: 1.26;
     letter-spacing: 0;
 }
 
@@ -590,7 +590,7 @@
     }
 
     .landing-hero-copy h1 {
-        font-size: clamp(2rem, 10vw, 2.9rem);
+        font-size: clamp(1.42rem, 2.1vw, 2rem);
     }
 
     .landing-primary-cta,
