@@ -52,7 +52,6 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     requestPasswordReset,
     completePasswordReset,
     signInWithSocialProvider,
-    continueAsGuest,
     isPasswordRecovery
   } = useHappy();
 
@@ -288,12 +287,6 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
     }
 
     setFailedLoginAttempts(0);
-  };
-
-  const handleContinueAsGuest = () => {
-    resetFields();
-    continueAsGuest();
-    onClose?.();
   };
 
   const handleSocialLogin = async provider => {
@@ -562,7 +555,7 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
 
         {!isSupabaseConfigured && (
           <div className="auth-screen-note">
-            Supabase 환경변수가 연결되지 않았어요. 연결 전에는 게스트로만 시작할 수 있어요.
+            계정 로그인을 준비하지 못했어요. 환경 설정을 확인해주세요.
           </div>
         )}
 
@@ -601,9 +594,6 @@ const AuthScreen = ({ isOpen, canClose = false, initialMode = 'login', onClose }
               ))}
             </div>
 
-            <button type="button" className="auth-screen-guest-btn" onClick={handleContinueAsGuest}>
-              게스트로 로그인하기
-            </button>
           </>
         )}
       </div>

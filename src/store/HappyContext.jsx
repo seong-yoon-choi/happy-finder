@@ -185,6 +185,20 @@ const getGuestLocalCreatorId = () => {
   return nextId;
 };
 
+const clearDeprecatedGuestStorage = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (window.localStorage.getItem(AUTH_MODE_STORAGE_KEY) !== 'guest') {
+    return;
+  }
+
+  APP_STORAGE_KEYS.forEach(key => window.localStorage.removeItem(key));
+  window.localStorage.removeItem(GUEST_LOCAL_CREATOR_ID_STORAGE_KEY);
+  window.localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
+};
+
 const readStoredReviewAdminAuthUser = () => {
   if (typeof window === 'undefined') {
     return null;
@@ -1583,6 +1597,8 @@ export const HappyContext = createContext();
 export const useHappy = () => useContext(HappyContext);
 
 export const HappyProvider = ({ children }) => {
+  clearDeprecatedGuestStorage();
+
   const storedStamps = readStoredJson('happy_stamps', {});
   const initialUserStamps = isRecord(storedStamps) ? storedStamps : {};
 
@@ -1661,7 +1677,7 @@ export const HappyProvider = ({ children }) => {
   const [authUser, setAuthUser] = useState(null);
   const [reviewAuthUser, setReviewAuthUser] = useState(() => readStoredReviewAdminAuthUser());
   const [authProfileNickname, setAuthProfileNickname] = useState('');
-  const [isGuestMode, setIsGuestMode] = useState(() => localStorage.getItem(AUTH_MODE_STORAGE_KEY) === 'guest');
+  const [isGuestMode, setIsGuestMode] = useState(false);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => hasPasswordRecoveryInUrl());
   const [isSignupCompletionPending, setIsSignupCompletionPending] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(isSupabaseConfigured);
@@ -1675,7 +1691,6 @@ export const HappyProvider = ({ children }) => {
   const cloudSyncTimeoutRef = useRef(null);
   const latestSnapshotStateRef = useRef(null);
   const authUserIdRef = useRef(null);
-  const isGuestModeRef = useRef(isGuestMode);
   const pendingGuestDataMigrationRef = useRef(false);
   const isPasswordRecoveryRef = useRef(hasPasswordRecoveryInUrl());
   const postSignOutFeedbackRef = useRef(null);
@@ -1725,10 +1740,6 @@ export const HappyProvider = ({ children }) => {
     authUserIdRef.current = authUser?.id || null;
   }, [authUser?.id]);
 
-  useEffect(() => {
-    isGuestModeRef.current = isGuestMode;
-  }, [isGuestMode]);
-
   const syncResolvedAuthState = (session, user = session?.user ?? null) => {
     const nextUser = user ?? null;
     const nextSession = session
@@ -1737,16 +1748,7 @@ export const HappyProvider = ({ children }) => {
         ...(nextUser ? { user: nextUser } : {})
       }
       : null;
-    const nextUserId = nextUser?.id || null;
-    const shouldPromoteGuestData = Boolean(
-      nextUserId
-      && !authUserIdRef.current
-      && isGuestModeRef.current
-    );
-
-    if (shouldPromoteGuestData) {
-      pendingGuestDataMigrationRef.current = true;
-    }
+    pendingGuestDataMigrationRef.current = false;
 
     setAuthSession(nextSession);
     setAuthUser(nextUser);
@@ -2557,7 +2559,7 @@ export const HappyProvider = ({ children }) => {
 
       const payload = shouldPromoteGuestData
         ? promotedLocalSnapshot
-        : normalizeCloudSnapshot(latestSnapshotStateRef.current);
+        : normalizeCloudSnapshot({});
 
       const { error: upsertError } = await supabase
         .from(CLOUD_SNAPSHOT_TABLE)
@@ -2595,7 +2597,7 @@ export const HappyProvider = ({ children }) => {
         type: 'success',
         message: shouldPromoteGuestData
           ? '게스트 기록을 계정에 처음 저장했어요.'
-          : '로컬 기록을 클라우드에 처음 백업했어요.',
+          : '계정 기록 저장 공간을 준비했어요.',
         lastSyncedAt: new Date().toISOString()
       });
       setIsCloudSyncing(false);
@@ -3715,18 +3717,6 @@ export const HappyProvider = ({ children }) => {
 
   const clearAuthFeedback = () => {
     setAuthFeedback(defaultAuthFeedback);
-  };
-
-  const continueAsGuest = () => {
-    clearReviewAdminSession();
-    setIsGuestMode(true);
-    localStorage.setItem(AUTH_MODE_STORAGE_KEY, 'guest');
-    setAuthFeedback(defaultAuthFeedback);
-  };
-
-  const leaveGuestMode = () => {
-    setIsGuestMode(false);
-    localStorage.removeItem(AUTH_MODE_STORAGE_KEY);
   };
 
   const resetLocalAppState = () => {
@@ -4968,8 +4958,6 @@ export const HappyProvider = ({ children }) => {
       isCloudSyncing,
       cloudSyncStatus,
       clearAuthFeedback,
-      continueAsGuest,
-      leaveGuestMode,
       signInWithPassword,
       signUpWithPassword,
       requestSignUpEmailVerification,

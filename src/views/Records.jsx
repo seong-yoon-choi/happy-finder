@@ -399,12 +399,17 @@ const EditIcon = () => (
 const TrashIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M6.4 8.15H17.6M9.7 5.65H14.3M10.35 5.65L10.85 4.45H13.15L13.65 5.65M8.35 8.15L8.9 18.05C8.95 18.88 9.64 19.52 10.48 19.52H13.52C14.36 19.52 15.05 18.88 15.1 18.05L15.65 8.15M10.65 11.2V16.2M13.35 11.2V16.2"
+      d="M8.05 8.35H15.95L15.45 18.05C15.4 19 14.62 19.75 13.67 19.75H10.33C9.38 19.75 8.6 19 8.55 18.05L8.05 8.35Z"
+      fill="currentColor"
+      opacity="0.18"
+    />
+    <path
+      d="M6.25 8.35H17.75M9.45 5.95H14.55M10.05 5.95L10.62 4.55H13.38L13.95 5.95M8.05 8.35L8.55 18.05C8.6 19 9.38 19.75 10.33 19.75H13.67C14.62 19.75 15.4 19 15.45 18.05L15.95 8.35M10.65 11.25V16.45M13.35 11.25V16.45"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="1.45"
+      strokeWidth="2.15"
     />
   </svg>
 );
@@ -599,6 +604,7 @@ const Records = () => {
   const [isSharingRecord, setIsSharingRecord] = useState(false);
   const [isRecordShareOptionsOpen, setIsRecordShareOptionsOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
+  const [deleteRecordTarget, setDeleteRecordTarget] = useState(null);
   const [gallerySaveState, setGallerySaveState] = useState({
     isSaving: false,
     message: ''
@@ -962,7 +968,22 @@ const Records = () => {
     resetComposer({ shouldCleanup: false });
   };
 
-  const handleDeleteRecord = record => {
+  const requestDeleteRecord = record => {
+    setDeleteRecordTarget(record);
+  };
+
+  const cancelDeleteRecord = () => {
+    requestCloseDeleteRecordConfirm();
+  };
+
+  const confirmDeleteRecord = () => {
+    if (!deleteRecordTarget?.id) {
+      requestCloseDeleteRecordConfirm();
+      return;
+    }
+
+    const record = deleteRecordTarget;
+
     if (editingRecordId === record.id) {
       resetComposer({ shouldCleanup: false });
     }
@@ -972,6 +993,7 @@ const Records = () => {
     }
 
     deleteFreeRecord(record.id);
+    requestCloseDeleteRecordConfirm();
   };
 
   const closeRecordDetail = () => {
@@ -1047,6 +1069,12 @@ const Records = () => {
     historyKey: 'record-detail'
   });
 
+  const requestCloseDeleteRecordConfirm = useModalBackNavigation({
+    isOpen: Boolean(deleteRecordTarget),
+    onClose: () => setDeleteRecordTarget(null),
+    historyKey: 'record-delete-confirm'
+  });
+
   const requestCloseComposer = useModalBackNavigation({
     isOpen: isComposerOpen,
     onClose: resetComposer,
@@ -1085,6 +1113,11 @@ const Records = () => {
                 행복 메모
               </button>
             </div>
+            <p className="records-heading-description">
+              {activeRecordsTab === 'memos'
+                ? '행복 리스트에 남긴 메모를 한곳에서 확인하세요.'
+                : '오늘의 순간과 감정을 날짜별로 돌아보세요.'}
+            </p>
           </div>
           <div className="records-header-actions">
             <div className="records-view-mode-tabs" role="tablist" aria-label="보기 방식">
@@ -1481,7 +1514,7 @@ const Records = () => {
                 <button
                   type="button"
                   className="danger"
-                  onClick={() => handleDeleteRecord(activeRecord)}
+                  onClick={() => requestDeleteRecord(activeRecord)}
                   aria-label="기록 삭제"
                 >
                   <TrashIcon />
@@ -1508,6 +1541,31 @@ const Records = () => {
             {activeRecord.images.length > 0 && (
               <RecordImageStrip images={activeRecord.images} onOpen={openImage} />
             )}
+          </div>
+        </div>
+      )}
+
+      {deleteRecordTarget && (
+        <div
+          className="record-delete-confirm-overlay"
+          data-block-pull-refresh="true"
+          onClick={cancelDeleteRecord}
+        >
+          <div
+            className="glass-panel record-delete-confirm-modal"
+            data-block-pull-refresh="true"
+            onClick={event => event.stopPropagation()}
+          >
+            <h3>정말 삭제하시겠습니까?</h3>
+            <p>삭제한 내용은 되돌릴 수 없습니다.</p>
+            <div className="record-delete-confirm-actions">
+              <button type="button" className="record-delete-confirm-cancel" onClick={cancelDeleteRecord}>
+                취소
+              </button>
+              <button type="button" className="record-delete-confirm-submit" onClick={confirmDeleteRecord}>
+                삭제하기
+              </button>
+            </div>
           </div>
         </div>
       )}

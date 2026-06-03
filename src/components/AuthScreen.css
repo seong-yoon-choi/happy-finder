@@ -262,15 +262,13 @@
     font-size: 0.84rem;
 }
 
-.auth-screen-submit,
-.auth-screen-guest-btn {
+.auth-screen-submit {
     min-height: 50px;
     border-radius: 14px;
     font-weight: 800;
 }
 
-.auth-screen-submit:disabled,
-.auth-screen-guest-btn:disabled {
+.auth-screen-submit:disabled {
     opacity: 0.7;
     cursor: wait;
 }
@@ -392,19 +390,6 @@
 
 .auth-screen-social-text {
     text-align: left;
-}
-
-.auth-screen-guest-btn {
-    border: 1px solid rgba(var(--primary-rgb), 0.22);
-    background: rgba(255, 255, 255, 0.72);
-    color: var(--text-dark);
-    padding: 13px 16px;
-    font-size: 0.98rem;
-    cursor: pointer;
-}
-
-.dark-theme .auth-screen-guest-btn {
-    background: rgba(255, 255, 255, 0.08);
 }
 
 @media (min-width: 780px) {

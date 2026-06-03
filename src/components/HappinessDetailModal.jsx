@@ -134,12 +134,17 @@ const MemoEditIcon = () => (
 const MemoDeleteIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M6.4 8.15H17.6M9.7 5.65H14.3M10.35 5.65L10.85 4.45H13.15L13.65 5.65M8.35 8.15L8.9 18.05C8.95 18.88 9.64 19.52 10.48 19.52H13.52C14.36 19.52 15.05 18.88 15.1 18.05L15.65 8.15M10.65 11.2V16.2M13.35 11.2V16.2"
+      d="M8.05 8.35H15.95L15.45 18.05C15.4 19 14.62 19.75 13.67 19.75H10.33C9.38 19.75 8.6 19 8.55 18.05L8.05 8.35Z"
+      fill="currentColor"
+      opacity="0.18"
+    />
+    <path
+      d="M6.25 8.35H17.75M9.45 5.95H14.55M10.05 5.95L10.62 4.55H13.38L13.95 5.95M8.05 8.35L8.55 18.05C8.6 19 9.38 19.75 10.33 19.75H13.67C14.62 19.75 15.4 19 15.45 18.05L15.95 8.35M10.65 11.25V16.45M13.35 11.25V16.45"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="1.45"
+      strokeWidth="2.15"
     />
   </svg>
 );
@@ -1268,14 +1273,8 @@ const HappinessDetailModal = ({
             className="glass-panel delete-confirm-modal"
             onClick={event => event.stopPropagation()}
           >
-            <h3 className="delete-confirm-title">
-              {confirmDialog.type === 'item' ? '행복을 삭제할까요?' : '메모를 삭제할까요?'}
-            </h3>
-            <p className="delete-confirm-text">
-              {confirmDialog.type === 'item'
-                ? `"${currentItem.title}"을 삭제하면 다시 되돌릴 수 없어요.`
-                : '이 메모를 삭제하면 다시 되돌릴 수 없어요.'}
-            </p>
+            <h3 className="delete-confirm-title">정말 삭제하시겠습니까?</h3>
+            <p className="delete-confirm-text">삭제한 내용은 되돌릴 수 없습니다.</p>
             {confirmDialog.type === 'item' && deleteFeedback && (
               <p className="report-dialog-feedback error">{deleteFeedback}</p>
             )}

@@ -150,37 +150,42 @@ const EditIcon = () => (
 const TrashIcon = () => (
   <svg viewBox="0 0 20 20" fill="none" focusable="false" aria-hidden="true">
     <path
-      d="M5.833 7.08333V14.1667C5.833 14.6269 6.2061 15 6.66634 15H13.333C13.7932 15 14.1663 14.6269 14.1663 14.1667V7.08333"
+      d="M5.95 6.95H14.05L13.62 15.1C13.58 15.82 12.98 16.38 12.27 16.38H7.73C7.02 16.38 6.42 15.82 6.38 15.1L5.95 6.95Z"
+      fill="currentColor"
+      opacity="0.18"
+    />
+    <path
+      d="M5.95 6.95L6.38 15.1C6.42 15.82 7.02 16.38 7.73 16.38H12.27C12.98 16.38 13.58 15.82 13.62 15.1L14.05 6.95"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
-      d="M4.583 5.41667H15.4163"
+      d="M4.25 6.95H15.75"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
-      d="M8.33301 5.41667V4.58333C8.33301 4.1231 8.7061 3.75 9.16634 3.75H10.833C11.2932 3.75 11.6663 4.1231 11.6663 4.58333V5.41667"
+      d="M7.95 6.95V5.42C7.95 4.7 8.53 4.12 9.25 4.12H10.75C11.47 4.12 12.05 4.7 12.05 5.42V6.95"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
-      d="M8.75 8.75V12.5"
+      d="M8.55 9.45V13.55"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
-      d="M11.25 8.75V12.5"
+      d="M11.45 9.45V13.55"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -236,7 +241,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     openExactAlarmSettings,
     authUser,
     authUserNickname,
-    isGuestMode,
     isAuthLoading,
     isAuthBusy,
     authFeedback,
@@ -250,6 +254,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const [pickerTime, setPickerTime] = useState(() => parseReminderTime(DEFAULT_REMINDER_TIME));
   const [isAccountActionsOpen, setIsAccountActionsOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteReminderTargetId, setDeleteReminderTargetId] = useState(null);
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState('');
   const [isNotificationOptionsOpen, setIsNotificationOptionsOpen] = useState(false);
   const [notificationSettingsFeedback, setNotificationSettingsFeedback] = useState('');
@@ -348,6 +353,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const resetReminderEditor = () => {
     setIsTimePickerOpen(false);
     setEditingReminderId(null);
+    setDeleteReminderTargetId(null);
     setPickerTime(parseReminderTime(DEFAULT_REMINDER_TIME));
   };
 
@@ -369,6 +375,11 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
     isOpen,
     onClose: handleClose,
     historyKey: 'settings'
+  });
+  const requestCloseReminderDeleteConfirm = useModalBackNavigation({
+    isOpen: Boolean(deleteReminderTargetId),
+    onClose: () => setDeleteReminderTargetId(null),
+    historyKey: 'settings-reminder-delete-confirm'
   });
 
   if (!isOpen) {
@@ -472,11 +483,27 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   };
 
   const handleDeleteReminder = reminderId => {
+    setDeleteReminderTargetId(reminderId);
+  };
+
+  const cancelDeleteReminder = () => {
+    requestCloseReminderDeleteConfirm();
+  };
+
+  const confirmDeleteReminder = () => {
+    const reminderId = deleteReminderTargetId;
+
+    if (!reminderId) {
+      requestCloseReminderDeleteConfirm();
+      return;
+    }
+
     if (editingReminderId === reminderId) {
       resetReminderEditor();
     }
 
     deleteReminder(reminderId);
+    requestCloseReminderDeleteConfirm();
   };
 
   const handleToggleReminder = async () => {
@@ -663,9 +690,6 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
 
           {!isAuthLoading && !authUser && (
             <>
-              {isGuestMode && (
-                <div className="settings-note settings-guest-state">게스트로 사용 중이에요.</div>
-              )}
               <button type="button" className="settings-action-btn" onClick={handleOpenAuth}>
                 로그인하기
               </button>
@@ -914,6 +938,29 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
             </div>
           )}
         </div>
+
+        {deleteReminderTargetId && (
+          <div
+            className="settings-delete-confirm-overlay"
+            onClick={cancelDeleteReminder}
+          >
+            <div
+              className="settings-delete-confirm-modal"
+              onClick={event => event.stopPropagation()}
+            >
+              <h3>정말 삭제하시겠습니까?</h3>
+              <p>삭제한 내용은 되돌릴 수 없습니다.</p>
+              <div className="settings-delete-confirm-actions">
+                <button type="button" className="settings-delete-confirm-cancel" onClick={cancelDeleteReminder}>
+                  취소
+                </button>
+                <button type="button" className="settings-delete-confirm-submit" onClick={confirmDeleteReminder}>
+                  삭제하기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

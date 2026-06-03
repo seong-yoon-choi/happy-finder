@@ -31,12 +31,22 @@ const ShareTargetIcon = ({ type }) => {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path
-          d="M4.5 11C4.5 7.4 7.86 4.5 12 4.5S19.5 7.4 19.5 11 16.14 17.5 12 17.5C11.35 17.5 10.73 17.43 10.14 17.29L6.95 19.2L7.55 16.2C5.7 15.02 4.5 13.16 4.5 11Z"
-          fill="none"
-          stroke="currentColor"
+          d="M12 4.25C7.35 4.25 3.65 7.25 3.65 10.94C3.65 13.35 5.22 15.46 7.57 16.64L6.92 20.02C6.88 20.25 7.13 20.42 7.33 20.29L11.14 17.84C11.42 17.86 11.71 17.87 12 17.87C16.65 17.87 20.35 14.87 20.35 10.94C20.35 7.25 16.65 4.25 12 4.25Z"
+          fill="currentColor"
           strokeLinejoin="round"
-          strokeWidth="1.8"
         />
+        <text
+          x="12"
+          y="12.15"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="#fee500"
+          fontSize="4.15"
+          fontWeight="900"
+          letterSpacing="-0.2"
+        >
+          TALK
+        </text>
       </svg>
     );
   }

@@ -25,21 +25,6 @@ const featureCards = [
   }
 ];
 
-const appSummaryPoints = [
-  {
-    title: '행복 둘러보기',
-    description: '다른 사람이 행복했던 순간을 보고 나에게 맞는 작은 행동을 발견합니다.'
-  },
-  {
-    title: '기록과 메모',
-    description: '오늘 좋았던 일, 다시 해보고 싶은 행동, 사진과 감정을 함께 남깁니다.'
-  },
-  {
-    title: '공감과 분석',
-    description: '공감, 즐겨찾기, 메모, 기록이 쌓이면 나의 행복 패턴을 확인할 수 있습니다.'
-  }
-];
-
 const LandingPage = ({
   onOpenAuth,
   onOpenProfile,
@@ -58,6 +43,7 @@ const LandingPage = ({
         <header className="landing-header">
           <nav className="landing-nav">
             <a href="/" className="landing-brand" aria-label="Happy Finder 홈">
+              <img className="landing-brand-icon" src="/happy-finder-icon.svg" alt="" aria-hidden="true" />
               Happy Finder
             </a>
 
@@ -124,26 +110,56 @@ const LandingPage = ({
               </div>
             </div>
 
-            <aside className="landing-app-summary" aria-label="Happy Finder 앱 설명">
-              <div className="landing-summary-image">
-                <img src="/happiness-sample-journal.svg" alt="" />
-              </div>
+            <aside className="landing-app-summary" aria-label="행복 분석 미리보기">
               <div className="landing-summary-copy">
-                <span>APP OVERVIEW</span>
-                <h2>작은 행복을 발견하고, 모아두고, 다시 돌아보는 앱</h2>
+                <span>ANALYSIS PREVIEW</span>
+                <h2>나의 데이터들로 내 성향을 분석해 보세요</h2>
                 <p>
-                  Happy Finder는 거창한 변화보다 일상에서 스쳐 지나가는 작은 기쁨에 집중합니다.
-                  다른 사람의 행복을 참고하고, 내 행복을 기록하며, 반복되는 패턴을 자연스럽게 찾아보세요.
+                  기록, 메모, 공감, 즐겨찾기가 쌓이면 내가 어떤 행복을 자주 만나는지 그래프와 리포트로 확인할 수 있습니다.
                 </p>
               </div>
 
-              <div className="landing-summary-list">
-                {appSummaryPoints.map(item => (
-                  <article key={item.title} className="landing-summary-item">
-                    <strong>{item.title}</strong>
-                    <p>{item.description}</p>
-                  </article>
-                ))}
+              <div className="landing-analysis-preview">
+                <div className="landing-analysis-summary">
+                  <span>이번 주 행복 지수</span>
+                  <strong>??</strong>
+                </div>
+
+                <div className="landing-analysis-chart" aria-hidden="true">
+                  <div className="landing-analysis-grid" />
+                  <svg viewBox="0 0 260 116" focusable="false">
+                    <path
+                      className="landing-analysis-area"
+                      d="M16 92L55 76L94 82L133 52L172 66L211 38L244 48L244 106L16 106Z"
+                    />
+                    <path
+                      className="landing-analysis-line"
+                      d="M16 92L55 76L94 82L133 52L172 66L211 38L244 48"
+                    />
+                    {[16, 55, 94, 133, 172, 211, 244].map((x, index) => {
+                      const yValues = [92, 76, 82, 52, 66, 38, 48];
+                      return <circle key={x} cx={x} cy={yValues[index]} r="5" />;
+                    })}
+                  </svg>
+                </div>
+
+                <div className="landing-analysis-bars">
+                  <div>
+                    <span>혼자</span>
+                    <i><b style={{ width: '62%' }} /></i>
+                    <em>??%</em>
+                  </div>
+                  <div>
+                    <span>실내</span>
+                    <i><b style={{ width: '48%' }} /></i>
+                    <em>??%</em>
+                  </div>
+                  <div>
+                    <span>길게</span>
+                    <i><b style={{ width: '74%' }} /></i>
+                    <em>??%</em>
+                  </div>
+                </div>
               </div>
             </aside>
           </div>
