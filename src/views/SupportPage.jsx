@@ -202,7 +202,10 @@ const SupportPage = ({
         <header className="support-hero">
           <div className="support-copy">
             <p className="support-kicker">SUPPORT</p>
-            <h1>Happy Finder에 전하고 싶은 이야기를 남겨주세요</h1>
+            <h1>
+              <span>Happy Finder에 전하고 싶은</span>
+              <span>이야기를 남겨주세요</span>
+            </h1>
             <p>
               앱 사용 중 궁금한 점, 오류, 개선 아이디어를 보내주시면 확인 후 필요한 내용을 안내드립니다.
             </p>

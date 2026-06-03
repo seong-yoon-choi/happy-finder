@@ -188,6 +188,9 @@
     font-size: clamp(1.42rem, 2.1vw, 2rem);
     line-height: 1.26;
     letter-spacing: 0;
+    text-wrap: balance;
+    word-break: keep-all;
+    overflow-wrap: normal;
 }
 
 .landing-lead {
