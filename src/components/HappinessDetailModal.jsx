@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import ShareOptionsModal from './ShareOptionsModal';
+import usePressReorder from '../hooks/usePressReorder';
 import {
   createHappinessItemReport,
   hasExistingHappinessItemReport,
@@ -256,7 +257,7 @@ const getMemoImageErrorMessage = code => {
   }
 };
 
-const MemoImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
+const MemoImageThumb = ({ image, onRemove, onOpen, reorderProps, isReordering }) => {
   const [src, setSrc] = useState('');
   const imageId = image.id;
   const imagePath = image.path;
@@ -293,33 +294,8 @@ const MemoImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
 
   return (
     <div
-      className={`detail-memo-image-thumb ${onReorder ? 'is-reorderable' : ''}`}
-      draggable={Boolean(onReorder)}
-      data-image-id={image.id}
-      onDragStart={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', image.id);
-      }}
-      onDragOver={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-      }}
-      onDrop={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.preventDefault();
-        onReorder(event.dataTransfer.getData('text/plain'), image.id);
-      }}
+      className={`detail-memo-image-thumb ${reorderProps ? 'is-reorderable' : ''} ${isReordering ? 'is-press-dragging' : ''}`}
+      {...(reorderProps || {})}
     >
       <button
         type="button"
@@ -334,6 +310,7 @@ const MemoImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
         <button
           type="button"
           className="detail-memo-image-remove"
+          data-reorder-ignore="true"
           onClick={() => onRemove(image)}
           aria-label="첨부 사진 삭제"
         >
@@ -345,19 +322,25 @@ const MemoImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
 };
 
 const MemoImageStrip = ({ images = [], onRemove, onOpen, onReorder }) => {
+  const { activeId, getReorderProps } = usePressReorder({
+    enabled: Boolean(onReorder),
+    onReorder
+  });
+
   if (images.length === 0) {
     return null;
   }
 
   return (
-    <div className="detail-memo-image-strip">
+    <div className="detail-memo-image-strip" data-reorder-strip="true">
       {images.map(image => (
         <MemoImageThumb
           key={image.id}
           image={image}
           onRemove={onRemove}
           onOpen={onOpen}
-          onReorder={onReorder}
+          reorderProps={onReorder ? getReorderProps(image.id) : null}
+          isReordering={activeId === image.id}
         />
       ))}
     </div>
@@ -1027,6 +1010,16 @@ const HappinessDetailModal = ({
       >
         <div className="detail-top-actions">
           <div className="detail-side-actions">
+            {canDelete && currentItem.isCustom && isOwner && (
+              <button
+                type="button"
+                className="detail-icon-btn detail-delete-trigger"
+                onClick={openDeleteConfirm}
+                aria-label="이 행복 삭제하기"
+              >
+                <MemoDeleteIcon />
+              </button>
+            )}
             {canReportItem && (
               <button
                 type="button"
@@ -1126,18 +1119,8 @@ const HappinessDetailModal = ({
           </div>
         )}
 
-        {((canDelete && currentItem.isCustom && isOwner) || showMemoComposer || itemMemos.length > 0) && (
+        {(showMemoComposer || itemMemos.length > 0) && (
           <div className="detail-record-section">
-            {canDelete && currentItem.isCustom && isOwner && (
-              <button
-                type="button"
-                className="detail-delete-btn"
-                onClick={openDeleteConfirm}
-              >
-                이 행복 삭제하기
-              </button>
-            )}
-
             {(showMemoComposer || itemMemos.length > 0) && (
               <div className="detail-memo-section">
                 {showMemoComposer && (

@@ -2,6 +2,7 @@ import React, { lazy, useCallback, useState } from 'react';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import ShareOptionsModal from '../components/ShareOptionsModal';
 import ImageAdjustModal from '../components/ImageAdjustModal';
+import usePressReorder from '../hooks/usePressReorder';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import {
   chooseMemoPhoto,
@@ -497,7 +498,7 @@ const RecordPreviewThumb = ({ images = [] }) => {
   );
 };
 
-const RecordImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
+const RecordImageThumb = ({ image, onRemove, onOpen, reorderProps, isReordering }) => {
   const [src, setSrc] = useState('');
   const imageId = image.id;
   const imagePath = image.path;
@@ -532,33 +533,8 @@ const RecordImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
 
   return (
     <div
-      className={`record-image-thumb ${onReorder ? 'is-reorderable' : ''}`}
-      draggable={Boolean(onReorder)}
-      data-image-id={image.id}
-      onDragStart={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', image.id);
-      }}
-      onDragOver={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-      }}
-      onDrop={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.preventDefault();
-        onReorder(event.dataTransfer.getData('text/plain'), image.id);
-      }}
+      className={`record-image-thumb ${reorderProps ? 'is-reorderable' : ''} ${isReordering ? 'is-press-dragging' : ''}`}
+      {...(reorderProps || {})}
     >
       <button
         type="button"
@@ -573,6 +549,7 @@ const RecordImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
         <button
           type="button"
           className="record-image-remove"
+          data-reorder-ignore="true"
           onClick={() => onRemove(image)}
           aria-label="첨부 사진 삭제"
         >
@@ -584,19 +561,25 @@ const RecordImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
 };
 
 const RecordImageStrip = ({ images = [], onRemove, onOpen, onReorder }) => {
+  const { activeId, getReorderProps } = usePressReorder({
+    enabled: Boolean(onReorder),
+    onReorder
+  });
+
   if (images.length === 0) {
     return null;
   }
 
   return (
-    <div className="record-image-strip">
+    <div className="record-image-strip" data-reorder-strip="true">
       {images.map(image => (
         <RecordImageThumb
           key={image.id}
           image={image}
           onRemove={onRemove}
           onOpen={onOpen}
-          onReorder={onReorder}
+          reorderProps={onReorder ? getReorderProps(image.id) : null}
+          isReordering={activeId === image.id}
         />
       ))}
     </div>

@@ -114,26 +114,6 @@
   pointer-events: none;
 }
 
-.image-adjust-zoom {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 12px;
-  margin: 16px 2px 0;
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: rgba(39, 54, 31, 0.78);
-}
-
-.dark-theme .image-adjust-zoom {
-  color: rgba(242, 244, 232, 0.74);
-}
-
-.image-adjust-zoom input {
-  width: 100%;
-  accent-color: #77a72d;
-}
-
 .image-adjust-actions {
   display: grid;
   grid-template-columns: 0.9fr 0.8fr 1.2fr;

@@ -3,6 +3,7 @@ import CreateHappinessModal from '../components/CreateHappinessModal';
 import HappinessCard from '../components/HappinessCard';
 import ImageAdjustModal from '../components/ImageAdjustModal';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
+import usePressReorder from '../hooks/usePressReorder';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { HAPPINESS_TAG_GROUPS, normalizeVisibleTags } from '../lib/happinessTags';
 import {
@@ -201,7 +202,7 @@ const TodayHappinessImage = ({ record }) => {
   return <span className="home-today-image-blank" aria-hidden="true" />;
 };
 
-const TodayRecordImageThumb = ({ image, onRemove, onReorder }) => {
+const TodayRecordImageThumb = ({ image, onRemove, reorderProps, isReordering }) => {
   const [src, setSrc] = useState('');
   const imageId = image.id;
   const imagePath = image.path;
@@ -236,33 +237,8 @@ const TodayRecordImageThumb = ({ image, onRemove, onReorder }) => {
 
   return (
     <div
-      className={`record-image-thumb ${onReorder ? 'is-reorderable' : ''}`}
-      draggable={Boolean(onReorder)}
-      data-image-id={image.id}
-      onDragStart={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', image.id);
-      }}
-      onDragOver={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-      }}
-      onDrop={event => {
-        if (!onReorder) {
-          return;
-        }
-
-        event.preventDefault();
-        onReorder(event.dataTransfer.getData('text/plain'), image.id);
-      }}
+      className={`record-image-thumb ${reorderProps ? 'is-reorderable' : ''} ${isReordering ? 'is-press-dragging' : ''}`}
+      {...(reorderProps || {})}
     >
       <button
         type="button"
@@ -275,6 +251,7 @@ const TodayRecordImageThumb = ({ image, onRemove, onReorder }) => {
       <button
         type="button"
         className="record-image-remove"
+        data-reorder-ignore="true"
         onClick={() => onRemove(image)}
         aria-label="첨부 사진 삭제"
       >
@@ -285,18 +262,24 @@ const TodayRecordImageThumb = ({ image, onRemove, onReorder }) => {
 };
 
 const TodayRecordImageStrip = ({ images = [], onRemove, onReorder }) => {
+  const { activeId, getReorderProps } = usePressReorder({
+    enabled: Boolean(onReorder),
+    onReorder
+  });
+
   if (images.length === 0) {
     return null;
   }
 
   return (
-    <div className="record-image-strip">
+    <div className="record-image-strip" data-reorder-strip="true">
       {images.map(image => (
         <TodayRecordImageThumb
           key={image.id}
           image={image}
           onRemove={onRemove}
-          onReorder={onReorder}
+          reorderProps={onReorder ? getReorderProps(image.id) : null}
+          isReordering={activeId === image.id}
         />
       ))}
     </div>

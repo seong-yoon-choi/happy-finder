@@ -44,6 +44,7 @@
 }
 
 .detail-close,
+.detail-delete-trigger,
 .detail-report-trigger,
 .detail-favorite-trigger,
 .detail-share-trigger {
@@ -80,6 +81,22 @@
 .detail-report-trigger:disabled {
     opacity: 0.45;
     cursor: default;
+}
+
+.detail-delete-trigger {
+    color: var(--danger);
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(255, 71, 87, 0.22);
+}
+
+.detail-delete-trigger svg {
+    width: 18px;
+    height: 18px;
+}
+
+.dark-theme .detail-delete-trigger {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 112, 124, 0.28);
 }
 
 .detail-favorite-trigger {
@@ -403,23 +420,6 @@
 }
 
 
-.detail-delete-btn {
-    width: 100%;
-    border: 1px solid rgba(255, 71, 87, 0.3);
-    background: rgba(255, 71, 87, 0.08);
-    color: var(--danger);
-    border-radius: clamp(24px, 6vw, 30px);
-    padding: clamp(12px, 3vw, 14px) clamp(16px, 4vw, 18px);
-    font-size: var(--font-body-md);
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.detail-delete-btn:active {
-    transform: scale(0.98);
-}
-
 .detail-memo-section {
     width: 100%;
     display: flex;
@@ -509,6 +509,11 @@
 
 .detail-memo-image-thumb.is-reorderable {
     cursor: grab;
+    touch-action: none;
+    transition:
+        transform 160ms ease,
+        box-shadow 160ms ease,
+        border-color 160ms ease;
 }
 
 .detail-memo-image-thumb.is-reorderable::after {
@@ -528,6 +533,13 @@
 .detail-memo-image-thumb.is-reorderable:active {
     cursor: grabbing;
     transform: scale(0.98);
+}
+
+.detail-memo-image-thumb.is-press-dragging {
+    z-index: 4;
+    border-color: rgba(var(--primary-rgb), 0.5);
+    box-shadow: 0 14px 30px rgba(45, 74, 33, 0.24);
+    transform: translateY(-7px) scale(1.06);
 }
 
 .detail-memo-image-open {

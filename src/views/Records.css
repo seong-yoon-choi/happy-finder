@@ -1379,6 +1379,11 @@
 
 .record-image-thumb.is-reorderable {
     cursor: grab;
+    touch-action: none;
+    transition:
+        transform 160ms ease,
+        box-shadow 160ms ease,
+        border-color 160ms ease;
 }
 
 .record-image-thumb.is-reorderable::after {
@@ -1398,6 +1403,13 @@
 .record-image-thumb.is-reorderable:active {
     cursor: grabbing;
     transform: scale(0.98);
+}
+
+.record-image-thumb.is-press-dragging {
+    z-index: 4;
+    border-color: rgba(var(--primary-rgb), 0.5);
+    box-shadow: 0 14px 30px rgba(45, 74, 33, 0.24);
+    transform: translateY(-7px) scale(1.06);
 }
 
 .record-image-open {

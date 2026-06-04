@@ -5,7 +5,7 @@ import './ImageAdjustModal.css';
 const OUTPUT_SIZE = 1200;
 const DEFAULT_FRAME_SIZE = 280;
 const MIN_ZOOM = 1;
-const MAX_ZOOM = 2.8;
+const MAX_ZOOM = 3.4;
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -24,6 +24,17 @@ const getDisplaySize = ({ naturalWidth, naturalHeight, frameSize, zoom }) => {
   };
 };
 
+const getPointDistance = (leftPoint, rightPoint) => (
+  Math.hypot(rightPoint.x - leftPoint.x, rightPoint.y - leftPoint.y)
+);
+
+const getPointCenter = (leftPoint, rightPoint) => ({
+  x: (leftPoint.x + rightPoint.x) / 2,
+  y: (leftPoint.y + rightPoint.y) / 2
+});
+
+const getFirstTwoPoints = pointers => Array.from(pointers.values()).slice(0, 2);
+
 const ImageAdjustModal = ({
   isOpen,
   imageSrc,
@@ -34,7 +45,8 @@ const ImageAdjustModal = ({
 }) => {
   const frameRef = useRef(null);
   const imageRef = useRef(null);
-  const dragRef = useRef(null);
+  const pointersRef = useRef(new Map());
+  const gestureRef = useRef(null);
   const [frameSize, setFrameSize] = useState(DEFAULT_FRAME_SIZE);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [zoom, setZoom] = useState(MIN_ZOOM);
@@ -77,6 +89,8 @@ const ImageAdjustModal = ({
       return;
     }
 
+    pointersRef.current.clear();
+    gestureRef.current = null;
     setZoom(MIN_ZOOM);
     setOffset({ x: 0, y: 0 });
     setImageSize({ width: 0, height: 0 });
@@ -104,6 +118,28 @@ const ImageAdjustModal = ({
     zoom
   });
 
+  const startPanGesture = point => {
+    gestureRef.current = {
+      type: 'pan',
+      pointerId: point.id,
+      startPoint: point,
+      startOffset: offset
+    };
+  };
+
+  const startPinchGesture = points => {
+    const [firstPoint, secondPoint] = points;
+    const center = getPointCenter(firstPoint, secondPoint);
+
+    gestureRef.current = {
+      type: 'pinch',
+      startDistance: Math.max(1, getPointDistance(firstPoint, secondPoint)),
+      startCenter: center,
+      startZoom: zoom,
+      startOffset: offset
+    };
+  };
+
   const handlePointerDown = event => {
     if (isApplying || !imageSize.width || !imageSize.height) {
       return;
@@ -111,40 +147,91 @@ const ImageAdjustModal = ({
 
     event.preventDefault();
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    dragRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      startOffset: offset
-    };
+
+    pointersRef.current.set(event.pointerId, {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY
+    });
+
+    const points = getFirstTwoPoints(pointersRef.current);
+
+    if (points.length >= 2) {
+      startPinchGesture(points);
+      return;
+    }
+
+    startPanGesture(points[0]);
   };
 
   const handlePointerMove = event => {
-    const dragState = dragRef.current;
-
-    if (!dragState || dragState.pointerId !== event.pointerId) {
+    if (!pointersRef.current.has(event.pointerId)) {
       return;
     }
 
     event.preventDefault();
+    pointersRef.current.set(event.pointerId, {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY
+    });
+
+    const points = getFirstTwoPoints(pointersRef.current);
+    const gesture = gestureRef.current;
+
+    if (points.length >= 2) {
+      if (!gesture || gesture.type !== 'pinch') {
+        startPinchGesture(points);
+        return;
+      }
+
+      const [firstPoint, secondPoint] = points;
+      const center = getPointCenter(firstPoint, secondPoint);
+      const distance = Math.max(1, getPointDistance(firstPoint, secondPoint));
+      const nextZoom = clamp(gesture.startZoom * (distance / gesture.startDistance), MIN_ZOOM, MAX_ZOOM);
+      const nextOffset = {
+        x: gesture.startOffset.x + center.x - gesture.startCenter.x,
+        y: gesture.startOffset.y + center.y - gesture.startCenter.y
+      };
+
+      setZoom(nextZoom);
+      setOffset(getClampedOffset(nextOffset, nextZoom));
+      return;
+    }
+
+    if (!gesture || gesture.type !== 'pan') {
+      startPanGesture(points[0]);
+      return;
+    }
+
+    const [point] = points;
     const nextOffset = {
-      x: dragState.startOffset.x + event.clientX - dragState.startX,
-      y: dragState.startOffset.y + event.clientY - dragState.startY
+      x: gesture.startOffset.x + point.x - gesture.startPoint.x,
+      y: gesture.startOffset.y + point.y - gesture.startPoint.y
     };
 
     setOffset(getClampedOffset(nextOffset));
   };
 
   const handlePointerUp = event => {
-    if (dragRef.current?.pointerId === event.pointerId) {
-      dragRef.current = null;
+    if (!pointersRef.current.has(event.pointerId)) {
+      return;
     }
-  };
 
-  const handleZoomChange = event => {
-    const nextZoom = Number(event.target.value);
-    setZoom(nextZoom);
-    setOffset(prev => getClampedOffset(prev, nextZoom));
+    pointersRef.current.delete(event.pointerId);
+    const points = getFirstTwoPoints(pointersRef.current);
+
+    if (points.length >= 2) {
+      startPinchGesture(points);
+      return;
+    }
+
+    if (points.length === 1) {
+      startPanGesture(points[0]);
+      return;
+    }
+
+    gestureRef.current = null;
   };
 
   const handleReset = () => {
@@ -155,7 +242,14 @@ const ImageAdjustModal = ({
   const handleApply = async () => {
     const imageElement = imageRef.current;
 
-    if (!imageElement || !imageSize.width || !imageSize.height || isApplying) {
+    if (!imageElement || isApplying) {
+      return;
+    }
+
+    const naturalWidth = imageSize.width || imageElement.naturalWidth;
+    const naturalHeight = imageSize.height || imageElement.naturalHeight;
+
+    if (!naturalWidth || !naturalHeight) {
       return;
     }
 
@@ -168,9 +262,15 @@ const ImageAdjustModal = ({
       return;
     }
 
-    const sourceX = (displaySize.width / 2 - frameSize / 2 - offset.x) / displaySize.scale;
-    const sourceY = (displaySize.height / 2 - frameSize / 2 - offset.y) / displaySize.scale;
-    const sourceSize = frameSize / displaySize.scale;
+    const currentDisplaySize = getDisplaySize({
+      naturalWidth,
+      naturalHeight,
+      frameSize,
+      zoom
+    });
+    const sourceX = (currentDisplaySize.width / 2 - frameSize / 2 - offset.x) / currentDisplaySize.scale;
+    const sourceY = (currentDisplaySize.height / 2 - frameSize / 2 - offset.y) / currentDisplaySize.scale;
+    const sourceSize = frameSize / currentDisplaySize.scale;
 
     context.fillStyle = '#f9f7ed';
     context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
@@ -215,7 +315,7 @@ const ImageAdjustModal = ({
           </button>
         </div>
 
-        <p className="image-adjust-copy">첫 번째 사진이 리스트에 보입니다. 네모 안에 보일 부분을 맞춰주세요.</p>
+        <p className="image-adjust-copy">사진을 움직여 네모 안에 보일 부분을 맞춰주세요. 두 손가락을 벌리면 확대되고 모으면 축소됩니다.</p>
 
         <div
           ref={frameRef}
@@ -224,6 +324,7 @@ const ImageAdjustModal = ({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
+          onLostPointerCapture={handlePointerUp}
         >
           <img
             ref={imageRef}
@@ -245,19 +346,6 @@ const ImageAdjustModal = ({
           <span className="image-adjust-grid" aria-hidden="true" />
         </div>
 
-        <label className="image-adjust-zoom">
-          <span>확대</span>
-          <input
-            type="range"
-            min={MIN_ZOOM}
-            max={MAX_ZOOM}
-            step="0.05"
-            value={zoom}
-            onChange={handleZoomChange}
-            disabled={isApplying}
-          />
-        </label>
-
         <div className="image-adjust-actions">
           <button type="button" onClick={handleReset} disabled={isApplying}>
             가운데로
@@ -265,8 +353,8 @@ const ImageAdjustModal = ({
           <button type="button" onClick={() => requestClose()} disabled={isApplying}>
             취소
           </button>
-          <button type="button" className="primary" onClick={handleApply} disabled={isApplying || !imageSize.width}>
-            {isApplying ? '적용 중...' : '이대로 사용'}
+          <button type="button" className="primary" onClick={handleApply} disabled={isApplying}>
+            {isApplying ? '적용 중...' : '확인'}
           </button>
         </div>
       </div>
