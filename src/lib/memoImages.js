@@ -85,6 +85,35 @@ const getBase64FromMediaResult = async mediaResult => {
   throw new Error('MEMO_IMAGE_READ_FAILED');
 };
 
+export const getMemoImageDataUrlFromMediaResult = async mediaResult => {
+  const format = normalizeImageFormat(mediaResult?.metadata?.format);
+  const contentType = getImageContentType(format);
+  const base64 = await getBase64FromMediaResult(mediaResult);
+
+  return `data:${contentType};base64,${base64}`;
+};
+
+export const createMemoImageMediaResultFromDataUrl = ({
+  dataUrl,
+  width = 1200,
+  height = 1200
+}) => {
+  const normalizedDataUrl = typeof dataUrl === 'string' ? dataUrl : '';
+  const match = normalizedDataUrl.match(/^data:(image\/(?:jpeg|jpg|png|webp));base64,(.+)$/);
+  const contentType = match?.[1] || DEFAULT_IMAGE_CONTENT_TYPE;
+  const base64 = match?.[2] || normalizedDataUrl.replace(/^data:image\/[^;]+;base64,/, '');
+  const format = normalizeImageFormat(contentType.replace('image/', ''));
+
+  return {
+    thumbnail: `data:${getImageContentType(format)};base64,${base64}`,
+    metadata: {
+      format,
+      size: Math.round((base64.length * 3) / 4),
+      resolution: `${width}x${height}`
+    }
+  };
+};
+
 const getMemoImageFileName = ({ imageId, format }) => (
   `${imageId}.${getImageExtension(format)}`
 );

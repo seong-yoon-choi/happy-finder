@@ -1,10 +1,13 @@
 import React, { lazy, useCallback, useState } from 'react';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import ShareOptionsModal from '../components/ShareOptionsModal';
+import ImageAdjustModal from '../components/ImageAdjustModal';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import {
   chooseMemoPhoto,
+  createMemoImageMediaResultFromDataUrl,
   deleteMemoStoredImages,
+  getMemoImageDataUrlFromMediaResult,
   getMemoImageSrc,
   isNativeMemoImageAvailable,
   MEMO_IMAGE_MAX_COUNT,
@@ -127,6 +130,24 @@ const getRecordShareText = record => {
   ]
     .filter(value => typeof value === 'string' && value.trim())
     .join('\n');
+};
+
+const moveImageById = (images, sourceId, targetId) => {
+  if (!sourceId || !targetId || sourceId === targetId) {
+    return images;
+  }
+
+  const sourceIndex = images.findIndex(image => image.id === sourceId);
+  const targetIndex = images.findIndex(image => image.id === targetId);
+
+  if (sourceIndex < 0 || targetIndex < 0) {
+    return images;
+  }
+
+  const nextImages = [...images];
+  const [sourceImage] = nextImages.splice(sourceIndex, 1);
+  nextImages.splice(targetIndex, 0, sourceImage);
+  return nextImages;
 };
 
 const getRecordTitle = record => {
@@ -476,7 +497,7 @@ const RecordPreviewThumb = ({ images = [] }) => {
   );
 };
 
-const RecordImageThumb = ({ image, onRemove, onOpen }) => {
+const RecordImageThumb = ({ image, onRemove, onOpen, onReorder }) => {
   const [src, setSrc] = useState('');
   const imageId = image.id;
   const imagePath = image.path;
@@ -510,7 +531,35 @@ const RecordImageThumb = ({ image, onRemove, onOpen }) => {
   }, [imageContentType, imageId, imagePath, imageStorageType]);
 
   return (
-    <div className="record-image-thumb">
+    <div
+      className={`record-image-thumb ${onReorder ? 'is-reorderable' : ''}`}
+      draggable={Boolean(onReorder)}
+      data-image-id={image.id}
+      onDragStart={event => {
+        if (!onReorder) {
+          return;
+        }
+
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', image.id);
+      }}
+      onDragOver={event => {
+        if (!onReorder) {
+          return;
+        }
+
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }}
+      onDrop={event => {
+        if (!onReorder) {
+          return;
+        }
+
+        event.preventDefault();
+        onReorder(event.dataTransfer.getData('text/plain'), image.id);
+      }}
+    >
       <button
         type="button"
         className="record-image-open"
@@ -534,7 +583,7 @@ const RecordImageThumb = ({ image, onRemove, onOpen }) => {
   );
 };
 
-const RecordImageStrip = ({ images = [], onRemove, onOpen }) => {
+const RecordImageStrip = ({ images = [], onRemove, onOpen, onReorder }) => {
   if (images.length === 0) {
     return null;
   }
@@ -547,6 +596,7 @@ const RecordImageStrip = ({ images = [], onRemove, onOpen }) => {
           image={image}
           onRemove={onRemove}
           onOpen={onOpen}
+          onReorder={onReorder}
         />
       ))}
     </div>
@@ -584,6 +634,8 @@ const Records = () => {
   const [recordTitle, setRecordTitle] = useState('');
   const [recordText, setRecordText] = useState('');
   const [recordImages, setRecordImages] = useState([]);
+  const [pendingImageEdit, setPendingImageEdit] = useState(null);
+  const [isApplyingImageEdit, setIsApplyingImageEdit] = useState(false);
   const [recordValidation, setRecordValidation] = useState({
     title: false,
     content: false,
@@ -694,6 +746,8 @@ const Records = () => {
     setRecordTitle('');
     setRecordText('');
     setRecordImages([]);
+    setPendingImageEdit(null);
+    setIsApplyingImageEdit(false);
     setRecordValidation({ title: false, content: false, pulse: 0 });
     setDraftRecordId(createDraftRecordId());
     setImageFeedback('');
@@ -910,20 +964,47 @@ const Records = () => {
     }
 
     try {
-      const persistedImage = await persistMemoImage({
-        supabase,
-        authUserId: cloudAuthUserId,
-        itemId: FREE_RECORD_IMAGE_ITEM_ID,
-        memoId: recordId,
-        mediaResult: pickResult.photo,
-        source
-      });
-
-      setRecordImages(prev => [...prev, persistedImage]);
+      const dataUrl = await getMemoImageDataUrlFromMediaResult(pickResult.photo);
+      setPendingImageEdit({ source, dataUrl, recordId });
     } catch {
       setImageFeedback(getImageErrorMessage('PERSIST_FAILED'));
     } finally {
       setImageBusyTarget('');
+    }
+  };
+
+  const handleCancelImageEdit = () => {
+    if (isApplyingImageEdit) {
+      return;
+    }
+
+    setPendingImageEdit(null);
+  };
+
+  const handleApplyImageEdit = async dataUrl => {
+    if (!pendingImageEdit || isApplyingImageEdit) {
+      return;
+    }
+
+    setIsApplyingImageEdit(true);
+    setImageFeedback('');
+
+    try {
+      const persistedImage = await persistMemoImage({
+        supabase,
+        authUserId: cloudAuthUserId,
+        itemId: FREE_RECORD_IMAGE_ITEM_ID,
+        memoId: pendingImageEdit.recordId,
+        mediaResult: createMemoImageMediaResultFromDataUrl({ dataUrl }),
+        source: pendingImageEdit.source
+      });
+
+      setRecordImages(prev => [...prev, persistedImage]);
+      setPendingImageEdit(null);
+    } catch {
+      setImageFeedback(getImageErrorMessage('PERSIST_FAILED'));
+    } finally {
+      setIsApplyingImageEdit(false);
     }
   };
 
@@ -937,6 +1018,10 @@ const Records = () => {
     if (!isOriginalEditingImage) {
       cleanupImages([image]);
     }
+  };
+
+  const handleReorderComposerImages = (sourceId, targetId) => {
+    setRecordImages(prev => moveImageById(prev, sourceId, targetId));
   };
 
   const handleSaveRecord = () => {
@@ -1658,6 +1743,7 @@ const Records = () => {
               images={recordImages}
               onRemove={handleRemoveComposerImage}
               onOpen={openImage}
+              onReorder={handleReorderComposerImages}
             />
 
             {imageFeedback && <p className="records-image-feedback">{imageFeedback}</p>}
@@ -1724,6 +1810,15 @@ const Records = () => {
           </div>
         </div>
       )}
+
+      <ImageAdjustModal
+        isOpen={Boolean(pendingImageEdit)}
+        imageSrc={pendingImageEdit?.dataUrl || ''}
+        title="기록 사진 맞추기"
+        isApplying={isApplyingImageEdit}
+        onCancel={handleCancelImageEdit}
+        onApply={handleApplyImageEdit}
+      />
     </div>
   );
 };

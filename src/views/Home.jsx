@@ -1,12 +1,15 @@
 import React, { lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import CreateHappinessModal from '../components/CreateHappinessModal';
 import HappinessCard from '../components/HappinessCard';
+import ImageAdjustModal from '../components/ImageAdjustModal';
 import LazyLoadBoundary from '../components/LazyLoadBoundary';
 import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { HAPPINESS_TAG_GROUPS, normalizeVisibleTags } from '../lib/happinessTags';
 import {
   chooseMemoPhoto,
+  createMemoImageMediaResultFromDataUrl,
   deleteMemoStoredImages,
+  getMemoImageDataUrlFromMediaResult,
   getMemoImageSrc,
   isNativeMemoImageAvailable,
   MEMO_IMAGE_MAX_COUNT,
@@ -109,6 +112,24 @@ const FREE_RECORD_IMAGE_ITEM_ID = 'free-records';
 
 const createTodayDraftRecordId = () => `fr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+const moveImageById = (images, sourceId, targetId) => {
+  if (!sourceId || !targetId || sourceId === targetId) {
+    return images;
+  }
+
+  const sourceIndex = images.findIndex(image => image.id === sourceId);
+  const targetIndex = images.findIndex(image => image.id === targetId);
+
+  if (sourceIndex < 0 || targetIndex < 0) {
+    return images;
+  }
+
+  const nextImages = [...images];
+  const [sourceImage] = nextImages.splice(sourceIndex, 1);
+  nextImages.splice(targetIndex, 0, sourceImage);
+  return nextImages;
+};
+
 const getImageErrorMessage = code => {
   switch (code) {
     case 'CAMERA_PERMISSION_DENIED':
@@ -180,7 +201,7 @@ const TodayHappinessImage = ({ record }) => {
   return <span className="home-today-image-blank" aria-hidden="true" />;
 };
 
-const TodayRecordImageThumb = ({ image, onRemove }) => {
+const TodayRecordImageThumb = ({ image, onRemove, onReorder }) => {
   const [src, setSrc] = useState('');
   const imageId = image.id;
   const imagePath = image.path;
@@ -214,7 +235,35 @@ const TodayRecordImageThumb = ({ image, onRemove }) => {
   }, [imageContentType, imageId, imagePath, imageStorageType]);
 
   return (
-    <div className="record-image-thumb">
+    <div
+      className={`record-image-thumb ${onReorder ? 'is-reorderable' : ''}`}
+      draggable={Boolean(onReorder)}
+      data-image-id={image.id}
+      onDragStart={event => {
+        if (!onReorder) {
+          return;
+        }
+
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', image.id);
+      }}
+      onDragOver={event => {
+        if (!onReorder) {
+          return;
+        }
+
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }}
+      onDrop={event => {
+        if (!onReorder) {
+          return;
+        }
+
+        event.preventDefault();
+        onReorder(event.dataTransfer.getData('text/plain'), image.id);
+      }}
+    >
       <button
         type="button"
         className="record-image-open"
@@ -235,7 +284,7 @@ const TodayRecordImageThumb = ({ image, onRemove }) => {
   );
 };
 
-const TodayRecordImageStrip = ({ images = [], onRemove }) => {
+const TodayRecordImageStrip = ({ images = [], onRemove, onReorder }) => {
   if (images.length === 0) {
     return null;
   }
@@ -243,7 +292,12 @@ const TodayRecordImageStrip = ({ images = [], onRemove }) => {
   return (
     <div className="record-image-strip">
       {images.map(image => (
-        <TodayRecordImageThumb key={image.id} image={image} onRemove={onRemove} />
+        <TodayRecordImageThumb
+          key={image.id}
+          image={image}
+          onRemove={onRemove}
+          onReorder={onReorder}
+        />
       ))}
     </div>
   );
@@ -261,6 +315,8 @@ const Home = () => {
   const [todayHappinessTitle, setTodayHappinessTitle] = useState('');
   const [todayHappinessContent, setTodayHappinessContent] = useState('');
   const [todayHappinessImages, setTodayHappinessImages] = useState([]);
+  const [pendingTodayImageEdit, setPendingTodayImageEdit] = useState(null);
+  const [isApplyingTodayImageEdit, setIsApplyingTodayImageEdit] = useState(false);
   const [todayDraftRecordId, setTodayDraftRecordId] = useState(() => createTodayDraftRecordId());
   const [todayImageFeedback, setTodayImageFeedback] = useState('');
   const [todayImageBusyTarget, setTodayImageBusyTarget] = useState('');
@@ -390,6 +446,8 @@ const Home = () => {
     setTodayHappinessTitle('');
     setTodayHappinessContent('');
     setTodayHappinessImages([]);
+    setPendingTodayImageEdit(null);
+    setIsApplyingTodayImageEdit(false);
     setTodayDraftRecordId(createTodayDraftRecordId());
     setTodayImageFeedback('');
     setTodayImageBusyTarget('');
@@ -458,20 +516,47 @@ const Home = () => {
     }
 
     try {
-      const persistedImage = await persistMemoImage({
-        supabase,
-        authUserId: cloudAuthUserId,
-        itemId: FREE_RECORD_IMAGE_ITEM_ID,
-        memoId: recordId,
-        mediaResult: pickResult.photo,
-        source
-      });
-
-      setTodayHappinessImages(prev => [...prev, persistedImage]);
+      const dataUrl = await getMemoImageDataUrlFromMediaResult(pickResult.photo);
+      setPendingTodayImageEdit({ source, dataUrl, recordId });
     } catch {
       setTodayImageFeedback(getImageErrorMessage('PERSIST_FAILED'));
     } finally {
       setTodayImageBusyTarget('');
+    }
+  };
+
+  const handleCancelTodayImageEdit = () => {
+    if (isApplyingTodayImageEdit) {
+      return;
+    }
+
+    setPendingTodayImageEdit(null);
+  };
+
+  const handleApplyTodayImageEdit = async dataUrl => {
+    if (!pendingTodayImageEdit || isApplyingTodayImageEdit) {
+      return;
+    }
+
+    setIsApplyingTodayImageEdit(true);
+    setTodayImageFeedback('');
+
+    try {
+      const persistedImage = await persistMemoImage({
+        supabase,
+        authUserId: cloudAuthUserId,
+        itemId: FREE_RECORD_IMAGE_ITEM_ID,
+        memoId: pendingTodayImageEdit.recordId,
+        mediaResult: createMemoImageMediaResultFromDataUrl({ dataUrl }),
+        source: pendingTodayImageEdit.source
+      });
+
+      setTodayHappinessImages(prev => [...prev, persistedImage]);
+      setPendingTodayImageEdit(null);
+    } catch {
+      setTodayImageFeedback(getImageErrorMessage('PERSIST_FAILED'));
+    } finally {
+      setIsApplyingTodayImageEdit(false);
     }
   };
 
@@ -484,6 +569,10 @@ const Home = () => {
     if (!isOriginalImage) {
       cleanupTodayImages([image]);
     }
+  };
+
+  const handleReorderTodayImages = (sourceId, targetId) => {
+    setTodayHappinessImages(prev => moveImageById(prev, sourceId, targetId));
   };
 
   const emptyStateTitle = normalizedSearchQuery
@@ -663,6 +752,7 @@ const Home = () => {
             <TodayRecordImageStrip
               images={todayHappinessImages}
               onRemove={handleRemoveTodayImage}
+              onReorder={handleReorderTodayImages}
             />
 
             {todayImageFeedback && <p className="records-image-feedback">{todayImageFeedback}</p>}
@@ -727,6 +817,15 @@ const Home = () => {
           onClose={() => setIsCreateModalOpen(false)}
         />
       )}
+
+      <ImageAdjustModal
+        isOpen={Boolean(pendingTodayImageEdit)}
+        imageSrc={pendingTodayImageEdit?.dataUrl || ''}
+        title="오늘의 행복 사진 맞추기"
+        isApplying={isApplyingTodayImageEdit}
+        onCancel={handleCancelTodayImageEdit}
+        onApply={handleApplyTodayImageEdit}
+      />
 
       {isTagPickerOpen && (
         <div

@@ -3,7 +3,9 @@ import useModalBackNavigation from '../hooks/useModalBackNavigation';
 import { HAPPINESS_TAG_GROUPS, MAX_RECORD_TAGS, normalizeVisibleTags } from '../lib/happinessTags';
 import {
   chooseMemoPhoto,
+  createMemoImageMediaResultFromDataUrl,
   deleteMemoStoredImages,
+  getMemoImageDataUrlFromMediaResult,
   getMemoImageSrc,
   isNativeMemoImageAvailable,
   persistMemoImage,
@@ -12,6 +14,7 @@ import {
 } from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
 import { useHappy } from '../store/HappyContext';
+import ImageAdjustModal from './ImageAdjustModal';
 import './CreateHappinessModal.css';
 
 const DEFAULT_CUSTOM_CATEGORY = '소확행';
@@ -145,6 +148,8 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
   const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
   const [tagError, setTagError] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
+  const [pendingPreviewImageEdit, setPendingPreviewImageEdit] = useState(null);
+  const [isApplyingImageEdit, setIsApplyingImageEdit] = useState(false);
   const [activePreviewImage, setActivePreviewImage] = useState(null);
   const [gallerySaveState, setGallerySaveState] = useState({
     isSaving: false,
@@ -178,6 +183,8 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     setIsTagPickerOpen(false);
     setTagError('');
     setPreviewImage(null);
+    setPendingPreviewImageEdit(null);
+    setIsApplyingImageEdit(false);
     setActivePreviewImage(null);
     setGallerySaveState({
       isSaving: false,
@@ -338,21 +345,48 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
     }
 
     try {
+      const dataUrl = await getMemoImageDataUrlFromMediaResult(pickResult.photo);
+      setPendingPreviewImageEdit({ source, dataUrl });
+    } catch {
+      setImageFeedback(getCreateImageErrorMessage('PERSIST_FAILED'));
+    } finally {
+      setImageBusyTarget('');
+    }
+  };
+
+  const handleCancelPreviewImageEdit = () => {
+    if (isApplyingImageEdit) {
+      return;
+    }
+
+    setPendingPreviewImageEdit(null);
+  };
+
+  const handleApplyPreviewImageEdit = async dataUrl => {
+    if (!pendingPreviewImageEdit || isApplyingImageEdit) {
+      return;
+    }
+
+    setIsApplyingImageEdit(true);
+    setImageFeedback('');
+
+    try {
       const persistedImage = await persistMemoImage({
         supabase,
         authUserId: cloudAuthUserId,
         itemId: draftItemId,
         memoId: CREATE_HAPPINESS_PREVIEW_MEMO_ID,
-        mediaResult: pickResult.photo,
-        source
+        mediaResult: createMemoImageMediaResultFromDataUrl({ dataUrl }),
+        source: pendingPreviewImageEdit.source
       });
 
       cleanupPreviewImage(previewImage);
       setPreviewImage(persistedImage);
+      setPendingPreviewImageEdit(null);
     } catch {
       setImageFeedback(getCreateImageErrorMessage('PERSIST_FAILED'));
     } finally {
-      setImageBusyTarget('');
+      setIsApplyingImageEdit(false);
     }
   };
 
@@ -664,6 +698,15 @@ const CreateHappinessModal = ({ isOpen, onClose }) => {
           </div>
         </div>
       )}
+
+      <ImageAdjustModal
+        isOpen={Boolean(pendingPreviewImageEdit)}
+        imageSrc={pendingPreviewImageEdit?.dataUrl || ''}
+        title="행복 이미지 맞추기"
+        isApplying={isApplyingImageEdit}
+        onCancel={handleCancelPreviewImageEdit}
+        onApply={handleApplyPreviewImageEdit}
+      />
     </div>
   );
 };
