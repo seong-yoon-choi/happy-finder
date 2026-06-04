@@ -150,26 +150,26 @@ const EditIcon = () => (
 const TrashIcon = () => (
   <svg viewBox="0 0 20 20" fill="none" focusable="false" aria-hidden="true">
     <path
-      d="M5.95 6.95H14.05L13.62 15.1C13.58 15.82 12.98 16.38 12.27 16.38H7.73C7.02 16.38 6.42 15.82 6.38 15.1L5.95 6.95Z"
+      d="M4.95 6.85H15.05L14.58 15.08C14.53 15.86 13.88 16.48 13.1 16.48H6.9C6.12 16.48 5.47 15.86 5.42 15.08L4.95 6.85Z"
       fill="currentColor"
-      opacity="0.18"
+      opacity="0.2"
     />
     <path
-      d="M5.95 6.95L6.38 15.1C6.42 15.82 7.02 16.38 7.73 16.38H12.27C12.98 16.38 13.58 15.82 13.62 15.1L14.05 6.95"
+      d="M4.95 6.85L5.42 15.08C5.47 15.86 6.12 16.48 6.9 16.48H13.1C13.88 16.48 14.53 15.86 14.58 15.08L15.05 6.85"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
-      d="M4.25 6.95H15.75"
+      d="M3.45 6.85H16.55"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
-      d="M7.95 6.95V5.42C7.95 4.7 8.53 4.12 9.25 4.12H10.75C11.47 4.12 12.05 4.7 12.05 5.42V6.95"
+      d="M7.55 6.85V5.35C7.55 4.65 8.12 4.08 8.82 4.08H11.18C11.88 4.08 12.45 4.65 12.45 5.35V6.85"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
