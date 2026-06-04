@@ -1386,20 +1386,6 @@
         border-color 160ms ease;
 }
 
-.record-image-thumb.is-reorderable::after {
-    content: "";
-    position: absolute;
-    left: 7px;
-    bottom: 7px;
-    width: 18px;
-    height: 18px;
-    border-radius: 7px;
-    background:
-        radial-gradient(circle, rgba(255, 255, 255, 0.92) 1.4px, transparent 1.6px) 4px 4px / 6px 6px,
-        rgba(23, 48, 31, 0.58);
-    pointer-events: none;
-}
-
 .record-image-thumb.is-reorderable:active {
     cursor: grabbing;
     transform: scale(0.98);
