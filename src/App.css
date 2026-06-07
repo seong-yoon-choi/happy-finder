@@ -4,6 +4,31 @@
     min-height: 100vh;
 }
 
+.opening-video {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fffefa;
+    opacity: 1;
+    pointer-events: all;
+    transition: opacity 0.32s ease;
+}
+
+.opening-video--leaving {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.opening-video__media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #fffefa;
+}
+
 .app-container {
     position: relative;
     min-height: 100vh;

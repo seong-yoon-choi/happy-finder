@@ -1,4 +1,4 @@
-import React, { lazy, useEffect, useEffectEvent, useState } from 'react';
+import React, { lazy, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { HappyProvider, useHappy } from './store/HappyContext';
@@ -12,6 +12,7 @@ import Home from './views/Home';
 import { getAvailableAppUpdate } from './lib/appVersionPolicy';
 import { openExternalUrl } from './lib/externalBrowser';
 import LandingPage from './views/LandingPage';
+import openingVideoSrc from './assets/opening-clover.mp4';
 import {
   APP_PATH,
   PROFILE_PATH,
@@ -46,8 +47,71 @@ const SupportPage = lazy(() => import('./views/SupportPage'));
 const WebProfilePage = lazy(() => import('./views/WebProfilePage'));
 const PULL_TO_REFRESH_VIEW_STORAGE_KEY = 'happy_pull_refresh_view';
 const APP_VIEW_KEYS = ['home', 'records', 'analysis', 'profile'];
+const OPENING_VIDEO_FALLBACK_MS = 5200;
 
 const isNativeRuntime = () => Capacitor.isNativePlatform();
+
+function OpeningVideo() {
+  const videoRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(() => isNativeRuntime());
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  useEffect(() => {
+    if (!isVisible) {
+      return undefined;
+    }
+
+    const finish = () => {
+      setIsLeaving(true);
+    };
+
+    const fallbackTimer = window.setTimeout(finish, OPENING_VIDEO_FALLBACK_MS);
+    const playTimer = window.setTimeout(() => {
+      videoRef.current?.play?.().catch(() => {
+        finish();
+      });
+    }, 80);
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      window.clearTimeout(playTimer);
+    };
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (!isLeaving) {
+      return undefined;
+    }
+
+    const hideTimer = window.setTimeout(() => {
+      setIsVisible(false);
+    }, 320);
+
+    return () => {
+      window.clearTimeout(hideTimer);
+    };
+  }, [isLeaving]);
+
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <div className={`opening-video ${isLeaving ? 'opening-video--leaving' : ''}`} aria-hidden="true">
+      <video
+        ref={videoRef}
+        className="opening-video__media"
+        src={openingVideoSrc}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onEnded={() => setIsLeaving(true)}
+        onError={() => setIsVisible(false)}
+      />
+    </div>
+  );
+}
 
 const consumePreservedAppView = () => {
   if (typeof window === 'undefined') {
@@ -756,6 +820,7 @@ function App() {
 
   return (
     <HappyProvider>
+      <OpeningVideo />
       <div className="app-shell">
         <AppContent />
       </div>
