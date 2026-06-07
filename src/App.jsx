@@ -1,4 +1,4 @@
-import React, { lazy, useEffect, useEffectEvent, useRef, useState } from 'react';
+import React, { lazy, useEffect, useEffectEvent, useState } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { HappyProvider, useHappy } from './store/HappyContext';
@@ -12,7 +12,7 @@ import Home from './views/Home';
 import { getAvailableAppUpdate } from './lib/appVersionPolicy';
 import { openExternalUrl } from './lib/externalBrowser';
 import LandingPage from './views/LandingPage';
-import openingVideoSrc from './assets/opening-clover.mp4';
+import openingAnimationSrc from './assets/opening-clover.webp';
 import {
   APP_PATH,
   PROFILE_PATH,
@@ -47,12 +47,11 @@ const SupportPage = lazy(() => import('./views/SupportPage'));
 const WebProfilePage = lazy(() => import('./views/WebProfilePage'));
 const PULL_TO_REFRESH_VIEW_STORAGE_KEY = 'happy_pull_refresh_view';
 const APP_VIEW_KEYS = ['home', 'records', 'analysis', 'profile'];
-const OPENING_VIDEO_FALLBACK_MS = 5200;
+const OPENING_ANIMATION_DURATION_MS = 4300;
 
 const isNativeRuntime = () => Capacitor.isNativePlatform();
 
-function OpeningVideo() {
-  const videoRef = useRef(null);
+function OpeningAnimation() {
   const [isVisible, setIsVisible] = useState(() => isNativeRuntime());
   const [isLeaving, setIsLeaving] = useState(false);
 
@@ -61,20 +60,12 @@ function OpeningVideo() {
       return undefined;
     }
 
-    const finish = () => {
+    const finishTimer = window.setTimeout(() => {
       setIsLeaving(true);
-    };
-
-    const fallbackTimer = window.setTimeout(finish, OPENING_VIDEO_FALLBACK_MS);
-    const playTimer = window.setTimeout(() => {
-      videoRef.current?.play?.().catch(() => {
-        finish();
-      });
-    }, 80);
+    }, OPENING_ANIMATION_DURATION_MS);
 
     return () => {
-      window.clearTimeout(fallbackTimer);
-      window.clearTimeout(playTimer);
+      window.clearTimeout(finishTimer);
     };
   }, [isVisible]);
 
@@ -98,15 +89,11 @@ function OpeningVideo() {
 
   return (
     <div className={`opening-video ${isLeaving ? 'opening-video--leaving' : ''}`} aria-hidden="true">
-      <video
-        ref={videoRef}
+      <img
         className="opening-video__media"
-        src={openingVideoSrc}
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        onEnded={() => setIsLeaving(true)}
+        src={openingAnimationSrc}
+        alt=""
+        decoding="async"
         onError={() => setIsVisible(false)}
       />
     </div>
@@ -820,7 +807,7 @@ function App() {
 
   return (
     <HappyProvider>
-      <OpeningVideo />
+      <OpeningAnimation />
       <div className="app-shell">
         <AppContent />
       </div>
