@@ -47,7 +47,7 @@ const SupportPage = lazy(() => import('./views/SupportPage'));
 const WebProfilePage = lazy(() => import('./views/WebProfilePage'));
 const PULL_TO_REFRESH_VIEW_STORAGE_KEY = 'happy_pull_refresh_view';
 const APP_VIEW_KEYS = ['home', 'records', 'analysis', 'profile'];
-const OPENING_ANIMATION_DURATION_MS = 5700;
+const OPENING_ANIMATION_DURATION_MS = 5000;
 
 const isNativeRuntime = () => Capacitor.isNativePlatform();
 
