@@ -53,10 +53,36 @@ const isNativeRuntime = () => Capacitor.isNativePlatform();
 
 function OpeningAnimation() {
   const [isVisible, setIsVisible] = useState(() => isNativeRuntime());
+  const [isAnimationReady, setIsAnimationReady] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
     if (!isVisible) {
+      return undefined;
+    }
+
+    let isMounted = true;
+    const openingImage = new Image();
+
+    openingImage.onload = () => {
+      if (isMounted) {
+        setIsAnimationReady(true);
+      }
+    };
+    openingImage.onerror = () => {
+      if (isMounted) {
+        setIsVisible(false);
+      }
+    };
+    openingImage.src = openingAnimationSrc;
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (!isVisible || !isAnimationReady) {
       return undefined;
     }
 
@@ -67,7 +93,7 @@ function OpeningAnimation() {
     return () => {
       window.clearTimeout(finishTimer);
     };
-  }, [isVisible]);
+  }, [isAnimationReady, isVisible]);
 
   useEffect(() => {
     if (!isLeaving) {
@@ -89,13 +115,22 @@ function OpeningAnimation() {
 
   return (
     <div className={`opening-video ${isLeaving ? 'opening-video--leaving' : ''}`} aria-hidden="true">
-      <img
-        className="opening-video__media"
-        src={openingAnimationSrc}
-        alt=""
-        decoding="async"
-        onError={() => setIsVisible(false)}
-      />
+      {!isAnimationReady && (
+        <div className="opening-video__loader">
+          <span className="opening-video__spinner" />
+          <span className="opening-video__brand">Happy Finder</span>
+        </div>
+      )}
+      {isAnimationReady && (
+        <img
+          key="opening-animation-ready"
+          className="opening-video__media"
+          src={openingAnimationSrc}
+          alt=""
+          decoding="async"
+          onError={() => setIsVisible(false)}
+        />
+      )}
     </div>
   );
 }
