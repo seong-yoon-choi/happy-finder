@@ -35,6 +35,12 @@ const getPointCenter = (leftPoint, rightPoint) => ({
 
 const getFirstTwoPoints = pointers => Array.from(pointers.values()).slice(0, 2);
 
+const getTouchPoint = touch => ({
+  id: touch.identifier,
+  x: touch.clientX,
+  y: touch.clientY
+});
+
 const ImageAdjustModal = ({
   isOpen,
   imageSrc,
@@ -107,10 +113,6 @@ const ImageAdjustModal = ({
     historyKey: 'image-adjust'
   });
 
-  if (!isOpen || !imageSrc) {
-    return null;
-  }
-
   const displaySize = getDisplaySize({
     naturalWidth: imageSize.width,
     naturalHeight: imageSize.height,
@@ -119,6 +121,11 @@ const ImageAdjustModal = ({
   });
 
   const startPanGesture = point => {
+    if (!point) {
+      gestureRef.current = null;
+      return;
+    }
+
     gestureRef.current = {
       type: 'pan',
       pointerId: point.id,
@@ -140,42 +147,7 @@ const ImageAdjustModal = ({
     };
   };
 
-  const handlePointerDown = event => {
-    if (isApplying || !imageSize.width || !imageSize.height) {
-      return;
-    }
-
-    event.preventDefault();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-
-    pointersRef.current.set(event.pointerId, {
-      id: event.pointerId,
-      x: event.clientX,
-      y: event.clientY
-    });
-
-    const points = getFirstTwoPoints(pointersRef.current);
-
-    if (points.length >= 2) {
-      startPinchGesture(points);
-      return;
-    }
-
-    startPanGesture(points[0]);
-  };
-
-  const handlePointerMove = event => {
-    if (!pointersRef.current.has(event.pointerId)) {
-      return;
-    }
-
-    event.preventDefault();
-    pointersRef.current.set(event.pointerId, {
-      id: event.pointerId,
-      x: event.clientX,
-      y: event.clientY
-    });
-
+  const updateGestureFromPoints = () => {
     const points = getFirstTwoPoints(pointersRef.current);
     const gesture = gestureRef.current;
 
@@ -199,26 +171,31 @@ const ImageAdjustModal = ({
       return;
     }
 
-    if (!gesture || gesture.type !== 'pan') {
-      startPanGesture(points[0]);
+    if (points.length === 1) {
+      if (!gesture || gesture.type !== 'pan') {
+        startPanGesture(points[0]);
+        return;
+      }
+
+      const [point] = points;
+      const nextOffset = {
+        x: gesture.startOffset.x + point.x - gesture.startPoint.x,
+        y: gesture.startOffset.y + point.y - gesture.startPoint.y
+      };
+
+      setOffset(getClampedOffset(nextOffset));
       return;
     }
 
-    const [point] = points;
-    const nextOffset = {
-      x: gesture.startOffset.x + point.x - gesture.startPoint.x,
-      y: gesture.startOffset.y + point.y - gesture.startPoint.y
-    };
-
-    setOffset(getClampedOffset(nextOffset));
+    gestureRef.current = null;
   };
 
-  const handlePointerUp = event => {
-    if (!pointersRef.current.has(event.pointerId)) {
+  const finishGesturePoint = id => {
+    if (!pointersRef.current.has(id)) {
       return;
     }
 
-    pointersRef.current.delete(event.pointerId);
+    pointersRef.current.delete(id);
     const points = getFirstTwoPoints(pointersRef.current);
 
     if (points.length >= 2) {
@@ -232,6 +209,88 @@ const ImageAdjustModal = ({
     }
 
     gestureRef.current = null;
+  };
+
+  const canAdjustImage = !isApplying && imageSize.width > 0 && imageSize.height > 0;
+
+  const handlePointerDown = event => {
+    if (event.pointerType === 'touch' || !canAdjustImage) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    pointersRef.current.set(event.pointerId, {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY
+    });
+    updateGestureFromPoints();
+  };
+
+  const handlePointerMove = event => {
+    if (event.pointerType === 'touch' || !pointersRef.current.has(event.pointerId)) {
+      return;
+    }
+
+    event.preventDefault();
+    pointersRef.current.set(event.pointerId, {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY
+    });
+    updateGestureFromPoints();
+  };
+
+  const handlePointerUp = event => {
+    if (event.pointerType === 'touch') {
+      return;
+    }
+
+    finishGesturePoint(event.pointerId);
+  };
+
+  const handleTouchStart = event => {
+    if (!canAdjustImage) {
+      return;
+    }
+
+    event.preventDefault();
+    Array.from(event.changedTouches).forEach(touch => {
+      pointersRef.current.set(touch.identifier, getTouchPoint(touch));
+    });
+    updateGestureFromPoints();
+  };
+
+  const handleTouchMove = event => {
+    if (pointersRef.current.size === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    Array.from(event.changedTouches).forEach(touch => {
+      if (pointersRef.current.has(touch.identifier)) {
+        pointersRef.current.set(touch.identifier, getTouchPoint(touch));
+      }
+    });
+    updateGestureFromPoints();
+  };
+
+  const handleTouchEnd = event => {
+    Array.from(event.changedTouches).forEach(touch => {
+      finishGesturePoint(touch.identifier);
+    });
+  };
+
+  const handleWheel = event => {
+    if (!canAdjustImage) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextZoom = clamp(zoom + (event.deltaY > 0 ? -0.08 : 0.08), MIN_ZOOM, MAX_ZOOM);
+    setZoom(nextZoom);
+    setOffset(prev => getClampedOffset(prev, nextZoom));
   };
 
   const handleReset = () => {
@@ -289,6 +348,10 @@ const ImageAdjustModal = ({
     await onApply?.(canvas.toDataURL('image/jpeg', 0.86));
   };
 
+  if (!isOpen || !imageSrc) {
+    return null;
+  }
+
   return (
     <div
       className="image-adjust-overlay"
@@ -325,6 +388,11 @@ const ImageAdjustModal = ({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onLostPointerCapture={handlePointerUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+          onWheel={handleWheel}
         >
           <img
             ref={imageRef}

@@ -1,28 +1,66 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const LONG_PRESS_DELAY_MS = 260;
-const MOVE_CANCEL_DISTANCE = 9;
+const MOVE_CANCEL_DISTANCE = 14;
 const CLICK_SUPPRESS_MS = 360;
 
 const getDistance = (startX, startY, currentX, currentY) => (
   Math.hypot(currentX - startX, currentY - startY)
 );
 
-const findImageTarget = (event, stripElement) => {
-  if (!stripElement || typeof document.elementsFromPoint !== 'function') {
+const getTouchPoint = touch => ({
+  id: touch.identifier,
+  x: touch.clientX,
+  y: touch.clientY
+});
+
+const isPointInsideElement = ({ x, y, element }) => {
+  if (!element) {
+    return false;
+  }
+
+  const rect = element.getBoundingClientRect();
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+};
+
+const findImageTarget = ({ x, y, stripElement, activeImageId, activeElement }) => {
+  if (!stripElement) {
     return null;
   }
 
-  return document
-    .elementsFromPoint(event.clientX, event.clientY)
-    .find(element => (
-      element?.dataset?.imageId
-      && element.closest('[data-reorder-strip="true"]') === stripElement
-    )) || null;
+  if (isPointInsideElement({ x, y, element: activeElement })) {
+    return null;
+  }
+
+  const candidates = Array.from(stripElement.querySelectorAll('[data-image-id]'))
+    .filter(element => element?.dataset?.imageId && element.dataset.imageId !== activeImageId);
+
+  const containingTarget = candidates.find(element => {
+    const rect = element.getBoundingClientRect();
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  });
+
+  if (containingTarget) {
+    return containingTarget;
+  }
+
+  return candidates
+    .map(element => {
+      const rect = element.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      return {
+        element,
+        distance: Math.hypot(centerX - x, centerY - y)
+      };
+    })
+    .sort((left, right) => left.distance - right.distance)[0]?.element || null;
 };
 
 const usePressReorder = ({ onReorder, enabled = true } = {}) => {
   const [activeId, setActiveId] = useState('');
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const stateRef = useRef(null);
   const suppressClickUntilRef = useRef(0);
 
@@ -33,10 +71,27 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
     }
   }, []);
 
+  const activateDrag = useCallback((pressState, currentElement) => {
+    pressState.isDragging = true;
+    pressState.lastTargetId = pressState.imageId;
+    setActiveId(pressState.imageId);
+    setDragOffset({ x: 0, y: 0 });
+
+    currentElement?.classList.add('is-press-dragging');
+
+    if (typeof navigator.vibrate === 'function') {
+      navigator.vibrate(12);
+    }
+  }, []);
+
   const finishPress = useCallback(() => {
     const wasDragging = Boolean(stateRef.current?.isDragging);
 
     clearPressTimer();
+
+    if (stateRef.current?.element) {
+      stateRef.current.element.classList.remove('is-press-dragging');
+    }
 
     if (wasDragging) {
       suppressClickUntilRef.current = Date.now() + CLICK_SUPPRESS_MS;
@@ -44,95 +99,241 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
 
     stateRef.current = null;
     setActiveId('');
+    setDragOffset({ x: 0, y: 0 });
   }, [clearPressTimer]);
 
   useEffect(() => () => {
     clearPressTimer();
   }, [clearPressTimer]);
 
-  const getReorderProps = useCallback(imageId => ({
-    'data-image-id': imageId,
-    onPointerDown: event => {
-      if (
-        !enabled
-        || !onReorder
-        || event.button > 0
-        || event.target.closest('[data-reorder-ignore="true"]')
-      ) {
-        return;
-      }
+  const beginPress = useCallback(({ imageId, element, pointerId, x, y, source }) => {
+    if (!enabled || !onReorder) {
+      return;
+    }
 
-      const currentElement = event.currentTarget;
-      const pointerId = event.pointerId;
-      const stripElement = currentElement.closest('[data-reorder-strip="true"]');
+    const stripElement = element.closest('[data-reorder-strip="true"]');
 
-      stateRef.current = {
-        imageId,
-        pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        lastTargetId: imageId,
-        isDragging: false,
-        stripElement,
-        timerId: window.setTimeout(() => {
-          if (!stateRef.current || stateRef.current.pointerId !== pointerId) {
-            return;
-          }
+    clearPressTimer();
+    stateRef.current = {
+      imageId,
+      pointerId,
+      source,
+      startX: x,
+      startY: y,
+      lastX: x,
+      lastY: y,
+      lastTargetId: imageId,
+      isDragging: false,
+      element,
+      stripElement,
+      timerId: window.setTimeout(() => {
+        const pressState = stateRef.current;
 
-          stateRef.current.isDragging = true;
-          setActiveId(imageId);
-          currentElement.setPointerCapture?.(pointerId);
-
-          if (typeof navigator.vibrate === 'function') {
-            navigator.vibrate(12);
-          }
-        }, LONG_PRESS_DELAY_MS)
-      };
-    },
-    onPointerMove: event => {
-      const pressState = stateRef.current;
-
-      if (!pressState || pressState.pointerId !== event.pointerId) {
-        return;
-      }
-
-      if (!pressState.isDragging) {
-        if (getDistance(pressState.startX, pressState.startY, event.clientX, event.clientY) > MOVE_CANCEL_DISTANCE) {
-          finishPress();
+        if (!pressState || pressState.pointerId !== pointerId || pressState.source !== source) {
+          return;
         }
 
-        return;
-      }
+        activateDrag(pressState, element);
+      }, LONG_PRESS_DELAY_MS)
+    };
+  }, [activateDrag, clearPressTimer, enabled, onReorder]);
 
-      event.preventDefault();
-      const targetElement = findImageTarget(event, pressState.stripElement);
-      const targetId = targetElement?.dataset?.imageId || '';
+  const movePress = useCallback(({ pointerId, x, y, source, preventDefault }) => {
+    const pressState = stateRef.current;
 
-      if (!targetId || targetId === pressState.imageId || targetId === pressState.lastTargetId) {
-        return;
-      }
-
-      pressState.lastTargetId = targetId;
-      onReorder(pressState.imageId, targetId);
-    },
-    onPointerUp: event => {
-      if (stateRef.current?.pointerId === event.pointerId) {
-        finishPress();
-      }
-    },
-    onPointerCancel: event => {
-      if (stateRef.current?.pointerId === event.pointerId) {
-        finishPress();
-      }
-    },
-    onLostPointerCapture: finishPress,
-    onClickCapture: event => {
-      if (Date.now() < suppressClickUntilRef.current) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+    if (!pressState || pressState.pointerId !== pointerId || pressState.source !== source) {
+      return;
     }
-  }), [enabled, finishPress, onReorder]);
+
+    pressState.lastX = x;
+    pressState.lastY = y;
+
+    if (!pressState.isDragging) {
+      if (getDistance(pressState.startX, pressState.startY, x, y) > MOVE_CANCEL_DISTANCE) {
+        finishPress();
+      }
+
+      return;
+    }
+
+    preventDefault?.();
+    const nextOffset = {
+      x: x - pressState.startX,
+      y: y - pressState.startY
+    };
+    setDragOffset(nextOffset);
+
+    const targetElement = findImageTarget({
+      x,
+      y,
+      stripElement: pressState.stripElement,
+      activeImageId: pressState.imageId,
+      activeElement: pressState.element
+    });
+    const targetId = targetElement?.dataset?.imageId || '';
+
+    if (!targetId || targetId === pressState.lastTargetId) {
+      return;
+    }
+
+    pressState.lastTargetId = targetId;
+    onReorder(pressState.imageId, targetId);
+  }, [finishPress, onReorder]);
+
+  const endPress = useCallback(({ pointerId, source }) => {
+    const pressState = stateRef.current;
+
+    if (pressState?.pointerId === pointerId && pressState.source === source) {
+      finishPress();
+    }
+  }, [finishPress]);
+
+  const getReorderProps = useCallback(imageId => {
+    const isActive = activeId === imageId;
+
+    return {
+      'data-image-id': imageId,
+      style: isActive
+        ? {
+          '--press-reorder-x': `${dragOffset.x}px`,
+          '--press-reorder-y': `${dragOffset.y}px`
+        }
+        : undefined,
+      onPointerDown: event => {
+        if (
+          event.pointerType === 'touch'
+          || !enabled
+          || !onReorder
+          || event.button > 0
+          || event.target.closest('[data-reorder-ignore="true"]')
+        ) {
+          return;
+        }
+
+        beginPress({
+          imageId,
+          element: event.currentTarget,
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          source: 'pointer'
+        });
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      },
+      onPointerMove: event => {
+        if (event.pointerType === 'touch') {
+          return;
+        }
+
+        movePress({
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          source: 'pointer',
+          preventDefault: () => event.preventDefault()
+        });
+      },
+      onPointerUp: event => {
+        if (event.pointerType !== 'touch') {
+          endPress({ pointerId: event.pointerId, source: 'pointer' });
+        }
+      },
+      onPointerCancel: event => {
+        if (event.pointerType !== 'touch') {
+          endPress({ pointerId: event.pointerId, source: 'pointer' });
+        }
+      },
+      onLostPointerCapture: () => {
+        if (stateRef.current?.source === 'pointer') {
+          finishPress();
+        }
+      },
+      onTouchStart: event => {
+        if (
+          !enabled
+          || !onReorder
+          || event.target.closest('[data-reorder-ignore="true"]')
+        ) {
+          return;
+        }
+
+        const [touch] = Array.from(event.changedTouches);
+
+        if (!touch) {
+          return;
+        }
+
+        const point = getTouchPoint(touch);
+        beginPress({
+          imageId,
+          element: event.currentTarget,
+          pointerId: point.id,
+          x: point.x,
+          y: point.y,
+          source: 'touch'
+        });
+      },
+      onTouchMove: event => {
+        const pressState = stateRef.current;
+
+        if (!pressState || pressState.source !== 'touch') {
+          return;
+        }
+
+        const touch = Array.from(event.changedTouches)
+          .find(candidate => candidate.identifier === pressState.pointerId);
+
+        if (!touch) {
+          return;
+        }
+
+        const point = getTouchPoint(touch);
+        movePress({
+          pointerId: point.id,
+          x: point.x,
+          y: point.y,
+          source: 'touch',
+          preventDefault: () => event.preventDefault()
+        });
+      },
+      onTouchEnd: event => {
+        const pressState = stateRef.current;
+
+        if (!pressState || pressState.source !== 'touch') {
+          return;
+        }
+
+        const touch = Array.from(event.changedTouches)
+          .find(candidate => candidate.identifier === pressState.pointerId);
+
+        if (touch) {
+          endPress({ pointerId: touch.identifier, source: 'touch' });
+        }
+      },
+      onTouchCancel: event => {
+        const pressState = stateRef.current;
+
+        if (!pressState || pressState.source !== 'touch') {
+          return;
+        }
+
+        const touch = Array.from(event.changedTouches)
+          .find(candidate => candidate.identifier === pressState.pointerId);
+
+        if (touch) {
+          endPress({ pointerId: touch.identifier, source: 'touch' });
+        } else {
+          finishPress();
+        }
+      },
+      onClickCapture: event => {
+        if (Date.now() < suppressClickUntilRef.current) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }
+    };
+  }, [activeId, beginPress, dragOffset.x, dragOffset.y, enabled, endPress, finishPress, movePress, onReorder]);
 
   return {
     activeId,
