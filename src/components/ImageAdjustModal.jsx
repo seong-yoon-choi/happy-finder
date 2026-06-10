@@ -41,6 +41,12 @@ const getTouchPoint = touch => ({
   y: touch.clientY
 });
 
+const preventGestureDefault = event => {
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+};
+
 const ImageAdjustModal = ({
   isOpen,
   imageSrc,
@@ -53,10 +59,32 @@ const ImageAdjustModal = ({
   const imageRef = useRef(null);
   const pointersRef = useRef(new Map());
   const gestureRef = useRef(null);
+  const nativeHandlersRef = useRef({});
   const [frameSize, setFrameSize] = useState(DEFAULT_FRAME_SIZE);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [zoom, setZoom] = useState(MIN_ZOOM);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  const syncLoadedImageSize = useCallback(() => {
+    const imageElement = imageRef.current;
+
+    if (!imageElement?.naturalWidth || !imageElement?.naturalHeight) {
+      return false;
+    }
+
+    const nextSize = {
+      width: imageElement.naturalWidth,
+      height: imageElement.naturalHeight
+    };
+
+    setImageSize(currentSize => (
+      currentSize.width === nextSize.width && currentSize.height === nextSize.height
+        ? currentSize
+        : nextSize
+    ));
+
+    return true;
+  }, []);
 
   const getClampedOffset = useCallback((nextOffset, nextZoom = zoom) => {
     const displaySize = getDisplaySize({
@@ -92,18 +120,45 @@ const ImageAdjustModal = ({
 
   useEffect(() => {
     if (!isOpen) {
-      return;
+      return undefined;
     }
 
     pointersRef.current.clear();
     gestureRef.current = null;
-    setZoom(MIN_ZOOM);
-    setOffset({ x: 0, y: 0 });
-    setImageSize({ width: 0, height: 0 });
+
+    const frameId = window.requestAnimationFrame(() => {
+      setZoom(MIN_ZOOM);
+      setOffset({ x: 0, y: 0 });
+      setImageSize({ width: 0, height: 0 });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
   }, [imageSrc, isOpen]);
 
   useEffect(() => {
-    setOffset(prev => getClampedOffset(prev));
+    if (!isOpen || !imageSrc) {
+      return undefined;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      syncLoadedImageSize();
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [imageSrc, isOpen, syncLoadedImageSize]);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setOffset(prev => {
+        const nextOffset = getClampedOffset(prev);
+
+        return nextOffset.x === prev.x && nextOffset.y === prev.y
+          ? prev
+          : nextOffset;
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
   }, [frameSize, getClampedOffset, imageSize, zoom]);
 
   const requestClose = useModalBackNavigation({
@@ -211,14 +266,12 @@ const ImageAdjustModal = ({
     gestureRef.current = null;
   };
 
-  const canAdjustImage = !isApplying && imageSize.width > 0 && imageSize.height > 0;
-
   const handlePointerDown = event => {
-    if (event.pointerType === 'touch' || !canAdjustImage) {
+    if (event.pointerType === 'touch' || isApplying || !syncLoadedImageSize()) {
       return;
     }
 
-    event.preventDefault();
+    preventGestureDefault(event);
     event.currentTarget.setPointerCapture?.(event.pointerId);
     pointersRef.current.set(event.pointerId, {
       id: event.pointerId,
@@ -233,7 +286,7 @@ const ImageAdjustModal = ({
       return;
     }
 
-    event.preventDefault();
+    preventGestureDefault(event);
     pointersRef.current.set(event.pointerId, {
       id: event.pointerId,
       x: event.clientX,
@@ -251,11 +304,11 @@ const ImageAdjustModal = ({
   };
 
   const handleTouchStart = event => {
-    if (!canAdjustImage) {
+    if (isApplying || !syncLoadedImageSize()) {
       return;
     }
 
-    event.preventDefault();
+    preventGestureDefault(event);
     Array.from(event.changedTouches).forEach(touch => {
       pointersRef.current.set(touch.identifier, getTouchPoint(touch));
     });
@@ -267,7 +320,7 @@ const ImageAdjustModal = ({
       return;
     }
 
-    event.preventDefault();
+    preventGestureDefault(event);
     Array.from(event.changedTouches).forEach(touch => {
       if (pointersRef.current.has(touch.identifier)) {
         pointersRef.current.set(touch.identifier, getTouchPoint(touch));
@@ -283,15 +336,77 @@ const ImageAdjustModal = ({
   };
 
   const handleWheel = event => {
-    if (!canAdjustImage) {
+    if (isApplying || !syncLoadedImageSize()) {
       return;
     }
 
-    event.preventDefault();
+    preventGestureDefault(event);
     const nextZoom = clamp(zoom + (event.deltaY > 0 ? -0.08 : 0.08), MIN_ZOOM, MAX_ZOOM);
     setZoom(nextZoom);
     setOffset(prev => getClampedOffset(prev, nextZoom));
   };
+
+  useEffect(() => {
+    nativeHandlersRef.current = {
+      handlePointerDown,
+      handlePointerMove,
+      handlePointerUp,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      handleWheel
+    };
+  });
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const frameElement = frameRef.current;
+
+    if (!frameElement) {
+      return undefined;
+    }
+
+    const callHandler = handlerName => event => {
+      nativeHandlersRef.current[handlerName]?.(event);
+    };
+
+    const pointerDown = callHandler('handlePointerDown');
+    const pointerMove = callHandler('handlePointerMove');
+    const pointerUp = callHandler('handlePointerUp');
+    const touchStart = callHandler('handleTouchStart');
+    const touchMove = callHandler('handleTouchMove');
+    const touchEnd = callHandler('handleTouchEnd');
+    const wheel = callHandler('handleWheel');
+    const touchOptions = { passive: false };
+    const pointerOptions = { passive: false };
+
+    frameElement.addEventListener('pointerdown', pointerDown, pointerOptions);
+    frameElement.addEventListener('pointermove', pointerMove, pointerOptions);
+    frameElement.addEventListener('pointerup', pointerUp, pointerOptions);
+    frameElement.addEventListener('pointercancel', pointerUp, pointerOptions);
+    frameElement.addEventListener('lostpointercapture', pointerUp, pointerOptions);
+    frameElement.addEventListener('touchstart', touchStart, touchOptions);
+    frameElement.addEventListener('touchmove', touchMove, touchOptions);
+    frameElement.addEventListener('touchend', touchEnd, touchOptions);
+    frameElement.addEventListener('touchcancel', touchEnd, touchOptions);
+    frameElement.addEventListener('wheel', wheel, { passive: false });
+
+    return () => {
+      frameElement.removeEventListener('pointerdown', pointerDown, pointerOptions);
+      frameElement.removeEventListener('pointermove', pointerMove, pointerOptions);
+      frameElement.removeEventListener('pointerup', pointerUp, pointerOptions);
+      frameElement.removeEventListener('pointercancel', pointerUp, pointerOptions);
+      frameElement.removeEventListener('lostpointercapture', pointerUp, pointerOptions);
+      frameElement.removeEventListener('touchstart', touchStart, touchOptions);
+      frameElement.removeEventListener('touchmove', touchMove, touchOptions);
+      frameElement.removeEventListener('touchend', touchEnd, touchOptions);
+      frameElement.removeEventListener('touchcancel', touchEnd, touchOptions);
+      frameElement.removeEventListener('wheel', wheel, { passive: false });
+    };
+  }, [isOpen]);
 
   const handleReset = () => {
     setZoom(MIN_ZOOM);
@@ -383,16 +498,6 @@ const ImageAdjustModal = ({
         <div
           ref={frameRef}
           className="image-adjust-frame"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onLostPointerCapture={handlePointerUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-          onWheel={handleWheel}
         >
           <img
             ref={imageRef}

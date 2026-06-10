@@ -14,6 +14,12 @@ const getTouchPoint = touch => ({
   y: touch.clientY
 });
 
+const preventGestureDefault = event => {
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+};
+
 const isPointInsideElement = ({ x, y, element }) => {
   if (!element) {
     return false;
@@ -114,6 +120,11 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
     const stripElement = element.closest('[data-reorder-strip="true"]');
 
     clearPressTimer();
+    if (stateRef.current?.element && stateRef.current.element !== element) {
+      stateRef.current.element.classList.remove('is-press-dragging');
+    }
+    setActiveId('');
+    setDragOffset({ x: 0, y: 0 });
     stateRef.current = {
       imageId,
       pointerId,
@@ -187,6 +198,88 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
       finishPress();
     }
   }, [finishPress]);
+
+  useEffect(() => {
+    const handleWindowTouchMove = event => {
+      const pressState = stateRef.current;
+
+      if (!pressState || pressState.source !== 'touch') {
+        return;
+      }
+
+      const touch = Array.from(event.changedTouches)
+        .find(candidate => candidate.identifier === pressState.pointerId);
+
+      if (!touch) {
+        return;
+      }
+
+      const point = getTouchPoint(touch);
+      movePress({
+        pointerId: point.id,
+        x: point.x,
+        y: point.y,
+        source: 'touch',
+        preventDefault: () => preventGestureDefault(event)
+      });
+    };
+
+    const handleWindowTouchEnd = event => {
+      const pressState = stateRef.current;
+
+      if (!pressState || pressState.source !== 'touch') {
+        return;
+      }
+
+      const touch = Array.from(event.changedTouches)
+        .find(candidate => candidate.identifier === pressState.pointerId);
+
+      if (touch) {
+        endPress({ pointerId: touch.identifier, source: 'touch' });
+      }
+    };
+
+    const handleWindowTouchCancel = event => {
+      const pressState = stateRef.current;
+
+      if (!pressState || pressState.source !== 'touch') {
+        return;
+      }
+
+      if (pressState.isDragging) {
+        preventGestureDefault(event);
+        return;
+      }
+
+      finishPress();
+    };
+
+    const handleWindowBlur = () => {
+      finishPress();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        finishPress();
+      }
+    };
+
+    const options = { passive: false, capture: true };
+
+    window.addEventListener('touchmove', handleWindowTouchMove, options);
+    window.addEventListener('touchend', handleWindowTouchEnd, options);
+    window.addEventListener('touchcancel', handleWindowTouchCancel, options);
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('touchmove', handleWindowTouchMove, options);
+      window.removeEventListener('touchend', handleWindowTouchEnd, options);
+      window.removeEventListener('touchcancel', handleWindowTouchCancel, options);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [endPress, finishPress, movePress]);
 
   const getReorderProps = useCallback(imageId => {
     const isActive = activeId === imageId;
@@ -293,7 +386,7 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
           x: point.x,
           y: point.y,
           source: 'touch',
-          preventDefault: () => event.preventDefault()
+          preventDefault: () => preventGestureDefault(event)
         });
       },
       onTouchEnd: event => {
@@ -314,6 +407,11 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
         const pressState = stateRef.current;
 
         if (!pressState || pressState.source !== 'touch') {
+          return;
+        }
+
+        if (pressState.isDragging) {
+          preventGestureDefault(event);
           return;
         }
 
