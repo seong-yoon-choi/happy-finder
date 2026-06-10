@@ -20,21 +20,13 @@ const preventGestureDefault = event => {
   }
 };
 
-const isPointInsideElement = ({ x, y, element }) => {
-  if (!element) {
-    return false;
-  }
+const hasActiveTouch = (event, pointerId) => (
+  Array.from(event.touches || [])
+    .some(touch => touch.identifier === pointerId)
+);
 
-  const rect = element.getBoundingClientRect();
-  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-};
-
-const findImageTarget = ({ x, y, stripElement, activeImageId, activeElement }) => {
+const findImageTarget = ({ x, y, stripElement, activeImageId }) => {
   if (!stripElement) {
-    return null;
-  }
-
-  if (isPointInsideElement({ x, y, element: activeElement })) {
     return null;
   }
 
@@ -178,8 +170,7 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
       x,
       y,
       stripElement: pressState.stripElement,
-      activeImageId: pressState.imageId,
-      activeElement: pressState.element
+      activeImageId: pressState.imageId
     });
     const targetId = targetElement?.dataset?.imageId || '';
 
@@ -236,6 +227,8 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
 
       if (touch) {
         endPress({ pointerId: touch.identifier, source: 'touch' });
+      } else if (!hasActiveTouch(event, pressState.pointerId)) {
+        finishPress();
       }
     };
 
@@ -246,7 +239,7 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
         return;
       }
 
-      if (pressState.isDragging) {
+      if (pressState.isDragging && hasActiveTouch(event, pressState.pointerId)) {
         preventGestureDefault(event);
         return;
       }
@@ -401,6 +394,8 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
 
         if (touch) {
           endPress({ pointerId: touch.identifier, source: 'touch' });
+        } else if (!hasActiveTouch(event, pressState.pointerId)) {
+          finishPress();
         }
       },
       onTouchCancel: event => {
@@ -410,7 +405,7 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
           return;
         }
 
-        if (pressState.isDragging) {
+        if (pressState.isDragging && hasActiveTouch(event, pressState.pointerId)) {
           preventGestureDefault(event);
           return;
         }
@@ -420,7 +415,7 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
 
         if (touch) {
           endPress({ pointerId: touch.identifier, source: 'touch' });
-        } else {
+        } else if (!hasActiveTouch(event, pressState.pointerId)) {
           finishPress();
         }
       },
