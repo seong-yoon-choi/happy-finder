@@ -27,6 +27,14 @@ const getImageElements = stripElement => (
 
 const hasAnyActiveTouch = event => Array.from(event.touches || []).length > 0;
 
+const isPointInsideRect = ({ x, y, rect, inset = 0 }) => (
+  Boolean(rect)
+  && x >= rect.left + inset
+  && x <= rect.right - inset
+  && y >= rect.top + inset
+  && y <= rect.bottom - inset
+);
+
 const findImageTarget = ({ x, y, stripElement, activeImageId }) => {
   const candidates = getImageElements(stripElement)
     .filter(element => element.dataset.imageId !== activeImageId);
@@ -190,6 +198,7 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
       finalTargetId: '',
       isDragging: false,
       element,
+      startRect: element.getBoundingClientRect(),
       stripElement,
       timerId: window.setTimeout(() => {
         const pressState = stateRef.current;
@@ -226,6 +235,23 @@ const usePressReorder = ({ onReorder, enabled = true } = {}) => {
       x: x - pressState.startX,
       y: y - pressState.startY
     });
+
+    const isBackAtStart = isPointInsideRect({
+      x,
+      y,
+      rect: pressState.startRect,
+      inset: Math.min(pressState.startRect.width, pressState.startRect.height) * 0.12
+    });
+
+    if (isBackAtStart) {
+      if (pressState.finalTargetId || pressState.lastTargetId !== pressState.imageId) {
+        pressState.lastTargetId = pressState.imageId;
+        pressState.finalTargetId = '';
+        setPreviewTransforms({});
+      }
+
+      return;
+    }
 
     const targetElement = findImageTarget({
       x,
