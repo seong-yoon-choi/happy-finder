@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 
 export const APP_PATH = '/app';
+export const HAPPINESS_DETAIL_PATH_PREFIX = `${APP_PATH}/happiness`;
 export const PROFILE_PATH = '/profile';
 export const PASSWORD_RESET_PATH = '/password-reset';
 export const ACCOUNT_DELETE_PATH = '/account-delete';
@@ -48,6 +49,34 @@ export const normalizePath = (value) => {
 };
 
 export const isAppPath = (value) => normalizePath(value) === APP_PATH;
+export const getHappinessItemPath = (itemId) => {
+  const normalizedItemId = typeof itemId === 'string' ? itemId.trim() : '';
+
+  return normalizedItemId
+    ? `${HAPPINESS_DETAIL_PATH_PREFIX}/${encodeURIComponent(normalizedItemId)}`
+    : APP_PATH;
+};
+export const getHappinessItemIdFromPath = (value) => {
+  const normalizedPath = normalizePath(value);
+  const detailPrefix = `${HAPPINESS_DETAIL_PATH_PREFIX}/`;
+
+  if (!normalizedPath.startsWith(detailPrefix)) {
+    return null;
+  }
+
+  const encodedItemId = normalizedPath.slice(detailPrefix.length).split('/')[0];
+
+  if (!encodedItemId) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(encodedItemId);
+  } catch {
+    return encodedItemId;
+  }
+};
+export const isHappinessItemPath = (value) => Boolean(getHappinessItemIdFromPath(value));
 export const isProfilePath = (value) => normalizePath(value) === PROFILE_PATH;
 export const isPasswordResetPath = (value) => normalizePath(value) === PASSWORD_RESET_PATH;
 export const isAccountDeletePath = (value) => normalizePath(value) === ACCOUNT_DELETE_PATH;
@@ -139,6 +168,43 @@ export const getNativeAuthCallbackPathFromUrl = (urlString) => {
   } catch {
     return null;
   }
+};
+
+export const getNativeAppPathFromUrl = (urlString) => {
+  const authCallbackPath = getNativeAuthCallbackPathFromUrl(urlString);
+
+  if (authCallbackPath) {
+    return authCallbackPath;
+  }
+
+  if (typeof urlString !== 'string' || !urlString.trim()) {
+    return null;
+  }
+
+  const overrideWebUrl = import.meta.env.VITE_AUTH_WEB_URL;
+
+  if (typeof overrideWebUrl !== 'string' || !overrideWebUrl.trim()) {
+    return null;
+  }
+
+  try {
+    const incomingUrl = new URL(urlString);
+    const publicWebUrl = new URL(overrideWebUrl.trim());
+
+    if (incomingUrl.protocol !== publicWebUrl.protocol || incomingUrl.host !== publicWebUrl.host) {
+      return null;
+    }
+
+    const normalizedIncomingPath = normalizePath(incomingUrl.pathname);
+
+    if (isAppPath(normalizedIncomingPath) || isHappinessItemPath(normalizedIncomingPath)) {
+      return normalizedIncomingPath;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 };
 
 export const getAppRedirectUrl = (pathname = APP_PATH) => {

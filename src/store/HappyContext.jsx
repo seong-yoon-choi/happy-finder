@@ -115,7 +115,9 @@ const APP_STORAGE_KEYS = [
   'happy_empathies',
   'happy_activity_log',
   'happy_memos',
+  'happy_deleted_memo_keys',
   'happy_free_records',
+  'happy_deleted_free_records',
   'happy_theme',
   'happy_streak',
   'happy_reminder'
@@ -1205,6 +1207,28 @@ const normalizeFreeRecords = (value) => {
     ));
 };
 
+const normalizeDeletedIdList = (value) => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(new Set(
+    value
+      .map(id => (typeof id === 'string' ? id.trim() : ''))
+      .filter(Boolean)
+  )).sort();
+};
+
+const mergeDeletedIdLists = (...lists) => normalizeDeletedIdList(lists.flat());
+
+const areDeletedIdListsEqual = (leftList = [], rightList = []) => {
+  const normalizedLeftList = normalizeDeletedIdList(leftList);
+  const normalizedRightList = normalizeDeletedIdList(rightList);
+
+  return normalizedLeftList.length === normalizedRightList.length
+    && normalizedLeftList.every((id, index) => id === normalizedRightList[index]);
+};
+
 const normalizeFlagMap = (value) => {
   if (!isRecord(value)) {
     return {};
@@ -1267,19 +1291,23 @@ const createCloudSnapshotPayload = ({
   userEmpathies,
   userActivityLog,
   userMemos,
+  deletedMemoKeys,
   freeRecords,
+  deletedFreeRecordIds,
   isDarkMode,
   globalStreak,
   reminderSettings
 }) => ({
-  version: 3,
+  version: 4,
   items,
   userStamps,
   userFavorites,
   userEmpathies,
   userActivityLog: normalizeActivityLog(userActivityLog),
   userMemos,
+  deletedMemoKeys: normalizeDeletedIdList(deletedMemoKeys),
   freeRecords,
+  deletedFreeRecordIds: normalizeDeletedIdList(deletedFreeRecordIds),
   isDarkMode,
   globalStreak,
   reminderSettings
@@ -1295,7 +1323,9 @@ const normalizeCloudSnapshot = (payload) => {
     userEmpathies: normalizeFlagMap(payload?.userEmpathies),
     userActivityLog: normalizeActivityLog(payload?.userActivityLog),
     userMemos: normalizeMemoMap(payload?.userMemos),
+    deletedMemoKeys: normalizeDeletedIdList(payload?.deletedMemoKeys),
     freeRecords: normalizeFreeRecords(payload?.freeRecords),
+    deletedFreeRecordIds: normalizeDeletedIdList(payload?.deletedFreeRecordIds),
     isDarkMode: Boolean(payload?.isDarkMode),
     globalStreak: normalizeGlobalStreak(payload?.globalStreak),
     reminderSettings: normalizeReminderSettings(payload?.reminderSettings)
@@ -1444,6 +1474,17 @@ const getMemoMergeKey = memo => {
   return `fallback:${memo?.createdAt || ''}:${memo?.content || ''}`;
 };
 
+const getDeletedMemoKey = (itemId, memoId) => {
+  const normalizedItemId = getNormalizedCreatorId(itemId);
+  const normalizedMemoId = getNormalizedCreatorId(memoId);
+
+  if (!normalizedItemId || !normalizedMemoId) {
+    return '';
+  }
+
+  return `${normalizedItemId}:${normalizedMemoId}`;
+};
+
 const mergeMemoCollection = (baseMemos = [], incomingMemos = []) => {
   const mergedMemoMap = new Map();
 
@@ -1462,15 +1503,17 @@ const mergeMemoCollection = (baseMemos = [], incomingMemos = []) => {
     .sort((leftMemo, rightMemo) => getComparableDateValue(rightMemo.updatedAt) - getComparableDateValue(leftMemo.updatedAt));
 };
 
-const mergeMemoMap = (baseMemoMap = {}, incomingMemoMap = {}) => {
+const mergeMemoMap = (baseMemoMap = {}, incomingMemoMap = {}, deletedMemoKeys = []) => {
   const mergedMemoMap = {};
+  const deletedMemoKeySet = new Set(normalizeDeletedIdList(deletedMemoKeys));
   const itemIds = new Set([
     ...Object.keys(isRecord(baseMemoMap) ? baseMemoMap : {}),
     ...Object.keys(isRecord(incomingMemoMap) ? incomingMemoMap : {})
   ]);
 
   itemIds.forEach(itemId => {
-    const mergedMemos = mergeMemoCollection(baseMemoMap[itemId], incomingMemoMap[itemId]);
+    const mergedMemos = mergeMemoCollection(baseMemoMap[itemId], incomingMemoMap[itemId])
+      .filter(memo => !deletedMemoKeySet.has(getDeletedMemoKey(itemId, memo.id)));
 
     if (mergedMemos.length > 0) {
       mergedMemoMap[itemId] = mergedMemos;
@@ -1480,10 +1523,12 @@ const mergeMemoMap = (baseMemoMap = {}, incomingMemoMap = {}) => {
   return mergedMemoMap;
 };
 
-const mergeFreeRecords = (baseRecords = [], incomingRecords = []) => {
+const mergeFreeRecords = (baseRecords = [], incomingRecords = [], deletedFreeRecordIds = []) => {
   const mergedRecordMap = new Map();
+  const deletedRecordIdSet = new Set(normalizeDeletedIdList(deletedFreeRecordIds));
 
   [...normalizeFreeRecords(baseRecords), ...normalizeFreeRecords(incomingRecords)]
+    .filter(record => !deletedRecordIdSet.has(record.id))
     .forEach(record => {
       const mergeKey = getMemoMergeKey(record);
       const previousRecord = mergedRecordMap.get(mergeKey);
@@ -1558,6 +1603,14 @@ const mergeCloudSnapshotsForAuthenticatedUser = ({
     ]),
     mergedUserStamps
   );
+  const mergedDeletedMemoKeys = mergeDeletedIdLists(
+    normalizedCloudSnapshot.deletedMemoKeys,
+    normalizedLocalSnapshot.deletedMemoKeys
+  );
+  const mergedDeletedFreeRecordIds = mergeDeletedIdLists(
+    normalizedCloudSnapshot.deletedFreeRecordIds,
+    normalizedLocalSnapshot.deletedFreeRecordIds
+  );
 
   return {
     snapshot: {
@@ -1577,12 +1630,16 @@ const mergeCloudSnapshotsForAuthenticatedUser = ({
       ),
       userMemos: mergeMemoMap(
         normalizedCloudSnapshot.userMemos,
-        normalizedLocalSnapshot.userMemos
+        normalizedLocalSnapshot.userMemos,
+        mergedDeletedMemoKeys
       ),
+      deletedMemoKeys: mergedDeletedMemoKeys,
       freeRecords: mergeFreeRecords(
         normalizedCloudSnapshot.freeRecords,
-        normalizedLocalSnapshot.freeRecords
+        normalizedLocalSnapshot.freeRecords,
+        mergedDeletedFreeRecordIds
       ),
+      deletedFreeRecordIds: mergedDeletedFreeRecordIds,
       isDarkMode: normalizedCloudSnapshot.isDarkMode,
       globalStreak: mergeGlobalStreak(
         normalizedCloudSnapshot.globalStreak,
@@ -1633,9 +1690,19 @@ export const HappyProvider = ({ children }) => {
     return isRecord(savedMemos) ? savedMemos : {};
   });
 
+  const [deletedMemoKeys, setDeletedMemoKeys] = useState(() => {
+    const savedDeletedMemoKeys = readStoredJson('happy_deleted_memo_keys', []);
+    return normalizeDeletedIdList(savedDeletedMemoKeys);
+  });
+
   const [freeRecords, setFreeRecords] = useState(() => {
     const savedFreeRecords = readStoredJson('happy_free_records', []);
     return normalizeFreeRecords(savedFreeRecords);
+  });
+
+  const [deletedFreeRecordIds, setDeletedFreeRecordIds] = useState(() => {
+    const savedDeletedFreeRecordIds = readStoredJson('happy_deleted_free_records', []);
+    return normalizeDeletedIdList(savedDeletedFreeRecordIds);
   });
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -2373,12 +2440,14 @@ export const HappyProvider = ({ children }) => {
       userEmpathies,
       userActivityLog,
       userMemos,
+      deletedMemoKeys,
       freeRecords,
+      deletedFreeRecordIds,
       isDarkMode,
       globalStreak,
       reminderSettings
     };
-  }, [items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, deletedMemoKeys, freeRecords, deletedFreeRecordIds, isDarkMode, globalStreak, reminderSettings]);
 
   const syncRemoteCatalogItems = useEffectEvent(async () => {
     if (!supabase) {
@@ -2430,7 +2499,9 @@ export const HappyProvider = ({ children }) => {
     setUserEmpathies(snapshot.userEmpathies);
     setUserActivityLog(snapshot.userActivityLog);
     setUserMemos(snapshot.userMemos);
+    setDeletedMemoKeys(snapshot.deletedMemoKeys);
     setFreeRecords(snapshot.freeRecords);
+    setDeletedFreeRecordIds(snapshot.deletedFreeRecordIds);
     setIsDarkMode(snapshot.isDarkMode);
     setGlobalStreak(snapshot.globalStreak);
     setReminderSettings(snapshot.reminderSettings);
@@ -2442,7 +2513,7 @@ export const HappyProvider = ({ children }) => {
     }
 
     isApplyingCloudSnapshotRef.current = false;
-  }, [items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, deletedMemoKeys, freeRecords, deletedFreeRecordIds, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!supabase || !authUser?.id) {
@@ -2498,7 +2569,7 @@ export const HappyProvider = ({ children }) => {
       }
 
       if (isRecord(data?.payload)) {
-        const snapshotResult = shouldPromoteGuestData
+        let snapshotResult = shouldPromoteGuestData
           ? mergeCloudSnapshotsForAuthenticatedUser({
               cloudSnapshot: data.payload,
               localSnapshot: promotedLocalSnapshot,
@@ -2506,8 +2577,40 @@ export const HappyProvider = ({ children }) => {
               guestCreatorIds
             })
           : repairCloudSnapshotForAuthenticatedUser(data.payload, authUser.id, guestCreatorIds);
-        const nextSnapshot = snapshotResult.snapshot;
-        const shouldPersistSnapshot = shouldPromoteGuestData || snapshotResult.didRepairOwnership;
+        let nextSnapshot = snapshotResult.snapshot;
+        let didApplyLocalDeletedMarkers = false;
+
+        if (!shouldPromoteGuestData) {
+          const mergedDeletedMemoKeys = mergeDeletedIdLists(
+            nextSnapshot.deletedMemoKeys,
+            promotedLocalSnapshot.deletedMemoKeys
+          );
+          const mergedDeletedFreeRecordIds = mergeDeletedIdLists(
+            nextSnapshot.deletedFreeRecordIds,
+            promotedLocalSnapshot.deletedFreeRecordIds
+          );
+
+          didApplyLocalDeletedMarkers = !areDeletedIdListsEqual(mergedDeletedMemoKeys, nextSnapshot.deletedMemoKeys)
+            || !areDeletedIdListsEqual(mergedDeletedFreeRecordIds, nextSnapshot.deletedFreeRecordIds);
+
+          if (didApplyLocalDeletedMarkers) {
+            nextSnapshot = {
+              ...nextSnapshot,
+              userMemos: mergeMemoMap(nextSnapshot.userMemos, {}, mergedDeletedMemoKeys),
+              deletedMemoKeys: mergedDeletedMemoKeys,
+              freeRecords: mergeFreeRecords(nextSnapshot.freeRecords, [], mergedDeletedFreeRecordIds),
+              deletedFreeRecordIds: mergedDeletedFreeRecordIds
+            };
+            snapshotResult = {
+              ...snapshotResult,
+              snapshot: nextSnapshot
+            };
+          }
+        }
+
+        const shouldPersistSnapshot = shouldPromoteGuestData
+          || snapshotResult.didRepairOwnership
+          || didApplyLocalDeletedMarkers;
 
         applyCloudSnapshot(nextSnapshot);
         hasBootstrappedCloudRef.current = true;
@@ -2672,8 +2775,16 @@ export const HappyProvider = ({ children }) => {
   }, [userMemos]);
 
   useEffect(() => {
+    localStorage.setItem('happy_deleted_memo_keys', JSON.stringify(deletedMemoKeys));
+  }, [deletedMemoKeys]);
+
+  useEffect(() => {
     localStorage.setItem('happy_free_records', JSON.stringify(freeRecords));
   }, [freeRecords]);
+
+  useEffect(() => {
+    localStorage.setItem('happy_deleted_free_records', JSON.stringify(deletedFreeRecordIds));
+  }, [deletedFreeRecordIds]);
 
   useEffect(() => {
     localStorage.setItem('happy_theme', JSON.stringify(isDarkMode));
@@ -2898,7 +3009,9 @@ export const HappyProvider = ({ children }) => {
         userEmpathies,
         userActivityLog,
         userMemos,
+        deletedMemoKeys,
         freeRecords,
+        deletedFreeRecordIds,
         isDarkMode,
         globalStreak,
         reminderSettings
@@ -2937,7 +3050,7 @@ export const HappyProvider = ({ children }) => {
         cloudSyncTimeoutRef.current = null;
       }
     };
-  }, [authUser?.id, items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, freeRecords, isDarkMode, globalStreak, reminderSettings]);
+  }, [authUser?.id, items, userStamps, userFavorites, userEmpathies, userActivityLog, userMemos, deletedMemoKeys, freeRecords, deletedFreeRecordIds, isDarkMode, globalStreak, reminderSettings]);
 
   useEffect(() => {
     if (!isNativeNotificationPlatform()) {
@@ -3372,8 +3485,13 @@ export const HappyProvider = ({ children }) => {
   };
 
   const getItemMemos = (itemId) => {
+    const deletedMemoKeySet = new Set(deletedMemoKeys);
     const savedMemos = userMemos[itemId];
-    return Array.isArray(savedMemos) ? savedMemos.map(normalizeMemo) : [];
+    return Array.isArray(savedMemos)
+      ? savedMemos
+          .map(normalizeMemo)
+          .filter(memo => !deletedMemoKeySet.has(getDeletedMemoKey(itemId, memo.id)))
+      : [];
   };
 
   const cleanupMemoImages = images => {
@@ -3403,6 +3521,8 @@ export const HappyProvider = ({ children }) => {
       updatedAt: nowIso
     };
 
+    setDeletedMemoKeys(prev => prev.filter(key => key !== getDeletedMemoKey(itemId, nextMemo.id)));
+
     setUserMemos(prev => {
       const currentMemos = Array.isArray(prev[itemId]) ? prev[itemId].map(normalizeMemo) : [];
 
@@ -3425,6 +3545,8 @@ export const HappyProvider = ({ children }) => {
     }
 
     let didUpdate = false;
+
+    setDeletedMemoKeys(prev => prev.filter(key => key !== getDeletedMemoKey(itemId, memoId)));
 
     setUserMemos(prev => {
       const currentMemos = Array.isArray(prev[itemId]) ? prev[itemId].map(normalizeMemo) : [];
@@ -3464,6 +3586,11 @@ export const HappyProvider = ({ children }) => {
 
   const deleteMemo = (itemId, memoId) => {
     let didDelete = false;
+    const deletedMemoKey = getDeletedMemoKey(itemId, memoId);
+
+    if (deletedMemoKey) {
+      setDeletedMemoKeys(prev => mergeDeletedIdLists(prev, [deletedMemoKey]));
+    }
 
     setUserMemos(prev => {
       const currentMemos = Array.isArray(prev[itemId]) ? prev[itemId].map(normalizeMemo) : [];
@@ -3494,6 +3621,8 @@ export const HappyProvider = ({ children }) => {
 
   const getAllRecords = () => {
     const itemById = new Map(items.map(item => [item.id, item]));
+    const deletedMemoKeySet = new Set(deletedMemoKeys);
+    const deletedFreeRecordIdSet = new Set(deletedFreeRecordIds);
     const listRecords = Object.entries(userMemos).flatMap(([itemId, memos]) => {
       if (!Array.isArray(memos)) {
         return [];
@@ -3502,6 +3631,7 @@ export const HappyProvider = ({ children }) => {
       const linkedItem = itemById.get(itemId);
 
       return memos.map(normalizeMemo)
+        .filter(memo => !deletedMemoKeySet.has(getDeletedMemoKey(itemId, memo.id)))
         .filter(memo => memo.content.trim() || memo.images.length > 0)
         .map(memo => ({
           ...memo,
@@ -3515,10 +3645,10 @@ export const HappyProvider = ({ children }) => {
         }));
     });
 
-    const freeRecordEntries = freeRecords.map(record => {
-      const normalizedRecord = normalizeFreeRecord(record);
-
-      return {
+    const freeRecordEntries = freeRecords
+      .map(normalizeFreeRecord)
+      .filter(record => !deletedFreeRecordIdSet.has(record.id))
+      .map(normalizedRecord => ({
         ...normalizedRecord,
         recordKey: `free:${normalizedRecord.id}`,
         sourceType: 'free',
@@ -3526,8 +3656,7 @@ export const HappyProvider = ({ children }) => {
         item: null,
         itemTitle: '기록',
         itemDescription: ''
-      };
-    });
+      }));
 
     return [...listRecords, ...freeRecordEntries]
       .sort((leftRecord, rightRecord) => (
@@ -3535,7 +3664,12 @@ export const HappyProvider = ({ children }) => {
       ));
   };
 
-  const getFreeRecords = () => freeRecords.map(normalizeFreeRecord);
+  const getFreeRecords = () => {
+    const deletedFreeRecordIdSet = new Set(deletedFreeRecordIds);
+    return freeRecords
+      .map(normalizeFreeRecord)
+      .filter(record => !deletedFreeRecordIdSet.has(record.id));
+  };
 
   const addFreeRecord = (content, images = [], options = {}) => {
     const trimmedContent = typeof content === 'string' ? content.trim() : '';
@@ -3557,6 +3691,8 @@ export const HappyProvider = ({ children }) => {
       updatedAt: nowIso
     };
 
+    setDeletedFreeRecordIds(prev => prev.filter(id => id !== nextRecord.id));
+
     setFreeRecords(prev => [nextRecord, ...prev.map(normalizeFreeRecord)]);
 
     return nextRecord;
@@ -3573,12 +3709,17 @@ export const HappyProvider = ({ children }) => {
     }
 
     let didUpdate = false;
+    const normalizedRecordId = typeof recordId === 'string' ? recordId.trim() : '';
+
+    if (normalizedRecordId) {
+      setDeletedFreeRecordIds(prev => prev.filter(id => id !== normalizedRecordId));
+    }
 
     setFreeRecords(prev => {
       const nextRecords = prev.map(record => {
         const normalizedRecord = normalizeFreeRecord(record);
 
-        if (normalizedRecord.id !== recordId) {
+        if (normalizedRecord.id !== normalizedRecordId) {
           return normalizedRecord;
         }
 
@@ -3607,11 +3748,16 @@ export const HappyProvider = ({ children }) => {
 
   const deleteFreeRecord = (recordId) => {
     let didDelete = false;
+    const normalizedRecordId = typeof recordId === 'string' ? recordId.trim() : '';
+
+    if (normalizedRecordId) {
+      setDeletedFreeRecordIds(prev => mergeDeletedIdLists(prev, [normalizedRecordId]));
+    }
 
     setFreeRecords(prev => {
       const normalizedRecords = prev.map(normalizeFreeRecord);
-      const deletedRecord = normalizedRecords.find(record => record.id === recordId);
-      const nextRecords = normalizedRecords.filter(record => record.id !== recordId);
+      const deletedRecord = normalizedRecords.find(record => record.id === normalizedRecordId);
+      const nextRecords = normalizedRecords.filter(record => record.id !== normalizedRecordId);
 
       if (nextRecords.length === normalizedRecords.length) {
         return prev;
@@ -3730,7 +3876,9 @@ export const HappyProvider = ({ children }) => {
     setUserEmpathies({});
     setUserActivityLog([]);
     setUserMemos({});
+    setDeletedMemoKeys([]);
     setFreeRecords([]);
+    setDeletedFreeRecordIds([]);
     setIsDarkMode(false);
     setGlobalStreak({ current: 0, lastDate: null });
     setReminderSettings(defaultReminderSettings);
@@ -4547,7 +4695,7 @@ export const HappyProvider = ({ children }) => {
 
     const sessionState = await ensureTrustedAuthSession();
 
-    if (!sessionState.success || !sessionState.user) {
+    if (!sessionState.success || !sessionState.user || !sessionState.session?.access_token) {
       setIsAuthBusy(false);
       const nextFeedback = {
         type: 'error',
@@ -4563,6 +4711,9 @@ export const HappyProvider = ({ children }) => {
     };
 
     const { error } = await supabase.functions.invoke(DELETE_ACCOUNT_FUNCTION_NAME, {
+      headers: {
+        Authorization: `Bearer ${sessionState.session.access_token}`
+      },
       body: {
         confirmation: 'DELETE'
       }

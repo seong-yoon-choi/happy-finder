@@ -21,7 +21,7 @@ import {
   takeMemoPhoto
 } from '../lib/memoImages';
 import { supabase } from '../lib/supabase';
-import { APP_PATH, getPublicWebUrl } from '../lib/routes';
+import { APP_PATH, getHappinessItemPath, getPublicWebUrl } from '../lib/routes';
 import { useHappy } from '../store/HappyContext';
 import ImageAdjustModal from './ImageAdjustModal';
 import './HappinessDetailModal.css';
@@ -217,6 +217,12 @@ const getItemShareText = item => {
     .filter(value => typeof value === 'string' && value.trim())
     .join('\n');
 };
+
+const getItemSharePath = item => (
+  item?.isCustom && !item?.isPublic
+    ? APP_PATH
+    : getHappinessItemPath(item?.id)
+);
 
 const createDraftMemoId = () => `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -1335,7 +1341,7 @@ const HappinessDetailModal = ({
           shareData={{
             title: currentItem.title,
             text: getItemShareText(currentItem),
-            url: getPublicWebUrl(APP_PATH)
+            url: getPublicWebUrl(getItemSharePath(currentItem))
           }}
           onClose={() => setIsShareOptionsOpen(false)}
           onResult={handleShareResult}

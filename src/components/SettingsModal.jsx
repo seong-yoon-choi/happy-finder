@@ -322,10 +322,14 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   const timeEditorDescription = editingReminderId === 'new'
     ? '원하는 시간을 골라 새 알림을 추가해보세요.'
     : '선택한 알림 시간을 바로 바꿀 수 있어요.';
-  const isDeleteConfirmationMatched = Boolean(
-    authUser?.email
-      && deleteConfirmationEmail.trim().toLowerCase() === authUser.email.toLowerCase()
-  );
+  const deleteConfirmationTarget = authUser?.email
+    ? authUser.email.trim().toLowerCase()
+    : '탈퇴';
+  const deleteConfirmationInstruction = authUser?.email
+    ? '탈퇴하려면 아래 입력칸에 현재 이메일 주소를 그대로 입력해주세요.'
+    : '탈퇴하려면 아래 입력칸에 탈퇴를 입력해주세요.';
+  const deleteConfirmationPlaceholder = authUser?.email || '탈퇴';
+  const isDeleteConfirmationMatched = deleteConfirmationEmail.trim().toLowerCase() === deleteConfirmationTarget;
 
   useEffect(() => {
     if (!isTimePickerOpen || reminderEditorScrollRequest === 0 || typeof window === 'undefined') {
@@ -435,7 +439,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
   };
 
   const handleDeleteAccount = async () => {
-    if (!authUser?.email || !isDeleteConfirmationMatched) {
+    if (!isDeleteConfirmationMatched) {
       return;
     }
 
@@ -651,15 +655,15 @@ const SettingsModal = ({ isOpen, onClose, onOpenAuth, onOpenAgreement, onOpenNic
                     {isDeleteConfirmOpen && (
                       <div className="settings-danger-panel">
                         <p className="settings-danger-note">
-                          탈퇴하려면 아래 입력칸에 현재 이메일 주소를 그대로 입력해주세요.
+                          {deleteConfirmationInstruction}
                         </p>
                         <input
-                          type="email"
+                          type={authUser?.email ? 'email' : 'text'}
                           className="settings-danger-input"
                           value={deleteConfirmationEmail}
                           onChange={event => setDeleteConfirmationEmail(event.target.value)}
-                          placeholder={authUser.email || '이메일 주소'}
-                          autoComplete="email"
+                          placeholder={deleteConfirmationPlaceholder}
+                          autoComplete={authUser?.email ? 'email' : 'off'}
                           disabled={isAuthBusy}
                         />
                         <div className="settings-danger-actions">

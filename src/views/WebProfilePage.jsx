@@ -33,10 +33,13 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
   const [isDeleteCompleted, setIsDeleteCompleted] = useState(false);
   const [isDeleteSectionOpen, setIsDeleteSectionOpen] = useState(false);
 
-  const normalizedEmail = confirmationEmail.trim().toLowerCase();
   const accountEmail = typeof authUser?.email === 'string' ? authUser.email : '';
-  const expectedEmail = accountEmail.toLowerCase();
-  const isConfirmationMatched = Boolean(expectedEmail && normalizedEmail === expectedEmail);
+  const confirmationTarget = accountEmail ? accountEmail.toLowerCase() : '탈퇴';
+  const isConfirmationMatched = confirmationEmail.trim().toLowerCase() === confirmationTarget;
+  const confirmationInstruction = accountEmail
+    ? '현재 이메일을 다시 입력하면 계정 삭제를 진행할 수 있어요.'
+    : '탈퇴를 입력하면 계정 삭제를 진행할 수 있어요.';
+  const confirmationPlaceholder = accountEmail || '탈퇴';
   const displayName = useMemo(() => {
     if (typeof authUserNickname === 'string' && authUserNickname.trim()) {
       return authUserNickname.trim();
@@ -210,22 +213,22 @@ const WebProfilePage = ({ onNavigate, onOpenAuth }) => {
               {isDeleteSectionOpen && (
                 <>
                   <div className="web-profile-section-head">
-                    <p>현재 이메일을 다시 입력하면 계정 삭제를 진행할 수 있어요.</p>
+                    <p>{confirmationInstruction}</p>
                   </div>
 
                   <div className="web-profile-account-box">
-                    <strong>{accountEmail}</strong>
+                    <strong>{accountEmail || '로그인된 계정'}</strong>
                     <span>삭제 후에는 계정과 저장 기록을 되돌릴 수 없어요.</span>
                   </div>
 
                   <label className="web-profile-field">
-                    <span>이메일 확인</span>
+                    <span>{accountEmail ? '이메일 확인' : '탈퇴 확인'}</span>
                     <input
-                      type="email"
+                      type={accountEmail ? 'email' : 'text'}
                       value={confirmationEmail}
                       onChange={event => setConfirmationEmail(event.target.value)}
-                      placeholder={accountEmail || '이메일 주소'}
-                      autoComplete="email"
+                      placeholder={confirmationPlaceholder}
+                      autoComplete={accountEmail ? 'email' : 'off'}
                       disabled={isAuthBusy}
                     />
                   </label>

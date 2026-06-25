@@ -17,14 +17,16 @@ import {
   APP_PATH,
   PROFILE_PATH,
   SUPPORT_PATH,
+  getHappinessItemIdFromPath,
   isAdminInquiriesPath,
   clearRequestedAuthModeInUrl,
-  getNativeAuthCallbackPathFromUrl,
+  getNativeAppPathFromUrl,
   getRequestedPostAuthPathFromUrl,
   getRequestedAuthModeFromUrl,
   getPublicWebUrl,
   isAccountDeletePath,
   isAppPath,
+  isHappinessItemPath,
   isPasswordResetPath,
   isFeedbackPath,
   isProfilePath,
@@ -170,6 +172,7 @@ const resolveRuntimePath = rawPathname => {
 
   if (
     isAppPath(normalizedPathname)
+    || isHappinessItemPath(normalizedPathname)
     || isPasswordResetPath(normalizedPathname)
     || isAccountDeletePath(normalizedPathname)
     || isAdminInquiriesPath(normalizedPathname)
@@ -196,7 +199,7 @@ const navigateToPath = (nextPath, onNavigate) => {
   onNavigate(normalizedNextPath);
 };
 
-function AppContent() {
+function AppContent({ pendingHappinessItemId, onHappinessDeepLinkHandled }) {
   const initialRequestedMode = getRequestedAuthModeFromUrl();
   const [currentView, setCurrentView] = useState(() => consumePreservedAppView());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -278,6 +281,14 @@ function AppContent() {
       });
     }
   }, [authUser, isAuthScreenRequested]);
+
+  useEffect(() => {
+    if (pendingHappinessItemId) {
+      queueMicrotask(() => {
+        setCurrentView('home');
+      });
+    }
+  }, [pendingHappinessItemId]);
 
   const openAuthScreen = (mode = 'login') => {
     setAuthScreenMode(mode);
@@ -454,7 +465,12 @@ function AppContent() {
           </button>
         </div>
 
-        {currentView === 'home' && <Home />}
+        {currentView === 'home' && (
+          <Home
+            deepLinkedHappinessItemId={pendingHappinessItemId}
+            onDeepLinkHandled={onHappinessDeepLinkHandled}
+          />
+        )}
         {currentView === 'records' && (
           <LazyLoadBoundary
             mode="page"
@@ -765,8 +781,8 @@ function App() {
 
     let listenerHandle = null;
 
-    const applyNativeCallbackPath = (urlString) => {
-      const callbackPath = getNativeAuthCallbackPathFromUrl(urlString);
+    const applyNativeAppPath = (urlString) => {
+      const callbackPath = getNativeAppPathFromUrl(urlString);
 
       if (!callbackPath) {
         return;
@@ -780,11 +796,11 @@ function App() {
     };
 
     CapacitorApp.getLaunchUrl().then(result => {
-      applyNativeCallbackPath(result?.url);
+      applyNativeAppPath(result?.url);
     });
 
     CapacitorApp.addListener('appUrlOpen', data => {
-      applyNativeCallbackPath(data?.url);
+      applyNativeAppPath(data?.url);
     }).then(handle => {
       listenerHandle = handle;
     });
@@ -829,7 +845,18 @@ function App() {
     );
   }
 
-  if (!isAppPath(pathname)) {
+  const isAppRoute = isAppPath(pathname) || isHappinessItemPath(pathname);
+  const pendingHappinessItemId = getHappinessItemIdFromPath(pathname);
+  const handleHappinessDeepLinkHandled = () => {
+    if (!pendingHappinessItemId) {
+      return;
+    }
+
+    window.history.replaceState({}, '', APP_PATH);
+    setPathname(APP_PATH);
+  };
+
+  if (!isAppRoute) {
     return (
       <HappyProvider>
         <PublicSiteContent
@@ -844,7 +871,10 @@ function App() {
     <HappyProvider>
       <OpeningAnimation />
       <div className="app-shell">
-        <AppContent />
+        <AppContent
+          pendingHappinessItemId={pendingHappinessItemId}
+          onHappinessDeepLinkHandled={handleHappinessDeepLinkHandled}
+        />
       </div>
     </HappyProvider>
   );

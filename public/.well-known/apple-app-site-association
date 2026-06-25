@@ -1,0 +1,15 @@
+{
+    "applinks":  {
+                     "apps":  [
+
+                              ],
+                     "details":  [
+                                     {
+                                         "appID":  "SSW6TZA3JC.net.happyfinder.app",
+                                         "paths":  [
+                                                       "/app/happiness/*"
+                                                   ]
+                                     }
+                                 ]
+                 }
+}

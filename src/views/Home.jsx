@@ -286,7 +286,7 @@ const TodayRecordImageStrip = ({ images = [], onRemove, onReorder }) => {
   );
 };
 
-const Home = () => {
+const Home = ({ deepLinkedHappinessItemId = null, onDeepLinkHandled }) => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [shouldOpenRecord, setShouldOpenRecord] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -346,6 +346,24 @@ const Home = () => {
       && itemMatchesSelectedTags(item, selectedTags)
     ))
   ), [normalizedSearchQuery, selectedTags, shuffledItems]);
+
+  useEffect(() => {
+    if (!deepLinkedHappinessItemId) {
+      return;
+    }
+
+    const linkedItem = items.find(item => item.id === deepLinkedHappinessItemId);
+
+    if (!linkedItem) {
+      return;
+    }
+
+    setSearchQuery('');
+    setSelectedTags([]);
+    setShouldOpenRecord(false);
+    setSelectedCard(linkedItem);
+    onDeepLinkHandled?.();
+  }, [deepLinkedHappinessItemId, items, onDeepLinkHandled]);
 
   const closeTagPicker = useCallback(() => {
     setIsTagPickerOpen(false);

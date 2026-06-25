@@ -35,9 +35,14 @@ const AccountDeletePage = () => {
     syncAuthenticatedState();
   }, [authUser]);
 
-  const normalizedEmail = confirmationEmail.trim().toLowerCase();
-  const expectedEmail = typeof authUser?.email === 'string' ? authUser.email.toLowerCase() : '';
-  const isConfirmationMatched = Boolean(expectedEmail && normalizedEmail === expectedEmail);
+  const confirmationTarget = authUser?.email
+    ? authUser.email.trim().toLowerCase()
+    : '탈퇴';
+  const confirmationInstruction = authUser?.email
+    ? '아래 입력칸에 현재 이메일 주소를 그대로 입력하면 삭제를 진행할 수 있습니다.'
+    : '아래 입력칸에 탈퇴를 입력하면 삭제를 진행할 수 있습니다.';
+  const confirmationPlaceholder = authUser?.email || '탈퇴';
+  const isConfirmationMatched = confirmationEmail.trim().toLowerCase() === confirmationTarget;
 
   const handleDeleteAccount = async () => {
     if (!isConfirmationMatched) {
@@ -76,18 +81,18 @@ const AccountDeletePage = () => {
         ) : authUser ? (
           <>
             <div className="account-delete-account">
-              <strong>{authUser.email}</strong>
-              <span>아래 입력칸에 현재 이메일 주소를 그대로 입력하면 삭제를 진행할 수 있습니다.</span>
+              <strong>{authUser.email || '로그인된 계정'}</strong>
+              <span>{confirmationInstruction}</span>
             </div>
 
             <label className="account-delete-field">
-              <span>이메일 확인</span>
+              <span>{authUser.email ? '이메일 확인' : '탈퇴 확인'}</span>
               <input
-                type="email"
+                type={authUser.email ? 'email' : 'text'}
                 value={confirmationEmail}
                 onChange={event => setConfirmationEmail(event.target.value)}
-                placeholder={authUser.email || '이메일 주소'}
-                autoComplete="email"
+                placeholder={confirmationPlaceholder}
+                autoComplete={authUser.email ? 'email' : 'off'}
                 disabled={isAuthBusy}
               />
             </label>

@@ -1,0 +1,12 @@
+{
+    "relation":  [
+                     "delegate_permission/common.handle_all_urls"
+                 ],
+    "target":  {
+                   "namespace":  "android_app",
+                   "package_name":  "net.happyfinder.app",
+                   "sha256_cert_fingerprints":  [
+                                                    "93:1E:5D:E7:EA:6F:B0:48:46:D8:E9:21:0E:F7:BF:8D:9D:5C:49:86:FA:E1:7A:A4:80:5A:23:15:6E:32:F5:82"
+                                                ]
+               }
+}
